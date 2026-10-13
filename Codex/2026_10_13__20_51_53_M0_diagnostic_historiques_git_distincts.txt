@@ -1,0 +1,42 @@
+Oryn — Diagnostic du rejet non-fast-forward
+
+Date : 2026-10-13 20:51:53 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0.
+Libellé : diagnostic_historiques_git_distincts.
+Commit local : 7ff378a, « First commit - Started TUI ».
+Référence distante disponible : origin/main, b401c2a, « Initial commit ».
+
+Demande : résoudre le rejet main -> main (non-fast-forward) communiqué
+par l'utilisateur, dans le cadre de la publication demandée.
+
+Observations vérifiées :
+- origin/main est maintenant disponible localement.
+- Son arbre contient uniquement LICENSE, 21 lignes ajoutées.
+- git rev-list --max-parents=0 main origin/main retourne deux racines distinctes.
+- git merge-base main origin/main retourne le code 1, sans ancêtre commun.
+- Le rejet provient de deux initialisations indépendantes du dépôt. Une fusion
+  explicite des historiques permet de conserver le code local et la licence.
+- main n'a toujours pas d'upstream ; le log précédent est non suivi.
+
+Action tentée :
+  git merge --allow-unrelated-histories --no-edit origin/main
+
+Résultat : échec avant fusion, car le sandbox interdit de créer
+.git/ORIG_HEAD.lock (« Operation not permitted »). Aucun commit de fusion
+ni push effectué par l'agent. L'accès réseau de la session restait également
+bloqué lors de la tentative de push précédente.
+
+Solution à exécuter dans le terminal utilisateur :
+  git fetch origin
+  git merge --allow-unrelated-histories --no-edit origin/main
+  git push --set-upstream origin main
+
+La première commande actualise la référence distante. Sur les arbres inspectés,
+aucun chemin commun ne devrait provoquer de conflit ; l'état distant peut avoir
+évolué depuis. Si la fusion échoue ou signale des conflits, examiner son message
+avant de poursuivre. Ne pas remplacer l'historique distant par un push forcé.
+
+Fichier créé : ce log, non commité. Aucun code applicatif modifié ; aucun test
+applicatif nécessaire. Vérifier la branche et le statut après la tentative.
+Pour l'état applicatif M0, consulter la synthèse du 19:46:58.

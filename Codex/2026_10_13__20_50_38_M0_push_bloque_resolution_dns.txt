@@ -1,0 +1,36 @@
+Oryn — Tentative de publication du premier commit
+
+Date : 2026-10-13 20:50:38 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0.
+Libellé : push_bloque_resolution_dns.
+Commit concerné : 7ff378a, « First commit - Started TUI ».
+
+Demande : publier le commit local et définir l'upstream après une erreur de
+push rencontrée par l'utilisateur.
+
+État observé avant action :
+- Working tree propre ; branche main au commit 7ff378a.
+- origin : git@github-pro:0xZyks/Oryn-Agentic_CLI_Workspace.git.
+- Aucun upstream configuré pour main.
+- Le premier commit a été créé par l'utilisateur depuis la précédente vérification.
+
+Action exécutée :
+  git -c core.sshCommand='ssh -o BatchMode=yes -o ConnectTimeout=10' push --set-upstream origin main
+
+Résultat : échec, code 128, avant la connexion distante :
+  ssh: Could not resolve hostname github.com: nodename nor servname provided, or not known
+Le réseau de cette session ne permet pas de résoudre GitHub. Aucune publication
+ni configuration d'upstream n'a été réalisée par cette tentative. L'état du
+dépôt distant et l'authentification SSH n'ont pas pu être vérifiés.
+Le message d'erreur rencontré dans le terminal utilisateur n'est pas disponible ;
+ne pas supposer qu'il a la même cause que l'échec de cette session.
+
+Fichier créé : ce log de passation, laissé non commité. Aucun code modifié.
+Aucun test applicatif nécessaire pour cette action de publication.
+
+Suite : depuis le terminal utilisateur, exécuter :
+  git push --set-upstream origin main
+Si cette commande échoue, récupérer son message exact pour diagnostiquer
+l'erreur. Ne pas forcer le push sans examiner un éventuel historique distant.
+Pour l'état applicatif, consulter le log M0 de synthèse du 19:46:58.
