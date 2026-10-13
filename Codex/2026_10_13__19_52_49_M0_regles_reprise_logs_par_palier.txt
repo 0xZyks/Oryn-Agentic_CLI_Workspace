@@ -1,0 +1,35 @@
+Oryn — Règles de reprise des sessions par palier
+
+Date : 2026-10-13 19:52:49 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0 (palier en cours ; modification documentaire).
+Libellé : regles_reprise_logs_par_palier.
+Commit associé : aucun commit créé dans cette session.
+
+Demande : rendre explicite la lecture des logs au lancement d'une session,
+ajouter le palier dans le nom des logs et limiter leur lecture au palier du
+dernier log enregistré.
+
+Résultat : AGENTS.md impose de lire le dernier log, identifié par l'horodatage
+de son nom, puis uniquement les autres logs nécessaires du même palier.
+La date de modification sur disque ne sert pas à déterminer le dernier log.
+Sans log, la session utilise la documentation et l'état actuel du projet.
+
+Nouvelle convention : YYYY_MM_dd__HH_mm_ss_<Palier>_<CommitMessage>.txt.
+Le palier est M0 à M7 ; une tâche transversale de passation reprend le palier
+en cours. Le contenu précise également le palier et le fuseau horaire.
+
+Fichiers concernés :
+- AGENTS.md, section « Logs de passation Codex ».
+- Premier log renommé en
+  Codex/2026_10_13__19_46_58_M0_synthese_etat_projet.txt ; palier ajouté au contenu.
+- Ce nouveau log de passation M0.
+
+Vérification : relecture des règles, contrôle des noms, des dates, du palier
+et de la présence des deux logs après écriture. Aucun test applicatif exécuté
+pour cette modification documentaire ; aucun code applicatif modifié.
+
+Reprise : lire aussi le log M0 de synthèse ci-dessus pour les détails du
+prototype et les validations historiques. Ce nouveau log ne valide aucun
+jalon supplémentaire ; la prochaine étape reste la reprise sur Linux et la
+vérification du workspace M0 avant le développement de M1 selon la demande.

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>oryn</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>oryn</ToolCommandName>
+    <PackageId>Oryn.Cli</PackageId>
+    <Version>0.1.0-m0</Version>
+    <Description>Local-first terminal engineering workspace.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <ProjectReference Include="../Oryn.App/Oryn.App.csproj" />
+    <ProjectReference Include="../Oryn.Tui.Prototype/Oryn.Tui.Prototype.csproj" />
+  </ItemGroup>
+</Project>

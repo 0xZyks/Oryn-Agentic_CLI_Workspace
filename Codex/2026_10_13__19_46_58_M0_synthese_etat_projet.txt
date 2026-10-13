@@ -1,0 +1,164 @@
+Oryn — Première synthèse de passation
+
+Date : 2026-10-13 19:46:58 CEST (+0200), Europe/Paris.
+Agent : Codex, session de création du journal de reprise.
+Palier de roadmap : M0.
+Libellé : synthese_etat_projet.
+Commit associé : aucun commit accessible ou créé dans cette session.
+
+DEMANDE ET PORTÉE
+
+Créer le dossier Codex/ et un premier log synthétisant le travail déjà présent
+sur Oryn, avec le format YYYY_MM_dd__HH_mm_ss_<CommitMessage>.txt.
+La précédente session a été interrompue ; son historique conversationnel n'est
+pas disponible. Cette synthèse est reconstruite à partir des fichiers présents,
+des ADR, de la documentation et des traces de vérification locales. Elle ne
+permet pas d'attribuer chaque modification à un agent ni d'établir sa date exacte.
+
+ÉTAT GIT OBSERVÉ
+
+Dans /Users/theosignori/Documents/Oryn-CLI, git status --short et git log ont
+échoué avec « not a git repository ». L'historique des commits et les éventuels
+changements non commités ne sont donc pas identifiables dans ce dossier.
+Cela ne renseigne pas sur l'existence d'un dépôt distant ou d'une autre copie.
+Le suffixe du nom de ce log est un libellé descriptif, pas un commit effectué.
+
+SYNTHÈSE DU TRAVAIL PRÉSENT
+
+Le projet est au stade d'un prototype de workspace terminal M0, version
+0.1.0-m0. La documentation rapporte des validations sur macOS ARM64.
+M1 et les jalons suivants restent à développer. Le chat et le visualiseur sont
+encore des placeholders : leur présence à l'écran ne constitue pas une
+intégration d'inférence ou un graphe de connaissance fonctionnel.
+
+1. Cadrage et architecture
+
+- README_ORYN.md contient la vision local-first, les exigences v0.1 et M0–M7.
+- AGENTS.md fixe les règles de travail, provenance et contrôle utilisateur.
+- Stack retenue pour M0 : C#/.NET 10 et Terminal.Gui 2.5.0, versions explicites.
+- global.json demande le SDK 10.0.100 avec rollForward latestFeature.
+- Oryn.slnx contient trois projets de production et deux projets de vérification.
+- Directory.Build.props active nullable, avertissements en erreurs et lockfiles.
+- ADR 0001 décrit la stack, les frontières applicatives, la racine du projet
+  et la restauration du terminal. ADR 0002 décrit docking et redimensionnement.
+
+2. CLI et configuration
+
+- src/Oryn.Cli compose l'application et produit l'exécutable oryn.
+- Sans chemin explicite, Oryn ouvre le dossier courant de l'appelant, même si
+  le binaire est installé ailleurs. Un chemin relatif est résolu depuis celui-ci.
+- Options : --help, --version, --check, --config, --no-color, --ascii et --.
+- --check rapporte en JSON la racine, le nombre d'entrées et les capacités
+  terminal détectées sans ouvrir la TUI. Les erreurs sont affichées dans le shell.
+- La configuration JSON est explicite, validée et illustrée dans
+  oryn.settings.example.json ; elle n'est pas chargée automatiquement du projet.
+- Le packaging en outil .NET est prévu dans le csproj. Un paquet et une
+  installation locale sont présents sous artifacts/, exclu par .gitignore.
+
+3. État applicatif et explorateur
+
+- src/Oryn.App n'a pas de dépendance Terminal.Gui. Il porte état du workspace,
+  sélection, focus, onglets, commandes, disposition et transactions de resize.
+- L'explorateur charge les dossiers à la demande, permet expansion/repli et
+  ouverture d'une prévisualisation en lecture seule dans l'onglet Code.
+- Les dossiers sont affichés avant les fichiers ; fichiers cachés exclus par défaut.
+- Limites par défaut : 1 000 entrées par dossier et 65 536 caractères par aperçu.
+  La troncature et les erreurs sont signalées ; les caractères de contrôle sont
+  neutralisés. Les accès sont bornés à la racine et les liens descendants ne
+  sont pas suivis.
+- Les services fichiers sont asynchrones et annulables. L'adaptateur annule
+  les requêtes remplacées et applique les résultats sur le thread de la TUI.
+
+4. TUI et derniers raffinements documentés
+
+- src/Oryn.Tui.Prototype adapte Terminal.Gui : explorateur à gauche, zone
+  centrale Chat/Code/Visualizer et visualiseur initialement docké à droite.
+- Thème sombre inspiré Material, surfaces sans bordures, accent lavande,
+  onglets plats cliquables, barre de projet et indicateurs de focus/sélection.
+- Modes monochrome (NO_COLOR ou --no-color) et décorations ASCII (--ascii).
+- Navigation clavier, sélection souris, défilement et menus selon le terminal.
+- Mode compact sous 90 colonnes ou 12 lignes : un panneau visible à la fois.
+- Le même visualiseur peut passer en onglet central ou être docké à gauche/droite.
+  Dernier onglet Chat/Code, dernier dock et contenu/défilement sont conservés
+  pendant la session lors de ces déplacements.
+- Séparateurs déplaçables, tailles minimales, resize clavier, annulation d'un
+  drag par Escape et remise à zéro par F8. Les préférences de largeur survivent
+  au redimensionnement du terminal pendant la session.
+- Raccourcis principaux : Tab/Shift+Tab, flèches/Entrée, F1–F4, Ctrl+D,
+  Ctrl+Shift+Gauche/Droite, Ctrl+Gauche/Droite, F8, F10 et Ctrl+Q.
+- Un garde POSIX sauvegarde stty -g et restaure le terminal après nettoyage
+  de la bibliothèque ; les détails et sa justification figurent dans ADR 0001.
+- La documentation retrace le remplacement du widget Tabs par des contrôles
+  plats, qui a également supprimé un contournement d'erreur de disposal.
+
+VÉRIFICATIONS HISTORIQUES — RAPPORTÉES, PAS RÉEXÉCUTÉES ICI
+
+docs/m0-verification.md rapporte, sur macOS 15.6.1 ARM64 avec SDK 10.0.100 :
+- Build de la solution réussi sans avertissement ni erreur.
+- 25 cas xUnit réussis via un runner temporaire en processus, avec assertions
+  et nettoyage de chaque cas : options, focus, fichiers, limites, liens,
+  annulation, configuration, layout, docking et resize.
+- Smoke executable réussi, y compris lancement depuis un dossier temporaire
+  sans argument de chemin et vérification de la racine utilisée.
+- Scénarios PTY réussis en couleur/Unicode et monochrome/ASCII : navigation,
+  souris, previews, onglets/docks, séparateurs, annulation, clavier, resize,
+  menu, sortie, restauration de l'écran et de tous les réglages du terminal.
+- Création du paquet et installation de l'outil .NET local réussies.
+
+Les traces consultées .local/pty/docking-result.log, docking-release.log,
+docking-installed.log, material-result.log et installed-result.log contiennent
+des lignes PASS cohérentes avec ces scénarios. Elles sont locales et exclues
+de Git ; elles ne garantissent pas que les sources actuelles ont été retestées.
+
+Limites historiques du sandbox : DNS NuGet bloqué ; dépendances restaurées
+par l'utilisateur dans .local/packages. VSTest ne pouvait pas ouvrir sa socket,
+d'où .local/test-runner. MSBuild utilisait -m:1 -nodeReuse:false
+-p:UseSharedCompilation=false. Le runner temporaire n'est pas versionné.
+
+VÉRIFICATIONS DE CETTE SESSION
+
+- Lecture des consignes, spécification, README, ADR et bilan M0.
+- Inspection de la solution, csproj, configuration, sources ciblées et tests.
+- Lecture des traces locales ci-dessus et constat de l'absence de Git accessible.
+- Aucun build, test applicatif, test terminal ou packaging réexécuté : tâche
+  documentaire. Vérification du format du nom et du contenu du log après écriture.
+
+FICHIERS CRÉÉS OU MODIFIÉS PAR CETTE SESSION
+
+- Codex/2026_10_13__19_46_58_M0_synthese_etat_projet.txt : ce premier log,
+  renommé lors de la mise à jour de la convention pour inclure le champ Palier.
+- AGENTS.md : consigne de lire les logs pertinents au démarrage et d'écrire
+  un nouveau log après chaque prompt conséquent, avec format, provenance,
+  vérifications, limites et prochaine étape. Aucun code applicatif modifié.
+
+REPRISE SUR LINUX ET SUITE
+
+- Versionner les sources, docs, scripts, lockfiles et Codex/ ; .local/,
+  artifacts/, bin/ et obj/ sont déjà exclus par .gitignore. Les binaires et
+  caches présents sur macOS devront être reconstruits/restaurés sur Linux.
+- Avec un SDK .NET 10 adapté à global.json, les commandes documentées sont :
+    dotnet restore Oryn.slnx
+    dotnet build Oryn.slnx --no-restore
+    dotnet test tests/Oryn.App.Tests --no-restore
+    dotnet run --project tests/Oryn.Smoke --no-restore -- src/Oryn.Cli/bin/Debug/net10.0/oryn
+    python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+    dotnet run --project src/Oryn.Cli --no-build
+- Ces commandes de reprise proviennent du README ; elles ne sont pas des
+  résultats de vérification Linux. Tester lancement/fermeture, navigation,
+  souris disponible, terminal étroit et restauration sur la machine cible.
+- Windows et Linux restent non validés selon le bilan existant. Le script PTY
+  est destiné à macOS/Linux. Aucun packaging multiplateforme n'est garanti ici.
+- M0 n'a pas de persistance du workspace, d'édition de code, d'inférence,
+  de graphe réel, de SQLite, de Roslyn, de conversations ou de cartes persistées.
+- Après validation du shell sur la machine de reprise, prochain jalon prévu :
+  M1, inférence locale, chat global persisté, streaming, annulation, erreurs et
+  fonctionnement sans modèle. Le backend devra être évalué avant choix.
+- Cette session n'a lancé ni M1, ni commit, ni push. Les développements suivants
+  nécessitent une nouvelle demande de l'utilisateur.
+
+SOURCES PRINCIPALES POUR LE PROCHAIN AGENT
+
+AGENTS.md ; README_ORYN.md ; README.md ; docs/m0-verification.md ;
+docs/adr/0001-m0-terminal-workspace.md ;
+docs/adr/0002-visualizer-docking-and-resize.md ; src/ ; tests/ ;
+scripts/terminal-smoke.py ; global.json ; Directory.Build.props ; .gitignore.

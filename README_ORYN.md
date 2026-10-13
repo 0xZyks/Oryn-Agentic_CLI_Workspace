@@ -1,0 +1,650 @@
+# Oryn — Local-first AI Engineering Environment
+
+> **Status:** Design specification / implementation roadmap for **v0.1**  
+> **Audience:** Project author, contributors, and coding agents (including Codex)  
+> **Principle:** *The AI assists the engineer's reasoning; it does not replace their agency.*
+
+## 0. Read this first — instructions to Codex
+
+This README is both the project vision and an actionable implementation brief. **Do not attempt to implement everything described here in v0.1.** Distinguish:
+
+- **[V0.1]** Committed product scope: implement a functional, usable first release.
+- **[LATER]** Direction for v1+; design extensibility where cheap, do not build prematurely.
+- **[PROPOSED]** Candidate choice requiring benchmarking or a short proof of concept.
+- **[DECIDED]** Product/architectural intent established during design.
+
+**First Codex session:** inspect the repository; if empty, create the solution skeleton and an executable minimal TUI, then proceed milestone by milestone. Present assumptions and short ADRs for decisions that cannot be inferred. Avoid broad rewrites, speculative frameworks, unbounded dependency additions, and features not listed as v0.1 deliverables. Never store credentials in the repository.
+
+**Definition of success:** launching `oryn` in a supported terminal opens a project, browses files, chats with a local model, inspects a navigable project/concept graph, edits/validates proposals, opens contextual element discussions and knowledge cards, and restores that state on restart. Some graph edges, documentation, and agent proposals may be incomplete or manually supplied in v0.1; this must be made explicit rather than fabricated.
+
+---
+
+## 1. Why Oryn exists
+
+Oryn is a **local-first, terminal-native, AI-assisted engineering workspace**. Its original motivation is personal: restore the pleasure of programming, experimenting, designing systems and understanding technical concepts **without losing the practical benefits of modern AI assistance**. It is not intended to be merely another chatbot, autonomous coding agent, or code editor.
+
+The central experience connects four activities:
+
+1. **Discuss** an idea, design trade-off, implementation or unfamiliar technology with specialized AI agents.
+2. **Visualize** both what exists in the repository and what is only being considered.
+3. **Understand** each element through a contextual technical knowledge card, linked references and architectural rationale.
+4. **Build and verify** the chosen design, preserving the history of why it was chosen.
+
+The long-term ambition is to **develop Oryn using Oryn**: start with proven libraries and inference engines, then progressively implement a native TUI renderer, specialized scheduling, memory management and potentially parts of the inference stack. Future homelab hardware may host larger models while the terminal frontend remains local and functional offline.
+
+### Guiding principles
+
+- **Human-controlled architecture:** agents suggest; the user validates. AI proposals must never silently become approved decisions.
+- **Code is factual; interpretations are not:** distinguish parser/analyzer evidence, AI-generated inference, and human-confirmed decisions.
+- **Local-first, not local-only:** usable with local models and without network; optional remote inference through user-provided API keys.
+- **Progressive enhancement:** file browsing and project knowledge should remain useful even if LSP, graph analysis, remote services or models are unavailable.
+- **Responsive interaction:** terminal input, graph navigation and hover/click/keyboard actions must never wait for LLM inference.
+- **Portable:** Windows, Linux, macOS; avoid hardcoding POSIX assumptions into shared application code.
+- **Measurable optimization:** minimize unnecessary model calls and redundant analysis before attempting exotic low-level tuning.
+- **No feature creep:** ideas beyond the agreed v0.1 scope go into the backlog / Idea Box.
+
+---
+
+## 2. Release boundaries
+
+### 2.1 v0.1 — required product capabilities
+
+1. **Terminal workspace:** launch from CLI, open a project directory, file explorer, top menu/command bar, central tabbed area, dockable or switchable views, keyboard-first navigation and basic mouse support where available. A third-party TUI library is allowed as a temporary implementation.
+2. **Project chat:** persisted conversations, streamed model output, references to project files/elements, explicit actions/tools with user-visible status and error handling.
+3. **Multi-agent architecture:** actual distinct agent roles and task routing, with a basic scheduler, cancellation, priority classes and model backend abstraction. Agents may share a physical model.
+4. **Interactive visualizer:** project/module/class/method/concept nodes, relationships, expandable semantic levels where supported, selection and navigation, context menus/actions, statuses and aggregated progress. Basic code-derived graph plus manually/agent-proposed nodes is sufficient initially.
+5. **Element-level chat:** persistent discussions attached to stable element identities; reopen from the node; general chat and contextual chat are separate scopes but may reference one another.
+6. **Knowledge cards:** purpose, mechanism, technology, design rationale, documentation/resources, relations, discussions and decision history; clearly label generated versus sourced versus user-confirmed information.
+7. **Design lifecycle:** **À valider → Validé → En cours → Implémenté**; user-confirmed transitions; archived/rejected ideas in a searchable **Idea Box**.
+8. **Persistence:** project graph, element identities, decisions, chats, status, citations/references, knowledge cards and settings survive restarts.
+9. **At least one viable language integration:** begin with a narrow, tested implementation, ideally **C# / Roslyn** for richer semantics, with graceful degradation for unsupported languages. Do not claim complete cross-language CFG support.
+10. **Usable local inference:** start with an established engine and realistic small quantized models; support a core-only mode for machines unable to run multiple models comfortably.
+
+### 2.2 Explicitly out of scope for v0.1
+
+- Homemade TUI renderer and complete widget toolkit.
+- Homemade GPU allocator, VRAM scheduler, inference kernels or model runtime.
+- Full language package manager/catalog and plugin marketplace.
+- Exhaustive cross-language call graph, CFG, data-flow and precise dynamic dispatch resolution.
+- Full autonomous implementation of graph proposals without approval.
+- Distributed inference / homelab orchestration (preserve interface seams, not implementation).
+- Advanced RAG infrastructure requiring a heavyweight vector database.
+- Perfect code-entity identity reconciliation after arbitrary refactors.
+- Pixel-accurate vector graphics inside a conventional character-cell terminal.
+
+These are **future ambitions, not abandoned ideas**.
+
+---
+
+## 3. UX and workspace design
+
+### 3.1 Layout
+
+```text
+┌──────────────────────── Oryn ────────────────────────────────┐
+│ File  Project  View  Agents  Tools  Settings                 │
+├────────────────┬──────────────────────────┬──────────────────┤
+│ File Explorer  │ Tabs: Chat | Code | ...  │ Visualizer       │
+│                │                          │ (dock right)     │
+│ src/           │ Global project chat      │                  │
+│  ...           │ or selected document     │ graph / detail   │
+│                │                          │                  │
+├────────────────┴──────────────────────────┴──────────────────┤
+│ Status: model · jobs · indexing · diagnostics · key hints    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Important:** the visualizer defaults to the **right**, not the chat. It may also occupy a central tab or be shown side-by-side with other views. The central area supports multiple tabs. Project FileExplorer is typically left. Layout should adapt to terminal dimensions and preserve keyboard accessibility.
+
+### 3.2 Interaction
+
+- Keyboard-driven focus, selection, navigation, search and context actions; optional mouse click, wheel, hover, drag and resizing when terminal supports them.
+- Selecting a graph node opens its details; a context action such as **Show Chat** opens the node's persistent discussion. Support shortcuts and discoverable actions; exact keymap remains configurable.
+- Node-local chatboxes may appear as floating overlays/panels and persist independently of visibility. Avoid making every chat permanently visible.
+- Project chat is global; node chat is scoped to a concept or code element. Allow linking messages/decisions across scopes without duplicating history.
+- Show status, source, confidence and staleness. A proposed node must look different from a code-backed implemented node.
+- Terminal compatibility tiers: basic keyboard/color/Unicode fallback; richer mouse and true-color only when supported. Avoid assumptions about universal mouse hover or advanced terminal image protocols.
+
+### 3.3 Visualizer and semantic zoom
+
+The visualizer is **not merely a drawing of source files**. It is a navigable map of both the actual system and the intended system.
+
+Potential abstraction levels:
+
+`Project → Modules/Namespaces → Classes/Types → Methods/Functions → Internal flow`
+
+- Zoom changes **semantic granularity and visible entities**, not only glyph size.
+- Show dependencies, incoming/outgoing calls, event and data flow, and architectural relationships, each with evidence and confidence.
+- Control **scope** (what part of the project) separately from **depth** (how much internal detail).
+- At deepest level, provide **Call Graph** and **Control Flow Graph (CFG)** as distinct switchable views; future synchronized side-by-side comparison is desirable.
+- **CFG is beta/limited in v0.1** if supported by the chosen analyzer. Do not generate authoritative CFG branches with an LLM.
+- Support code-derived entities **and** conceptual nodes not yet in code, with visible provenance.
+- For a class or module, summarize child progress (e.g., 5 implemented, 2 in progress, 1 to validate). Counts are not proof of correctness.
+
+### 3.4 Four states and Idea Box
+
+| State | Meaning | Transition policy |
+|---|---|---|
+| **À valider** | Hypothesis/proposal, not yet approved | Created manually or proposed by agent |
+| **Validé** | Accepted design/requirement, not started | Explicit human validation |
+| **En cours** | Implementation underway, incomplete | User-controlled, can be assisted by evidence |
+| **Implémenté** | User considers element finished and functional | Explicit confirmation, preferably backed by tests/evidence |
+
+The **Idea Box** is **not a fifth main state**: it archives rejected, deferred or superseded concepts, including the original discussion, rationale and links to affected elements. Archived concepts remain searchable and retrievable as historical context, and can be reconsidered later.
+
+Important subtleties:
+
+- Detecting a class/method in source does **not** prove it is complete or correct.
+- If an implemented element is being redesigned, create a **linked change proposal** instead of rewriting history to pretend the existing implementation disappeared.
+- Preserve a timestamped audit trail of decisions and transitions.
+- Status and code-presence are distinct internal properties, even if the user-facing workflow exposes just four main statuses.
+
+---
+
+## 4. Project Knowledge Graph — the central model
+
+**[DECIDED]** The visualizer and the agents must share **one unified project knowledge model**. Do not build a separate opaque visualizer database and an unrelated AI memory database.
+
+### 4.1 Entity classes
+
+At minimum:
+
+- **Code entities:** repository, project, module, namespace, file, type, method/function, field/property, relevant symbol.
+- **Conceptual entities:** technology (e.g., RAG), architectural component, planned feature, subsystem, hypothesis, design decision.
+- **Knowledge entities:** documentation card, external resource, conversation, message, decision record, archived idea.
+- **Edges:** contains, references, calls, depends-on, implements, proposed-to-implement, documents, discussed-in, supersedes, related-to, data-flow, event-flow, CFG transition.
+
+Do not require every edge type in the first milestone. Design typed edges and metadata so new types can be introduced safely.
+
+### 4.2 Identity and reconciliation
+
+Assign a stable internal **UUID** to each discovered or created element. Chats, documentation, decisions and statuses reference UUIDs, **never just a file path or display name**.
+
+**Crucial caveat:** UUID assignment alone does not solve continuity when source code is externally renamed, moved or substantially edited. The analyzer will rediscover symbols; the system must reconcile them.
+
+Suggested matching evidence, strongest first when available:
+
+1. Explicit rename/move notifications from an IDE/LSP or tracked user action.
+2. Semantic symbol identity, signatures, enclosing scope and language-specific IDs.
+3. Git rename/move information and source location history.
+4. Normalized code-body fingerprints and structural fingerprints.
+5. Reference/dependency neighborhood similarity.
+6. File path and line/column proximity as weak supporting signals.
+
+Design reconciliation as a **scored matching operation with confidence**, not a simplistic string equality check. If ambiguous, **do not silently reattach a conversation to the wrong symbol**: preserve the old entity, mark it unresolved/orphaned, and offer user-assisted linking. Track merge/split cases and provenance; do not discard history.
+
+v0.1 can start with exact matches, simple rename heuristics and a manual re-link UI; richer reconciliation is later.
+
+### 4.3 Evidence and provenance
+
+Every machine-produced fact should carry:
+
+- origin: parser, semantic analyzer, LSP, user, agent, imported documentation;
+- source pointer (file/range/symbol, URL, conversation/message ID) where applicable;
+- observed/generated timestamp and last validation;
+- confidence / certainty where meaningful;
+- stale/invalidated flag when relevant.
+
+**Three knowledge categories must not be conflated:**
+
+1. **Deterministic or analyzer-backed observations** (code facts).
+2. **AI-generated explanations/inferences** (fallible, must be validated or visibly labeled).
+3. **Human-confirmed architectural intent** (must never be silently overwritten by a rescan).
+
+A parser or analyzer is the source of truth for its supported code facts; a model can enrich descriptions, labels, grouping and proposed relations, **not fabricate CFG branches or claim code is functional**.
+
+### 4.4 Incremental invalidation
+
+On a file change, compute impacted symbols/edges and mark derived cards, summaries, embeddings and graph regions stale as appropriate. Recompute affected results rather than reindexing the entire project. Build a dependency/invalidation mechanism incrementally; don't overengineer it in the first iteration.
+
+---
+
+## 5. Contextual knowledge cards
+
+A graph node is also an entry point into learning and project history. For example, selecting **RAG Engine** should offer a detailed card explaining what RAG is and how it relates to Oryn.
+
+Recommended card sections:
+
+- **Overview:** what the element is and why it exists.
+- **Mechanism:** how it works, concepts, flow, inputs/outputs and trade-offs.
+- **Technology:** libraries, standards, algorithms, interfaces and versions when known.
+- **Documentation:** official docs, articles, papers, source links; distinguish verified links from suggestions.
+- **Project role:** how Oryn intends to use it and its relationships to other nodes.
+- **Design decisions:** what was approved, why, alternatives considered and rejected.
+- **Implementation:** code locations, status, tests/evidence and outstanding work.
+- **Discussions:** persistent chats attached to the element.
+
+**RAG example:** explain retrieval-augmented generation, chunking, embeddings, lexical/vector/hybrid retrieval, reranking, context assembly, freshness, citations and hallucination limitations. Do **not** suggest a vector database is mandatory: lexical or structural code search can be more appropriate.
+
+v0.1 may combine curated/static templates, project annotations and AI-assisted generation. Documentation claims should have citations or clear uncertainty labels; AI-generated prose is not itself an authoritative source. Cards must remain useful offline when previously cached.
+
+---
+
+## 6. Chat, agents and model orchestration
+
+### 6.1 Conversation scopes
+
+- **Global project chat:** architecture discussions, cross-cutting requests, project-level decisions.
+- **Element chat:** anchored to a stable graph UUID, persists even when the panel is closed; linked to relevant source and card.
+- **Cross-reference:** a global discussion can propose or update a specific graph node; record which message led to which proposal.
+
+Agent actions that mutate knowledge (new nodes, links, documentation, statuses) should appear as **reviewable structured proposals**. The user can accept, edit, reject or archive. Never silently promote an AI-generated hypothesis to a validated architecture decision.
+
+### 6.2 Logical agents versus physical models
+
+**[DECIDED]** Oryn is multi-agent, but **multi-agent does not imply one loaded LLM per agent**. Several roles may use one physical model, different prompts, tools and context. This is vital on 16 GB RAM-class systems and limited VRAM.
+
+Initial agent roles (implement the minimal useful subset, not a complex autonomous society):
+
+| Role | Responsibility | Outputs |
+|---|---|---|
+| **Router/Coordinator** | Classify intent, choose tools/agent/model, manage dependencies | Typed task plan / dispatch |
+| **Project Assistant** | User-facing reasoning, coding and architecture discussion | Streamed chat response with references |
+| **Graph Curator** | Turn conversations into proposed nodes/edges/status changes | Validated structured proposals |
+| **Knowledge/Research Agent** | Explain concepts, suggest and contextualize documentation | Sourced or labeled knowledge-card content |
+| **Code Analysis Tooling** | Deterministic indexing, symbols, references, optional CFG | Evidence-backed graph updates; **not necessarily an LLM** |
+
+Agent roles can be logical configurations of the same model. The runtime should distinguish **model selection**, **agent policy**, **tools** and **execution priority**.
+
+### 6.3 Tentative local model lineup
+
+**[PROPOSED — benchmark before freezing]**
+
+- **Router:** Qwen3 **0.6B** class — short classification/routing and simple structured output.
+- **Light:** Qwen3 **4B** class — small summaries, graph/card enrichment and cheap tasks.
+- **Core:** Qwen3 **8B** class — main conversation, architecture, coding and difficult synthesis.
+
+These are **starting candidates, not mandatory dependencies**. Check current model licenses, available quantizations, tokenizer/chat-template compatibility, actual context requirements, tool/JSON reliability, latency and memory use. A tiny router may cost more in load/switch overhead than it saves; compare with deterministic routing and core-only operation. Never assume all three models can reside simultaneously in RAM/VRAM.
+
+**Core-only fallback** is required as an architectural mode; a practical single-model v0.1 deployment is acceptable. Lazy loading, queueing and model reuse should be possible without redesigning agents.
+
+### 6.4 Inference engines and API providers
+
+**[PROPOSED] v0.1:** prefer a proven local inference backend such as **llama.cpp** (direct integration or local server) or **Ollama** for a fast first implementation. On Apple Silicon, **MLX** may be evaluated later behind the same provider interface. **Do not build a new inference engine in v0.1.**
+
+Define an interface conceptually equivalent to:
+
+```csharp
+public interface IInferenceProvider
+{
+    IAsyncEnumerable<InferenceChunk> GenerateAsync(
+        InferenceRequest request,
+        CancellationToken cancellationToken);
+}
+```
+
+A provider reports capabilities: streaming, structured output, tool calling, context length, local/remote, token metrics and optional model residency information. The agent layer must not depend on Ollama-specific response types.
+
+**External APIs (optional, not required for v0.1):** support future user-configured OpenAI-compatible endpoints and, where necessary, dedicated adapters for provider-specific APIs. Use **the user's own keys**; never bundle keys or require a paid service to open projects. Credentials must be read from environment variables or OS credential stores (preferred), not committed to config or logs. Redact secrets from traces and screenshots. Make remote transmission of project source **explicitly opt-in**, with clear indication of which provider receives what content; offline/local-only mode must prevent such transmission.
+
+### 6.5 Tools, tasking and safety
+
+- Tool invocations should be typed, validated, cancellable and logged at a useful level.
+- File reads and code analysis can be allowed by project scope; shell execution and file writes need a visible permission policy and user approval appropriate to risk.
+- Treat repository files, documentation and model output as **untrusted inputs**, not instructions that override the user's permissions.
+- Give interactive chat higher priority than background knowledge enrichment; indexing and LLM tasks should not freeze the TUI.
+- Do not run an LLM on hover, mouse movement, scrolling, graph pan or other routine UI interactions.
+- Parse/validate agent-generated JSON or typed proposals before committing; reject malformed or unsupported output and continue with deterministic behavior.
+
+---
+
+## 7. Language integrations and graph analysis
+
+### 7.1 Language-neutral intermediate representation
+
+**[DECIDED]** Normalize adapter results into a **Unified Graph Model / IR** that supports code entities and relations while retaining language-specific metadata and provenance. Do not flatten away distinctions that matter for correctness.
+
+Potential adapter/tool sources:
+
+| Language | Candidate tools | Notes |
+|---|---|---|
+| **C#** | Roslyn, C# LSP | Strong semantic analysis; Roslyn offers CFG facilities for supported operations |
+| **C / C++** | Clang AST, clangd, Tree-sitter | Preprocessor, templates, function pointers complicate exact call graphs |
+| **Rust** | rust-analyzer, Tree-sitter | Semantic APIs/capabilities vary; macros and trait dispatch complicate analysis |
+| **Python** | Pyright, Tree-sitter | Dynamic dispatch limits static certainty |
+| **JavaScript / TypeScript** | TypeScript language services, Tree-sitter | Dynamic behavior and module resolution matter |
+| **PHP** | PHP language server / parser, Tree-sitter | Select tools based on supported semantics |
+
+Tree-sitter provides incremental syntax parsing, **not by itself a complete semantic call graph or CFG**. LSP supports symbols/navigation and sometimes call hierarchy, but capabilities vary by server. Accurate cross-language CFG, data flow, async edges, dynamic calls and macros are hard; represent inferred/partial edges honestly.
+
+**v0.1:** select one language path with measurable behavior; start with code entities, contains/references/calls where trustworthy, then optional beta CFG. Provide generic file browsing and manually maintained concepts for other languages.
+
+### 7.2 Future language catalog and package manager
+
+**[LATER]** A LazyVim/Mason-inspired **Language Integrations Catalog** should let users install/configure LSPs, parsers, semantic analyzers and associated tools. Simple mode installs a recommended bundle; advanced mode allows precise selection. Plugins declare capabilities (`symbols`, `references`, `callGraph`, `controlFlow`, `dataFlow`, etc.) and requirements. UI degrades gracefully if missing.
+
+The author **does not want to build a complete package manager in v0.1**. A future Oryn Package Manager may distribute broader extensions, but should leverage existing package distribution where sensible and validate versions/checksums. Treat plugins as potentially untrusted code with explicit permissions/isolation policies.
+
+---
+
+## 8. TUI architecture and platform support
+
+### 8.1 Terminal-native, not a desktop GUI pretending to be a terminal
+
+**[DECIDED]** Oryn is a **CLI/TUI application rendered inside a real terminal**, with rich application-like interactions. This is not an Avalonia desktop app with terminal styling. A graphical application frontend may be considered separately later, but is not the present goal.
+
+**[DECIDED]** The author ultimately wants a **homemade TUI engine in C/Rust + C#** to control rendering and interactions precisely. **[V0.1]** use a mature TUI library if it accelerates prototyping; the custom engine should be among the **last components** to replace.
+
+`termios` is useful for POSIX terminal input modes on Linux/macOS, but is **not a TUI engine** and is not natively portable to Windows. Terminal support requires abstractions for POSIX and Windows console/virtual terminal modes, ANSI/VT output, keyboard/mouse input, resize, Unicode, color and feature detection.
+
+### 8.2 Critical abstraction boundary
+
+**Do not let the provisional TUI library own Oryn's application state.** Define framework-independent concepts for:
+
+- workspace state and panel/tab layout;
+- focus, selection, input commands, keybindings and mouse events;
+- graph viewport and semantic navigation;
+- overlays, contextual chat panels and detail cards;
+- rendering primitives and invalidation;
+- terminal capabilities and fallback behavior.
+
+Replacing the renderer must not require rewriting chats, graph logic or layout state. A renderer-only abstraction is insufficient if focus and event routing remain coupled to the library.
+
+### 8.3 Long-term native renderer ideas [LATER]
+
+- Virtual **cell framebuffer**; current and desired frames, diff-based terminal updates.
+- Dirty rectangles/regions, clipping, minimal ANSI output, batched writes.
+- Correct Unicode grapheme clusters, combining marks and double-width glyphs (not merely one `uint32_t` per visible character).
+- Mouse hit testing, terminal capability detection, responsive layout and resize.
+- Optimized graph drawing within character-cell limitations; semantic zoom over naive pixel zoom.
+- Cross-platform terminal backend; possible native C ABI consumed from .NET.
+
+Evaluate whether a Rust renderer or a C# renderer is simpler to integrate; **do not assume Rust is faster in the actual bottleneck**. Prototype with existing libraries (e.g., Terminal.Gui in C#, or Ratatui + Crossterm in Rust) without prematurely committing to a specific dependency. Benchmark before locking the stack.
+
+---
+
+## 9. Language split and process boundaries
+
+**[PROPOSED architectural direction]**
+
+- **C# / .NET:** application logic, workspace state, graph domain model, conversations, agents, task coordination, persistence, external LSP processes and tool integration.
+- **Rust:** later native scheduling/memory/compute components, optional custom TUI renderer and low-level performance-critical infrastructure.
+- **C / C++:** C ABI interop and reuse of mature native libraries such as llama.cpp/Clang; optional targeted custom low-level experiments.
+
+Avoid pushing trivial operations across a C#/native FFI boundary. Prefer coarse-grained commands, batched results and bounded event streams. Where isolation matters, a separate process and IPC may be preferable to in-process FFI despite overhead.
+
+**Important:** begin with a **simple C#-centric v0.1 if that is fastest**, with clear provider and renderer interfaces. Rust/C modules should be introduced when they solve an observed requirement or form a deliberate later learning milestone. Cross-platform build and packaging must be tested, not assumed.
+
+---
+
+## 10. Persistence, search and RAG
+
+### 10.1 Persistence [V0.1]
+
+**[PROPOSED]** Use a local SQLite database per workspace or project, with migrations and transactions. Store stable entity IDs, aliases, provenance, edges, statuses, conversations, messages, cards, references, proposals, decisions and archived ideas. Keep indexes for path/symbol/text search. Prefer portable, inspectable storage and clear backup/export semantics.
+
+Example conceptual schema (not final DDL):
+
+```text
+Project(id, root, settings)
+Entity(id UUID, kind, name, code_identity?, lifecycle_state, code_presence, ...)
+EntityAlias(entity_id, old_name, old_path, observed_at)
+Edge(id, source_id, target_id, kind, provenance, confidence, ...)
+Conversation(id, project_id, scope, entity_id?, ...)
+Message(id, conversation_id, role, content, references, ...)
+KnowledgeCard(id, entity_id, section, content, origin, stale, ...)
+Proposal(id, source_message_id, change_set, status, ...)
+Decision(id, entity_id, rationale, author, timestamp, ...)
+IdeaArchive(id, proposal_id?, rationale, reconsideration_links, ...)
+SourceObservation(id, entity_id, file, range, fingerprint, observed_at, ...)
+```
+
+Use migrations, foreign keys, transactional proposal acceptance and no implicit cascade deletion of valuable chat/decision history.
+
+### 10.2 Retrieval and RAG [V0.1 basic / LATER advanced]
+
+RAG = **retrieval-augmented generation**: find relevant information and supply it as context to the model. It need not involve embeddings or a vector database.
+
+Start with:
+
+1. Project file and symbol search.
+2. Keyword/full-text search across knowledge cards, decisions and chats.
+3. Graph-neighborhood retrieval for linked concepts, dependencies and code references.
+4. Bounded context assembly with citations and source freshness.
+
+Later consider embeddings, hybrid lexical/vector search, reranking, chunking strategies, incremental re-embedding, semantic caches and context-window budgeting. Evaluate retrieval quality on real project questions before choosing storage complexity.
+
+**Core rule:** an agent should not repeat expensive analysis or model generation if a verified, fresh cached result already answers the request.
+
+---
+
+## 11. Runtime, scheduling, memory and performance
+
+### 11.1 v0.1 scheduler
+
+Implement a straightforward task abstraction supporting:
+
+- priority classes: **interactive**, **analysis**, **background**;
+- cancellation and bounded queues;
+- dependencies and task status/progress;
+- timeouts and failure isolation;
+- bounded concurrency and memory pressure awareness;
+- responsive TUI even during inference/indexing.
+
+.NET `Task`, `CancellationToken`, channels and normal process APIs are appropriate starting points. **Do not implement a native work-stealing scheduler just to have one.**
+
+### 11.2 Future low-level runtime [LATER]
+
+The author wants to explore specialized threading/task scheduling, CPU/GPU work overlap, buffer lifetime, VRAM allocation/residency, KV-cache management, batching, model loading/eviction and perhaps an inference engine or kernels of their own.
+
+Key trade-offs:
+
+- **Logical agents ≠ concurrently loaded models.** Reuse model weights and serialize/schedule workloads when hardware is constrained.
+- Prioritize user interaction over background enrichment.
+- Run independent CPU code analysis while GPU inference runs when beneficial.
+- Batch compatible inference jobs when latency and backend support permit.
+- Avoid unnecessary CPU↔GPU copies; respect backend ownership of GPU allocations.
+- Use incremental indexing and dependency invalidation rather than reprocessing the entire repository.
+- Consider a remote homelab provider later: local TUI/tools + LAN-hosted heavy models, with local fallback and explicit data routing.
+
+### 11.3 Instrumentation before optimization
+
+Record at least:
+
+- time to first token, tokens/sec, total generation time;
+- model load/unload and switching latency;
+- queue wait, execution duration, cancellations, failures;
+- RAM/VRAM usage **where supported by the backend**;
+- parser/indexing duration and invalidation counts;
+- retrieval latency, cache hit rate and repeated work;
+- TUI input-to-render latency and frame/terminal output volume.
+
+Do not claim universal GPU memory observability or portable GPU buffer control through a generic provider. The future native runtime requires platform/backend-specific investigation.
+
+---
+
+## 12. Security, privacy and reliability
+
+- Local mode must not upload source code, chats or project knowledge to remote services.
+- External provider use requires user-supplied API credentials and explicit consent to transmit project content.
+- Prefer OS credential store or environment variables; redact keys from logs and exported diagnostics.
+- Treat tool responses, repository comments and documents as untrusted input (prompt-injection boundary).
+- Require appropriate confirmation for writes, shell commands and potentially destructive actions.
+- Restrict file operations to allowed project roots unless user authorizes more.
+- Parse/validate structured agent proposals against schemas; transactional acceptance; keep audit history.
+- Handle model unavailability, malformed output, LSP crashes, unsupported terminal features and database failures gracefully.
+- Ensure knowledge cards cite their sources; mark stale, generated or unverified material.
+- Keep source observations separate from human decisions; rescans must not erase intent.
+
+---
+
+## 13. Suggested repository structure [PROPOSED]
+
+```text
+oryn/
+├── README.md
+├── docs/
+│   ├── adr/                    # Architecture decision records
+│   ├── architecture/           # Runtime, graph, TUI and agent contracts
+│   └── roadmap.md
+├── src/
+│   ├── Oryn.Cli/               # CLI entrypoint, configuration
+│   ├── Oryn.App/               # Application state and use cases
+│   ├── Oryn.Tui.Abstractions/  # Terminal UI independent contracts
+│   ├── Oryn.Tui.Prototype/     # Temporary TUI adapter
+│   ├── Oryn.Graph/             # Entities, relations, identity, lifecycle
+│   ├── Oryn.Knowledge/         # Cards, retrieval, provenance
+│   ├── Oryn.Agents/            # Agent roles, orchestration, tools
+│   ├── Oryn.Inference/         # Provider abstractions + local adapter
+│   ├── Oryn.Analysis/          # Language-neutral analyzer interfaces
+│   ├── Oryn.Analysis.CSharp/   # First language integration (candidate)
+│   └── Oryn.Storage/           # SQLite, migrations, repositories
+├── native/                     # Future Rust/C crates and interop
+├── tests/
+├── samples/
+└── .github/workflows/
+```
+
+This is a **modular boundary proposal**, not a demand for 11 assemblies on day one. Begin with a small solution and split projects when real coupling or testing needs justify it.
+
+---
+
+## 14. Practical roadmap for Codex
+
+### M0 — Repository bootstrap and running shell
+
+**Build:** CLI entrypoint, configuration, terminal capability detection, temporary TUI adapter, open project directory, left file tree, central tab and right placeholder panel. Define application state outside TUI library.
+
+**Done when:** launches on the primary development OS; keyboard navigation works; resizing doesn't crash; a project folder can be browsed; startup/shutdown restore terminal state.
+
+### M1 — Chat + inference provider
+
+**Build:** local inference adapter (choose Ollama or llama.cpp after a brief proof of concept), streaming chat, cancellation, errors, persisted global project chat, model configuration and core-only operation.
+
+**Done when:** ask a question about an opened project; see streamed response; cancel safely; restart and recover conversation. No API key required.
+
+### M2 — Persistence + foundational graph
+
+**Build:** SQLite migrations; UUID entities/edges; project/concept nodes; statuses; manually create/edit/link nodes; graph list/viewport; simple navigation and progress summaries.
+
+**Done when:** create a concept, link it to a project component, mark status, restart and see all data unchanged.
+
+### M3 — Language analysis MVP
+
+**Build:** first language adapter (C#/Roslyn recommended), project/file/type/method discovery, source pointers and selected relationships, evidence metadata, incremental refresh where feasible, simple reconciliation and manual re-link on ambiguity.
+
+**Done when:** open a small sample repository; graph is populated from real source; a rename or move doesn't silently steal a chat; unsupported relationships are visibly absent/uncertain.
+
+### M4 — Contextual chats + knowledge cards
+
+**Build:** attach conversation to UUID; Show Chat action; card tabs (overview, technical, references, project role, decisions); references/provenance; persisted content; manual edits.
+
+**Done when:** discuss a concept, close the chat, reopen from the node, and retrieve its rationale and documentation after restart.
+
+### M5 — Multi-agent proposal pipeline
+
+**Build:** coordinator + assistant + graph-curation role, typed proposal schema, model-backed generation, validation, review/accept/reject/archive UI, provenance links to originating messages; Idea Box.
+
+**Done when:** discuss a proposed subsystem in global chat; agent offers a new node/edge; user can accept it, edit it or archive it without silently changing approved architecture.
+
+### M6 — Retrieval, detail views and limited graph depth
+
+**Build:** full-text and graph-neighborhood retrieval, context citations, scope/depth controls, method-level graph where analyzer supports it; optional beta call graph/CFG **only when analyzer-backed**.
+
+**Done when:** user can ask why a node exists, get the relevant project decision and source references, and navigate at least two meaningful graph abstraction levels.
+
+### M7 — Stabilization and v0.1 release
+
+**Build:** cross-platform smoke tests, terminal fallbacks, model/backend failure handling, backup/export, logging, security review, performance baseline and user documentation.
+
+**Done when:** documented install/run works on Windows, Linux and macOS (with platform limitations documented), no data loss on restart, TUI remains responsive under background tasks, and key workflows have automated tests.
+
+**Roadmap note:** milestones are a dependency-oriented guide, not permission to defer core v0.1 features indefinitely. Implement vertical slices and ship a usable result at each stage. If a proposed library proves unsuitable, write a brief ADR and substitute a compatible adapter rather than rewriting the product design.
+
+---
+
+## 15. Test strategy and acceptance criteria
+
+**Automated:**
+
+- Graph UUID stability across rescans; no accidental identity reassignment.
+- Proposal validation rejects malformed, unauthorized or contradictory updates.
+- Lifecycle transitions preserve decision history and do not imply code correctness.
+- Archived ideas remain searchable and can be restored as proposals.
+- Storage migrations and restart recovery; no chat loss.
+- Retrieval returns traceable sources and marks stale data.
+- Model cancellation and backend failure do not block UI.
+- Input/event routing remains testable independently of the temporary renderer.
+
+**Manual scenarios:**
+
+1. Open an unfamiliar project, browse files and discuss architecture.
+2. Select a code element and inspect what it does, how, why and where it is documented.
+3. Propose a component in global chat, review the graph diff, accept it as **À valider**, then promote to **Validé**.
+4. Mark it **En cours**; later confirm **Implémenté** with relevant code/tests.
+5. Archive an alternative in the Idea Box and retrieve its rationale later.
+6. Rename a code symbol and ensure attached chat is preserved or flagged for manual reconciliation.
+7. Disable inference/network and still browse the project and stored knowledge.
+8. Run with a narrow terminal and with a backend unavailable; recover gracefully.
+
+---
+
+## 16. Decisions, proposals and open questions
+
+### Decisions to preserve
+
+- Oryn is **terminal-native** and **local-first**.
+- A rich visualizer is a core feature, not an optional later dashboard.
+- The visualizer represents **implemented code and conceptual architecture**.
+- Main lifecycle is **À valider / Validé / En cours / Implémenté**, with a separate Idea Box.
+- Chat is both **global** and **persistent per element**.
+- Knowledge cards teach technologies and explain project-specific rationale.
+- Stable UUIDs plus conservative reconciliation protect element history.
+- Deterministic analyzers, not LLMs, provide authoritative code/CFG observations.
+- Multi-agent roles are central; agents can share physical models.
+- A custom TUI engine and low-level runtime are future personal engineering projects, **not v0.1 blockers**.
+- Oryn should eventually be able to help build Oryn itself.
+
+### Choices to verify experimentally
+
+- Temporary TUI: C# library vs Rust library/bridge; choose for speed of prototype and abstraction quality.
+- Local inference: llama.cpp vs Ollama, packaging and streaming ergonomics.
+- Model lineup: Qwen3 0.6B / 4B / 8B candidates vs a single quantized core model; benchmark real tasks and memory.
+- C# Roslyn-first integration versus a narrower multi-language syntax-only first pass.
+- SQLite schema, full-text indexing and when embeddings add enough value.
+- .NET/native boundaries, if and when needed.
+
+### Open questions (do not block first coding session)
+
+- Exact TUI keymap, mouse interaction policy and panel docking UX.
+- Exact schema for graph proposal diffs and conflict resolution.
+- Granularity of knowledge-card generation and refresh.
+- Packaging/install UX across three OSes.
+- Terminal graphics protocol extensions, if ever used.
+- Homelab inference protocol, model residency policy and remote privacy controls.
+- Long-term in-house TUI, scheduler and inference engine internals.
+
+---
+
+## 17. Future roadmap — vision, not v0.1 obligations
+
+### v1 and beyond
+
+- Custom cross-platform terminal rendering engine, cell buffers, advanced interaction and diff-based updates.
+- Richer language integrations and a Mason/LazyVim-inspired tool catalog/package manager.
+- More accurate and synchronized Call Graph + CFG, deeper semantic zoom and data/event flow views.
+- Stronger identity reconciliation across renames, moves, refactors, splits and merges.
+- Incremental hybrid RAG, reranking and specialized knowledge agents.
+- Sophisticated scheduler, task DAGs, batching, CPU/GPU overlap and memory-aware model residency.
+- Rust/C native modules and experiments in GPU buffers, KV caches, inference runtime internals.
+- Remote model execution on a personal homelab, optional external API providers, local fallback.
+- Performance visualization of Oryn's own tasks, inference and architecture **inside Oryn**.
+- Extension ecosystem for languages, tools, visualization and inference providers.
+
+### The ultimate loop
+
+1. Build a functional v0.1 with pragmatic dependencies.
+2. Open the Oryn repository in Oryn.
+3. Use its own project graph, contextual chats and knowledge cards to plan improvements.
+4. Replace selected dependencies with carefully measured homemade implementations.
+5. Repeat without sacrificing usability, provenance or the user's control.
+
+---
+
+## 18. Immediate instruction for the next development session
+
+**Do not brainstorm more product features before obtaining a running prototype.**
+
+Start with **M0**. Inspect the current machine, repository and available toolchains. Recommend a concrete v0.1 stack in a short ADR; then implement a minimal terminal workspace with independent application state, left FileExplorer, central chat tab placeholder, right Visualizer placeholder, focus management and clean terminal restoration. Include build/run instructions and at least one smoke test. Keep the code ready for M1 without implementing the full roadmap in one shot.
+
+> **Oryn is not meant to write software instead of its author. It is meant to make exploring, understanding and building software enjoyable again.**

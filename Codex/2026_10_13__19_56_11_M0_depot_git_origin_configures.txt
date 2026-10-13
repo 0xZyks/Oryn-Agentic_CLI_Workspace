@@ -1,0 +1,26 @@
+Oryn — Initialisation Git confirmée
+
+Date : 2026-10-13 19:56:11 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0.
+Libellé : depot_git_origin_configures.
+Commit associé : aucun ; la branche main ne contient pas encore de commit.
+
+Contexte : l'utilisateur indique avoir exécuté les commandes d'initialisation
+et de liaison Git proposées après le refus du sandbox.
+
+Vérifications exécutées :
+- git rev-parse --show-toplevel confirme la racine Oryn-CLI.
+- git branch --show-current indique main.
+- git remote -v confirme origin pour fetch et push :
+  git@github-pro:0xZyks/Oryn-Agentic_CLI_Workspace.git
+- git status --short indique les sources, docs et logs comme non suivis.
+- git log -1 confirme l'absence de commit sur main (erreur attendue).
+
+Résultat : dépôt local initialisé et origin configuré avec l'alias github-pro.
+Le blocage relaté dans le log du 19:54:54 a été résolu par l'utilisateur.
+L'accès SSH distant et le contenu distant n'ont pas été testés ici.
+Aucun commit ou push effectué par l'agent ; seul ce log a été ajouté.
+
+Suite : premier commit et publication restent à effectuer à la demande de
+l'utilisateur. Pour l'état applicatif M0, lire le log de synthèse du 19:46:58.

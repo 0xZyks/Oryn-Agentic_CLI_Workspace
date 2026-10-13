@@ -1,0 +1,34 @@
+Oryn — Initialisation Git et liaison SSH demandées
+
+Date : 2026-10-13 19:54:54 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0 (palier en cours ; configuration du dépôt).
+Libellé : initialisation_git_bloquee.
+Commit associé : aucun.
+
+Demande : initialiser le dépôt local et le relier au dépôt GitHub
+0xZyks/Oryn-Agentic_CLI_Workspace avec l'alias SSH github-pro.
+
+Vérifications exécutées :
+- git rev-parse --show-toplevel : aucun dépôt Git accessible avant l'action.
+- ssh -G github-pro : configuration résolue vers hostname github.com,
+  user git, identitiesonly yes, identityfile ~/.ssh/id_ed25519_pro.
+  Cette lecture vérifie la configuration, pas l'authentification distante.
+- git init -b main : échec, création de .git refusée avec
+  « Operation not permitted ». Le sandbox de la session restreint .git
+  à la lecture ; aucune élévation n'est disponible.
+
+Résultat : initialisation non réalisée ; remote origin non configuré.
+Aucun commit, fetch ou push effectué. Aucun code applicatif modifié.
+Seul ce log de passation a été créé.
+
+À exécuter par l'utilisateur depuis la racine du projet :
+  git init -b main
+  git remote add origin git@github-pro:0xZyks/Oryn-Agentic_CLI_Workspace.git
+
+Puis vérifier :
+  git remote -v
+
+Suite : vérifier l'état local après ces commandes. Le contenu distant n'a
+pas été inspecté ; ne pas supposer qu'il est vide avant une première publication.
+Pour l'état applicatif, consulter le log M0 de synthèse du 2026-10-13 19:46:58.
