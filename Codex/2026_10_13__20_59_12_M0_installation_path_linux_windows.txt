@@ -1,0 +1,76 @@
+Oryn — Installation utilisateur Linux et Windows dans le PATH
+
+Date : 2026-10-13 20:59:12 CEST (+0200), Europe/Paris.
+Agent : Codex.
+Palier de roadmap : M0 (packaging du workspace existant).
+Libellé : installation_path_linux_windows.
+Commit associé aux modifications : aucun commit créé par l'agent.
+Commit de base observé : 3f2072e, « Update Codex Agents log ».
+
+DEMANDE
+
+Ajouter un petit script SH pour installer Oryn dans le PATH sous Linux,
+et un équivalent Windows si possible.
+
+RÉSULTAT ET FICHIERS
+
+- scripts/install-linux.sh : script Bash exécutable, installation utilisateur.
+  Publication Release incluant le runtime .NET ; détection Linux x64/ARM64.
+  Fichiers conservés ensemble dans ~/.local/share/oryn ; lien ~/.local/bin/oryn.
+  PATH ajouté à .profile, .bashrc, .zshrc et aux profils de login Bash existants,
+  sans répéter la même ligne. La commande export affichée active le PATH dans
+  le terminal courant ; le script enfant ne peut pas modifier son parent.
+  Options --prefix, --runtime, --no-path et --help. Les cibles musl/Alpine
+  nécessitent --runtime linux-musl-x64 ou linux-musl-arm64.
+  Le script refuse de remplacer un autre launcher ; une publication échouée
+  ne remplace pas les fichiers installés. Pas de sudo requis.
+- scripts/install-windows.ps1 : publication Release autonome pour win-x64
+  ou win-arm64 ; installation dans %LOCALAPPDATA%\Oryn. Ajout au PATH utilisateur
+  persistant et au PATH du processus PowerShell courant, sans dupliquer l'entrée
+  ni copier le PATH machine. Options -InstallDir, -Runtime et -NoPath.
+  Aucun changement global de politique PowerShell ni privilège admin requis.
+- README.md : commandes Linux/Windows, destinations, options, prérequis,
+  activation du PATH, mise à jour et limites de validation.
+- Ce log de passation.
+
+Les scripts compilent depuis la racine du dépôt afin de respecter global.json,
+même s'ils sont invoqués ailleurs. Ils publient d'abord dans un dossier temporaire,
+puis copient l'ensemble des fichiers. Réexécuter le script après mise à jour des
+sources, Oryn fermé. Le SDK .NET 10 compatible avec global.json et l'accès aux
+packages NuGet/runtime sont requis pour compiler. Le runtime est inclus dans
+la publication destinée à la machine cible ; conserver ses fichiers associés.
+
+VÉRIFICATIONS EXÉCUTÉES
+
+- bash -n et --help : réussis.
+- Smoke temporaire de l'installateur Linux avec uname/dotnet simulés et --no-path :
+  publication et copie des fichiers associés, lien, invocation via PATH,
+  chemins contenant espaces/apostrophe, dossier courant et arguments conservés,
+  réinstallation, échec de publication laissant l'exécutable précédent intact,
+  cible musl explicite, rejet des options invalides et protection d'un launcher
+  préexistant : réussis. Le premier essai du harness avait comparé les variantes
+  /var et /private/var du chemin temporaire macOS ; corrigé dans le harness.
+- Publication réelle du projet sur macOS, Release, framework-dependent : réussie.
+  Commande : dotnet publish src/Oryn.Cli/Oryn.Cli.csproj --configuration Release
+  --self-contained false --no-restore --output .local/installer-verification/host
+  -m:1 -nodeReuse:false -p:UseSharedCompilation=false.
+- Exécutable réellement publié lancé via PATH/lien symbolique depuis un dossier
+  temporaire contenant des espaces : --check retrouve la racine de l'appelant
+  et son fichier, succès.
+- git diff --check : réussi.
+
+LIMITES ET SUITE
+
+- Machine de vérification : macOS ARM64, SDK 10.0.100. Aucun profil utilisateur
+  réel modifié lors des vérifications ; persistance dans les profils non exécutée.
+- Pas de PowerShell disponible ici : script Windows relu, non exécuté.
+- Aucun runtime Linux/Windows publié ou exécuté dans cette session. Les tests
+  simulés ne constituent pas une validation native ni une validation TUI.
+- Sur Linux : bash scripts/install-linux.sh, puis activer le PATH affiché,
+  vérifier oryn --check depuis un autre dossier et les workflows TUI M0.
+- Sur Windows : .\scripts\install-windows.ps1, puis mêmes vérifications.
+  Un hôte de terminal déjà ouvert peut nécessiter un redémarrage pour hériter
+  du PATH utilisateur persistant.
+- Aucun code applicatif modifié, aucun commit/push effectué. M1 non commencé.
+  Pour l'état fonctionnel M0 et les validations historiques, lire la synthèse
+  du 2026-10-13 19:46:58.

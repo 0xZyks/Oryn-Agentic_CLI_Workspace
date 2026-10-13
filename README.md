@@ -27,7 +27,52 @@ An optional path opens another directory: `oryn ../another-project`. `oryn --che
 
 ## Install the `oryn` command
 
-Package and install into a directory you control; this does not require publishing to NuGet:
+For a user installation on **Linux** (Bash/Zsh), run from the repository:
+
+```sh
+bash scripts/install-linux.sh
+export PATH="$HOME/.local/bin:$PATH"
+oryn
+```
+
+The script detects x64/ARM64, publishes Release with the .NET runtime into
+`~/.local/share/oryn`, and links `~/.local/bin/oryn`. It adds that directory to
+`~/.profile`, `~/.bashrc`, `~/.zshrc` and any existing Bash login profiles without
+repeating the same configuration line. The `export` above enables it in the current terminal; new Bash/Zsh
+terminals use the persisted entry. For other shells, add that directory to their
+PATH. On Alpine/musl, specify `--runtime linux-musl-x64` or `linux-musl-arm64`.
+Use `--prefix /absolute/path` for another installation root and `--no-path` to
+leave shell profiles unchanged; `--help` lists these options.
+
+On **Windows**, run in PowerShell from the repository:
+
+```powershell
+.\scripts\install-windows.ps1
+oryn
+```
+
+The script detects x64/ARM64, publishes to `%LOCALAPPDATA%\Oryn`, and adds that
+directory to the user PATH and current PowerShell PATH without administrator
+rights. New terminal applications pick up the persisted PATH; an existing
+terminal host may need restarting. Options: `-InstallDir 'D:\Tools\Oryn'`,
+`-Runtime win-arm64` and `-NoPath`. If PowerShell's execution policy blocks
+the script, after reviewing it you can run it with a process-scoped override:
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1`.
+In that case, reopen your terminal for the updated PATH.
+
+Both installers require a .NET 10 SDK compatible with `global.json` and network
+access for NuGet/runtime packs during publication. They use
+[self-contained .NET publication](https://learn.microsoft.com/en-us/dotnet/core/deploying/)
+and keep the supporting files together; launching the installed application
+does not require a separately installed .NET runtime. Run the installer again
+to update Oryn after source changes, with Oryn closed. Launching from another
+directory still opens that directory, without changing it to the install path.
+Linux/Windows native terminal execution remains to be validated on those systems.
+Windows persists the PATH through the
+[user environment](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_environment_variables).
+
+For an alternative installation as a .NET tool, package and install into a
+directory you control; this does not require publishing to NuGet:
 
 ```sh
 dotnet pack src/Oryn.Cli -c Release -o artifacts/packages
