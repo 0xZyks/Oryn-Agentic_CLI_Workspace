@@ -1,0 +1,31 @@
+Oryn — Rechargement complet des logs M0
+
+Date : 2026-10-14 16:51:45 CEST (+0200) — Europe/Paris.
+Palier : M0.
+Demande : recharger tous les logs M0.
+
+Résultat : lecture des 31 logs M0 existants, classés par horodatage du nom,
+du 2026_10_13__19_46_58 au 2026_10_14__06_34_16. Dernier log lu en premier :
+passation_reprise_mac. Aucun log hors M0 consulté. AGENTS.md et README_ORYN.md lus.
+
+Observations actuelles : working tree propre avant ce log ; HEAD dcf67ae.
+La passation précédente décrivait un état non commité à 7fd5544 ; cette
+observation est historique et ne décrit plus le dépôt actuel. Vérification
+ciblée des sources : Terminal.Gui 2.5.0, visualiseur initial en onglet,
+Super+Tab pour panneaux, Enter confirme un onglet, Alt+Enter options graphe,
+UUID fixes cartes/membres et chats démo en mémoire, réponse Hello World!.
+Choix actuels retenus : barre de focus sans halo, composer compact sans
+contour, spinner Braille, canvas code read-only, graphe de démonstration
+avec navigation membres et menus contextuels. Continuer le polish M0.
+
+Validations historiques : dernier développement rapporte 68 tests App et
+suites PTY Linux réussis. Ces tests ne sont pas réexécutés dans ce prompt.
+Limites : aucune inférence, analyse réelle, persistance de chats/graphe ou
+validation réelle de statut ; validations récentes macOS/Windows non acquises.
+
+Vérifications de ce prompt : lecture intégrale des logs, consignes et vision,
+git status, git log, recherche ciblée dans les sources ; git diff --check.
+Aucun build ni test runtime relancé pour cette demande de lecture.
+Fichier créé : ce log uniquement. Aucun code ou réglage utilisateur modifié.
+Commit associé : aucun commit créé ; HEAD observé dcf67ae. Aucun push.
+Prochaine étape : poursuivre M0 selon la prochaine demande utilisateur.

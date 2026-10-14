@@ -1,0 +1,25 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T19:56:09.534397+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande et préférences
+Prototype : maintenir clic gauche sur une carte pour déplacement libre. Autres cartes fixes, aucune superposition ; contourner obstacle par côté court, longer et rejoindre curseur. Liens attachés. Positions uniquement en mémoire sans save/cache. Annonce d'un futur émulateur de terminal : aucun travail sur cet élément différé.
+
+Résultat actuel
+GraphDragState toolkit-independent : positions flottantes pixels logiques par UUID, point de prise, cible, obstacles dilatés par l'empreinte de la carte + marge 10 px. Trajectoires via corners visibles et shortest path déterministe pour fixture sept cartes ; test swept segments exclut tunneling. Cible bloquée projetée côté latéral proche avec choix stable. Mouvement borné 1200 px/s et pas de temps max 50 ms. Cartes voisines fixes, positions négatives permises pour contourner arrangement dense. Relâchement garde position courante ; Escape restitue départ ; focus perdu/overlay/action clavier arrêtent glisser. Resize/zoom adapte dimensions/placements et termine geste.
+Painter traduit cartes aux coordonnées subpixel ; liens/pointes recalculés depuis bords des rectangles. Hit regions drag flottantes en coordonnées fenêtre. Contrôleur reçoit mouvement 2D sans détourner resize ou clic droit ; sélection membres conservée. Navigation clavier géométrique suit placements actuels. Caméra fixe pendant drag ; retrouve sélection à la fin. Pas de persistance ni nouvelle dépendance.
+
+Fichiers concernés
+Nouveau src/Oryn.App/GraphDragState.cs ; VisualizerPreviewState.cs ; GraphicalWorkspaceController.cs ; src/Oryn.Ui.Sdl/{WorkspacePainter,SdlWorkspace}.cs.
+Nouveau tests/Oryn.App.Tests/GraphDragTests.cs ; tests/Oryn.Ui.Smoke/Program.cs (34 stages). README.md, nouvelle ADR 0010, docs/m0-verification.md.
+Modifications précédentes et utilisateur conservées.
+
+Vérifications exécutées
+Build solution 0 erreurs/avertissements ; 109 App tests passés. Cinq nouveaux cas couvrent gauche/droite, trajectoires sans overlap à chaque pas, jitter, grands jumps/multiples obstacles, UUID/liens immuables, release/cancel, zoom, état frais. Smoke SDL34 stages dummy/software et Wayland/opengl natif passés (down/motion/up, collision chaque frame, cible rejointe, release). Capture /tmp/oryn-drag-wayland/13-drag-released.png inspectée : carte déplacée, liens attachés, voisinage et viewport. Publication Release autonome Linux passée ; smoke software avec quatre assemblies App/SDL exactes publiées passé ; --check publié et installé passés ; git diff --check passé. Installation approuvée : backup /tmp/oryn-graph-drag-backup-20261014-195509-f0fd60b5 ; fichiers identiques octet par octet. Runtime/lanceur/profil inchangés.
+
+Limites et décisions de prototype
+Évitement déterministe petite fixture, pas simulation rigid-body ou moteur graphe général. Si aucun itinéraire/côté cible valide, rester position sûre. Les liens peuvent traverser d'autres cartes, mais extrémités et identités préservées. Panneau étroit : une partie du contournement peut être hors clip, caméra ne suit pas en cours de drag ; elle rétablit visibilité sélection au relâchement. Autopan/caméra et comportement dans amas complexes restent à affiner. Ressenti physique souris et Windows/macOS non testés. Aucun gain performance prétendu ni mesures inventées.
+
+Validations historiques/prochaine étape
+Correction présentation au repos confirmée par utilisateur précédemment ; boucle de présentation cachée conservée. Relancer oryn pour essayer prototype puis affiner animation, caméra, routes et design selon retour utilisateur. Aucun jalon M1+ implémenté.

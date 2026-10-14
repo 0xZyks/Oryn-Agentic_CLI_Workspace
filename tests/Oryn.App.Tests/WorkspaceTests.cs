@@ -99,9 +99,10 @@ public sealed class WorkspaceTests : IDisposable
         Assert.Equal(3, state.Rows.Count);
         state.Select(2);
         state.Dispatch(WorkspaceCommand.Collapse);
-        Assert.Equal(2, state.Rows.Count);
+        Assert.Equal(2, state.Rows.Count); // Left on a file collapses its immediate parent in one press.
         Assert.Equal(1, state.SelectedIndex);
         state.Dispatch(WorkspaceCommand.Collapse);
+        Assert.Equal(0, state.SelectedIndex);
         Assert.Single(state.Rows);
         Assert.Empty(state.ExpandedDirectories);
     }

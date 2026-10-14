@@ -1,0 +1,89 @@
+Oryn — Migration de l’interface M0 vers SDL3 + SkiaSharp
+
+Date : 2026-10-14 17:39:01 CEST (+0200) — Europe/Paris.
+Palier principal : M0. Cible future v1.0 : SDL + OpenGL, non implémentée.
+Commit associé : aucun créé ; base de cette session dcf67ae. Aucun push.
+
+DEMANDE
+Passer l’UI à SDL + SkiaSharp et conserver l’esprit visuel TUI.
+Contexte repris : les 31 anciens logs M0 ont été lus dans cette session,
+puis direction SDL documentée. Aucun log hors M0 consulté.
+
+RÉSULTAT ET OBSERVATIONS ACTUELLES
+La CLI compose désormais Oryn.Ui.Sdl, pas Terminal.Gui. Solution active et
+assets de la CLI sans dépendance Terminal.Gui. Le vieux projet Tui.Prototype
+et les scripts PTY restent historiques, hors build courant.
+Stack : .NET 10 ; ppy.SDL3-CS 2026.1002.1 ; SkiaSharp et assets Linux
+3.119.1. SDL3 natif livré par le package ; assets Win/macOS Skia transitifs.
+Skia dessine un bitmap BGRA raster, présenté par texture SDL ; SDL peut
+choisir OpenGL pour la présentation (Linux natif testé), ce n’est pas le
+renderer de dessin OpenGL direct de v1.0.
+
+Aspect : monospace système, surfaces sombres plates, accent lavande,
+explorateur, onglets Chat/Code/Visualizer, canvas code et cartes du graphe.
+CLI garde le cwd comme racine par défaut et --check sans initialisation SDL.
+Pas de terminal interactif requis ; fenêtre ouverte sur le thread principal.
+Grille logique 9x22 pixels pour préserver la disposition/rythme M0 ; rendu
+adapté aux dimensions framebuffer. Fenêtre demandée 1280x836, min 360x264.
+Focus clavier/souris, Tab local, Super+Tab panneaux, F6/Enter onglets,
+docking, resize/annulation, roue, navigation cartes/membres et options.
+Chat global et chats UUID restent des démos, réponse Hello World après attente,
+brouillons/historiques en mémoire. Aucun M1–M6 lancé, aucune persistance.
+Édition bornée/graphemes, sélection, caret, multiligne et clipboard SDL.
+Compositions IME ne soumettent pas prématurément le brouillon.
+Keybindings groupés Apply/Save atomique/Reset tous/Cancel ; profil existant
+conservé, aucun réglage utilisateur réel écrit par les tests.
+Fichiers async annulables, résultats remplacés ignorés et appliqués UI.
+SDL interroge l’écran de sa fenêtre (poll 1s), repli 60 Hz ou --fps manuel.
+Animations visibles à 100ms ; pas de redraw d’animation de chat masqué.
+VSync désactivée, aucune promesse de FPS mesurés ; raster limité à 32M pixels.
+Pas de Niri IPC/OSC/Kitty/stty dans le frontend actif.
+
+FICHIERS PRINCIPAUX
+- src/Oryn.Ui.Sdl/ : projet, lockfile, SdlWorkspace, WorkspacePainter.
+- src/Oryn.App/GraphicalWorkspaceController.cs et TextEditState.cs.
+- src/Oryn.App/VisualizerPreviewState.cs : nom fictif SdlWorkspace,
+  UUID de fixture inchangés.
+- Oryn.slnx, src/Oryn.Cli/{Program.cs,Oryn.Cli.csproj,packages.lock.json}.
+- tests/Oryn.App.Tests/GraphicalWorkspaceTests.cs ; tests/Oryn.Ui.Smoke/.
+- README.md, README_ORYN.md, AGENTS.md, docs/m0-verification.md,
+  docs/adr/0005-sdl-rendering-direction.md et 0006-sdl3-skia-raster-m0.md.
+- Ce log. Les modifications/logs des prompts précédents sont conservés.
+
+VALIDATIONS RÉELLEMENT EXÉCUTÉES
+Machine : Debian 13 x64, SDK 10.0.401 ; .NET 10.0.12.
+- Restauration NuGet : succès après escalade réseau ; lockfiles générés.
+- Build final Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 77 passés,
+  zéro échec/ignoré, runner autorisé hors sandbox pour socket VSTest.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès, cwd/CLI et domaine.
+- SDL_VIDEODRIVER=dummy dotnet run --project tests/Oryn.Ui.Smoke
+  --no-build --no-restore -- /tmp/oryn-sdl-headless-final : succès.
+- Même suite dans une vraie fenêtre Linux autorisée : succès final avec
+  backend SDL opengl ; /tmp/oryn-sdl-native-final. Injecte événements SDL
+  natifs : focus, UTF8/multiligne, clipboard, chat, souris fichier, aperçu,
+  UUID graph/membres/options/chats, profil temporaire sauvegardé, resize
+  compact/large, dock, drag/Escape, quit et SDL_WasInit=0 après shutdown.
+- Dix images natives finales inspectées, plus captures software représentatives.
+- Publication autonome Release linux-x64 --no-restore : succès sous
+  /tmp/oryn-sdl-release ; libs SDL/Skia présentes ; --check publié réussi.
+- Assets CLI inspectés : aucune bibliothèque Terminal.Gui dans le graphe.
+- SDL_VIDEODRIVER=oryn-missing-driver : erreur lisible, sortie 1 attendue.
+- git diff --check : succès ; contrôle final après écriture de ce log.
+
+LIMITES ET SUITE
+Validations macOS/Windows historiques Terminal.Gui ne valident pas cette UI.
+Nouveau frontend non exécuté sur ces OS ; packaging natif à vérifier dessus.
+Scaling logiciel implémenté ; matériel high-DPI non testé. Texte Unicode
+conservé/édité par graphèmes mais shaping, bidi et fallback complet non faits ;
+emoji non présents dans la police apparaissent comme glyphes manquants.
+Profils Win/Command restent unsupported ; Ctrl/Alt/Shift/leader disponibles.
+Aucun benchmark soutenu CPU/GPU/FPS ni métrique d’inférence dans cette tranche.
+Installation ~/.local de l’auteur non modifiée. Pour essayer les sources :
+  dotnet run --project src/Oryn.Cli --no-build
+Pour remplacer l’oryn installé : relancer l’installateur Linux autorisé par
+l’utilisateur au moment de l’installation (écriture hors dépôt requise).
+Prochaine étape : retour utilisateur sur rendu/focus, puis finitions SDL M0
+et validations des plateformes utiles avant d’avancer à M1.

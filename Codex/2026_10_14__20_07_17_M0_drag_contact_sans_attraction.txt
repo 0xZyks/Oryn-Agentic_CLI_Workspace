@@ -1,0 +1,23 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T20:07:17.039437+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Corriger sensation magnétique quand la carte approche une voisine pendant le drag, avant que le curseur ne passe dessus.
+
+Observations actuelles et résultat
+Ancien chemin global pouvait amorcer la déviation latérale avant contact ; marge de 10 pixels accentuait anticipation. GraphDragState : marge réduite à 1 pixel ; en segment libre positions suivent directement pointeur moins grab offset, sans ressort/retard ; sweep fournit premier point de contact de l'empreinte de la carte, suivi jusque-là avant contournement animé. Retour vers segment libre vide path et side retenu : pas d'accroche au recul. Collision du bord de la carte intervient nécessairement avant le curseur selon endroit où on l'a saisie ; ne pas supprimer cette protection au risque de superposer les boxes. Cartes voisines, liens, identités et mémoire de session conservés.
+
+Fichiers
+src/Oryn.App/GraphDragState.cs ; tests/Oryn.App.Tests/GraphDragTests.cs (nouveau cas approche/contact/recul). README.md ; docs/adr/0010-graph-card-drag-prototype.md ; docs/m0-verification.md. Aucune dépendance, changement du renderer ou sauvegarde des positions.
+
+Vérifications réellement exécutées
+110 tests App passés. Nouveau cas : suivi exact à un pixel du contact, pas de dérive au repos, contact atteint sans déplacement latéral, recul libre immédiat ; anciens contours gauche/droite, jitter, grands jumps, liens/UUID et non-overlap passent. Build solution 0 erreurs/avertissements. Smoke Wayland natif34 étapes passé ; publication Release autonome Linux passée ; smoke software avec quatre assemblies App/SDL exactes publiées passé ; --check publié et installé passés. git diff --check passé.
+Installation locale approuvée : backup /tmp/oryn-graph-drag-backup-20261014-200643-4cad1163, fichiers comparés octet par octet. Aucun commit/push ni changement de runtime/profil/lanceur.
+
+Historique et limites
+Prototype initial était utilisable selon utilisateur, ressenti magnétique à affiner. Validation physique de cette correction encore à confirmer. Limites précédentes de clipping/caméra et itinéraires dans amas complexes demeurent ; pas de moteur physique complet ou nouveaux jalons.
+
+Prochaine étape
+Relancer oryn et vérifier ressenti en approche, glissement au contact puis retrait ; affiner animation/routing/caméra selon retour utilisateur.

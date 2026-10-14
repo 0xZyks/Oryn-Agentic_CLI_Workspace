@@ -16,13 +16,13 @@ public sealed class KeyboardTests
         Assert.Equal(KeyboardAction.NextPanel, router.Route(InputKey.Parse("Ctrl+Tab"), Explorer, 0).Action);
         foreach (KeyboardContext context in new[] { Explorer, Tabs, Content })
         {
-            Assert.False(router.Route(InputKey.Parse("Tab"), context, 0).Handled);
-            Assert.False(router.Route(InputKey.Parse("Shift+Tab"), context, 0).Handled);
+            Assert.Equal(context == Tabs, router.Route(InputKey.Parse("Tab"), context, 0).Handled);
+            Assert.Equal(KeyboardAction.ToggleNavbarFocus, router.Route(InputKey.Parse("Shift+Tab"), context, 0).Action);
             Assert.Equal(KeyboardAction.PreviousPanel, router.Route(InputKey.Parse("Ctrl+Shift+Tab"), context, 0).Action);
         }
         KeyboardContext editing = Content with { ContentAcceptsTab = true, ContentAcceptsText = true };
         Assert.False(router.Route(InputKey.Parse("Tab"), editing, 0).Handled);
-        Assert.False(router.Route(InputKey.Parse("Shift+Tab"), editing, 0).Handled);
+        Assert.Equal(KeyboardAction.ToggleNavbarFocus, router.Route(InputKey.Parse("Shift+Tab"), editing, 0).Action);
         Assert.Equal(KeyboardAction.NextPanel, router.Route(InputKey.Parse("Ctrl+Tab"), editing, 0).Action);
     }
 
@@ -31,11 +31,11 @@ public sealed class KeyboardTests
     {
         KeyboardRouter router = new(new());
         Assert.Equal(KeyboardAction.NextTab, router.Route(InputKey.Parse("Right"), Tabs, 0).Action);
-        Assert.Equal(KeyboardAction.OpenSelection, router.Route(InputKey.Parse("Right"), Explorer, 0).Action);
+        Assert.Equal(KeyboardAction.ExpandSelection, router.Route(InputKey.Parse("Right"), Explorer, 0).Action);
         Assert.Equal(KeyboardAction.ContentRight, router.Route(InputKey.Parse("Right"), Content, 0).Action);
         Assert.Equal(KeyboardAction.ResizeLarger, router.Route(InputKey.Parse("Ctrl+Right"), Tabs, 0).Action);
         Assert.Equal(KeyboardAction.ToggleTabFocus, router.Route(InputKey.Parse("Ctrl+Enter"), Content, 0).Action);
-        Assert.Null(router.Route(InputKey.Parse("Ctrl+Enter"), Explorer, 0).Action);
+        Assert.Equal(KeyboardAction.ToggleTabFocus, router.Route(InputKey.Parse("Ctrl+Enter"), Explorer, 0).Action);
     }
 
     [Fact]
@@ -83,8 +83,10 @@ public sealed class KeyboardTests
     [Fact]
     public void AltAndCustomLeaderResolveSuperBindings()
     {
+        Assert.Equal(KeyboardAction.ToggleNavbarFocus, new KeyboardRouter(new() { Super = "Alt" })
+            .Route(InputKey.Parse("Shift+Tab"), Content, 0).Action);
         Assert.Equal(KeyboardAction.NextPanel, new KeyboardRouter(new() { Super = "Alt" })
-            .Route(InputKey.Parse("Alt+Tab"), Content, 0).Action);
+            .Route(InputKey.Parse("Ctrl+Tab"), Content, 0).Action);
         KeyboardRouter leader = new(new() { Super = "F12" });
         leader.Route(InputKey.Parse("F12"), Content, 0);
         Assert.Equal(KeyboardAction.ResizeLarger, leader.Route(InputKey.Parse("Right"), Content, 1).Action);
@@ -97,7 +99,7 @@ public sealed class KeyboardTests
         profile.Workspace["Quit"] = ["Right"];
         Assert.Throws<ArgumentException>(() => new KeyboardRouter(profile));
         profile = new();
-        profile.Panels["NextPanel"] = ["Ctrl+J", "Tab"];
+        profile.Panels["NextPanel"] = ["Ctrl+J"];
         Assert.Equal(KeyboardAction.NextPanel, new KeyboardRouter(profile).Route(InputKey.Parse("Ctrl+J"), Explorer, 0).Action);
         Assert.Throws<ArgumentException>(() => new KeyboardRouter(new() { Super = "Shift" })); // Next/previous collapse to the same Shift+Tab.
         profile.Explorer["Quit"] = ["F9"];
@@ -120,7 +122,7 @@ public sealed class KeyboardTests
             Assert.Equal(original, File.ReadAllText(path));
             original = """{"Panels":{"NextPanel":["Super+J","Tab"]}}""";
             File.WriteAllText(path, original);
-            Assert.Equal(new[] { "Super+J", "Tab" }, KeyBindingStore.Load(path).Panels["NextPanel"]);
+            Assert.Throws<ArgumentException>(() => KeyBindingStore.Load(path)); // Tab also has local actions; ambiguous profiles are rejected.
         }
         finally { Directory.Delete(directory, recursive: true); }
     }
@@ -167,7 +169,7 @@ public sealed class KeyboardTests
             Assert.Equal("Alt", recovered.Super);
             Assert.Equal(KeyboardAction.NextPanel, new KeyboardRouter(recovered).Route(InputKey.Parse("Alt+J"), Explorer, 0).Action);
             recovered.Panels.Clear();
-            Assert.Equal(KeyboardAction.NextPanel, new KeyboardRouter(recovered).Route(InputKey.Parse("Alt+Tab"), Explorer, 0).Action);
+            Assert.Equal(KeyboardAction.NextPanel, new KeyboardRouter(recovered).Route(InputKey.Parse("Ctrl+Tab"), Explorer, 0).Action);
             Assert.Equal(KeyboardAction.ContentDown, new KeyboardRouter(recovered).Route(InputKey.Parse("J"), Content, 0).Action);
             string original = File.ReadAllText(path);
             Assert.Throws<ArgumentException>(() => KeyBindingStore.Save(path, recovered with { Super = "Win" }));
@@ -182,7 +184,8 @@ public sealed class KeyboardTests
     {
         WorkspaceState state = new(Path.GetTempPath());
         state.Dispatch(WorkspaceCommand.ToggleTabFocus);
-        Assert.Equal(PanelFocusArea.Content, state.FocusArea);
+        Assert.Equal(WorkspacePanel.Center, state.Focus);
+        Assert.Equal(PanelFocusArea.Tabs, state.FocusArea);
         state.Dispatch(WorkspaceCommand.ChatTab);
         state.Dispatch(WorkspaceCommand.NextTab);
         Assert.Equal(WorkspaceTab.Chat, state.ActiveTab);

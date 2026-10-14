@@ -1,0 +1,23 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T20:34:24.348183+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Alt+Tab active le changement de fenêtre du desktop ; remplacer accès navbar par Shift+Tab.
+
+Résultat actuel
+ToggleNavbarFocus default Shift+Tab/F9 ; Shift+Tab toggle aussi sortie du mode. Retrait du même accord des defaults PreviousNavbar (Left), PreviousTab (Left) et ToggleHistory (Tab) pour supprimer conflits dans les scopes normaux. DialogPrevious/BindingPrevious conservent Shift+Tab car modal non navbar. Alt+Tab ne déclenche plus entrée navbar ; default panel traversal des profils SuperAlt reste Ctrl+Tab pour éviter le raccourci OS réservé.
+Exactes anciennes arrays defaults migrées en mémoire au Load : NavbarToggle AltTab/F9 -> ShiftTab/F9, PrevNavbar Left/ShiftTab -> Left, PrevTab idem, ToggleHistory Tab/ShiftTab -> Tab. Custom mappings préservés, conflit signalé plutôt que priorité implicite, fichier non réécrit. Passage ShiftTab navbar prioritaire sur composition IME normale, composition annulée comme tout changement de focus ; dialogues conservent leur comportement.
+
+Fichiers
+src/Oryn.App/{KeyBindingSettings,KeyboardRouter,GraphicalWorkspaceController}.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs (hint).
+Tests NavbarTests.cs, KeyboardTests.cs ; smokes Program.cs et X11KeyboardSmoke.cs. README.md, exemple bindings JSON, ADR0011 mise à jour, docs/m0-verification.md.
+Modifications précédentes/utilisateur conservées. Aucun nouveau menu ou réglage desktop.
+
+Vérifications exécutées
+120 tests App passés, notamment defaults sans conflits tous scopes, profils historiques adaptés sans rewrite, custom mappings conservés, AltTab non intercepté par app, ShiftTab local en modal, IME. Build solution 0 erreurs/avertissements. Smoke36 dummy/software et Wayland/opengl natif passés ; plateforme X11 40 cycles panels + ShiftTab/Right/Enter navbar passés. Publication autonome Release linux-x64 passée ; smoke software utilisant quatre assemblies App/SDL exactes publiées passé. Exemple --check et --check installé passés ; git diff --check passé.
+Installation approuvée : backup /tmp/oryn-navbar-backup-20261014-203352-7d4d4d30 ; App/SDL DLL/PDB vérifiés octet par octet. Lanceur/runtime/profil non modifiés.
+
+Historique/limites/prochaine étape
+Utilisateur confirme interception OS d'AltTab : ancienne injection X11 ciblée contournait cette interception. Pas de modification compositor pour libérer AltTab. Livraison physique du nouveau shortcut à confirmer après relancement ; autres plateformes non testées. Relancer oryn ; navigation bar Left/Right ou Tab puis Enter, Escape retour. Aucun commit/push ni jalon futur lancé.

@@ -1,0 +1,25 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T20:21:01.345622+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Ajouter Alt+Tab pour sélection de la barre File/View/etc, comme les tabs des panneaux ; Entrée sélectionne et ouvre le menu.
+
+Résultat actuel
+Nouveau scope Navbar dans le dispatcher existant et groupe configurable Navbar. Alt+Tab/F9 togglent ; flèches gauche/droite ou Tab/Shift+Tab cyclent les rubriques ; Entrée ouvre sélection. Escape depuis menu revient sélection bar, Escape depuis bar restitue focus panel/tab/history. Appuis maintenus ignorés pour toggle/confirmation ; Unicode non accepté dans navbar. État navbar et catégories indépendants du renderer. Curseur/brouillon Chat conservés en fermeture de menu ; seuls chats d'élément nécessitent restoration globale de l'éditeur.
+Barre accentuée en sélection, panneaux sans focus simultané ; rubriques sélectionnées restent visibles dans fenêtre étroite. Clic sur rubrique ouvre sa catégorie au lieu de toujours menu générique. File/Quit, View/dock/reset widths, Settings/bindings ; Project/Agents/Tools = indication désactivée No actions available yet. F10 garde ancien Workspace menu six actions. Aucun nouveau système métier ou modèle.
+Conflit Super=Alt traité pour exacts defaults NextPanel/PreviousPanel : Ctrl+Tab/Ctrl+Shift+Tab ; autres Super raccourcis restent Alt. Bindings custom conflictuels rejetés avec diagnostic, pas réécrits. Groupes absents utilisent defaults ; aucun fichier user/config desktop modifié.
+
+Fichiers
+src/Oryn.App/{KeyBindingSettings,KeyboardRouter,GraphicalWorkspaceController}.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs.
+Nouveau NavbarTests.cs ; KeyboardTests/GraphicalKeyboardTests actualisés ; smokes Program.cs (36 stages) et X11KeyboardSmoke.cs (11 stages).
+README.md, oryn.keybindings.example.json, docs/m0-verification.md, nouvelle ADR 0011.
+Autres modifications précédentes/utilisateur conservées.
+
+Vérifications exécutées
+118 tests App passés (huit cas navbar : tous panels, wrap/repeats, isolationmodale, saisie/focus/caret, catégories/disabled, fallback SuperAlt, remaps/conflits). Build solution 0 erreurs/avertissements. Smoke36 dummy/software et Wayland/opengl natif passés. X11 ciblant sa fenêtre :40 Ctrl+Tab et nouveau Alt+Tab/Right/Enter catégorie Project passés. Capture /tmp/oryn-navbar-wayland/14-navbar-selection.png inspectée : Settings accentué, focuspanels retiré, hintbar correct. Publication Release autonome Linux passée ; smoke software avec quatre fichiers App/SDL exacts publiés passé. Exemple JSON validé --check ; --check installé passé ; git diff --check passé.
+Installation approuvée : quatre App/SDL DLL/PDB, backup /tmp/oryn-navbar-backup-20261014-201959-fcfda045, comparaison octet par octet. Pas de runtime/lanceur/profil modifié.
+
+Historique, limites et prochaine étape
+Les contrôles clavier/drag/présentation précédents restent testés dans la suite, les confirmations physiques historiques sont distinctes. Les injections X11 ciblées et queue SDL ne prouvent pas livraison des raccourcis globaux par le clavier physique sous chaque desktop. F9 alternative, pas de configuration compositor modifiée. Windows/macOS non exécutés. Relancer oryn pour essayer nouvelle sélection/menu ; rubriques vides restent futures. Aucun commit/push ni fonctionnalités M1+.

@@ -1,0 +1,97 @@
+Oryn — Stabilisation du routage clavier SDL et du focus
+
+Date : 2026-10-14 18:16:08 CEST (+0200) — Europe/Paris.
+Palier : M0. Commit associé : aucun créé ; base dcf67ae. Aucun push.
+
+DEMANDE
+Le rendu graphique convient, mais l’utilisateur rapporte des interactions
+clavier incohérentes après la migration SDL. Corriger sans exiger une liste
+exhaustive des cas. Dernier log consulté par horodatage du nom :
+2026_10_14__17_39_01_M0_migration_ui_sdl3_skiasharp.txt. Pas de log hors M0.
+Changements précédents du dépôt conservés, dont migration encore non commitée.
+
+OBSERVATIONS ACTUELLES ET CAUSES CORRIGÉES
+La première migration/test SDL utilisait principalement des key-down isolés,
+sans répétition ni key-up. Le code rejouait bascules et confirmations pendant
+la répétition, déduisait suppression de texte depuis Ctrl, et ignorait les
+releases. Cela faisait notamment perdre des caractères AltGr et pouvait
+laisser des raccourcis Alt taper dans un champ nouvellement ouvert.
+Les fallbacks Tab/Enter/Escape acceptaient aussi des modificateurs étrangers.
+Historique Chat pouvait rester focalisé en revenant à Chat ; molette et
+résultats de preview tardifs pouvaient reprendre le focus.
+
+RÉSULTAT
+- SdlKeyboardInput sépare strokes, modificateurs, release et Unicode commis.
+  Suppression liée au résultat réel du routage ; modificateurs seuls ne
+  changent pas la propriété du stroke ; releases correspondants réinitialisent.
+- AltGr/MODE et GUI restent distincts de Ctrl/Alt et des touches simples.
+  Equals n’est plus Plus ; F13–F24 et Insert sont mappés.
+- Résultat de commande/édition/clipboard dans App ; SDK SDL n’entre pas
+  dans le modèle applicatif. Clipboard SDL exécuté seulement après résolution.
+- Bascules/confirmation/ouverture/traversée une fois par appui ; répétition
+  conservée pour flèches, suppression, navigation et resize appropriés.
+  Leader avant édition, caractères ordinaires réservés au champ ; validation
+  IME peut recevoir son texte sans envoyer un prompt.
+- Modales isolées ; Enter/Escape simples, Shift+Tab inverse ; Tab modifié
+  non reconnu ne devient plus un Tab local. Remap explicite global Tab accepté.
+- F2/retour aux contenus restaure composer ; clics de focus passent par le
+  contrôleur ; molette ne change plus le focus clavier. Navigation explicite
+  annule les previews en vol plutôt que laisser l’ancien résultat ouvrir Code.
+- Ctrl+C retiré des quit defaults ; seul ancien couple exact migré en mémoire,
+  aucun profil réel réécrit, remappings personnalisés conservés.
+- Footer indique scope actuel et raccourcis résolus (Ctrl+Tab ou F12 then Tab),
+  sans prétendre F6 disponible si le profil l’a remappé.
+
+FICHIERS DE CE PROMPT
+src/Oryn.App/GraphicalWorkspaceController.cs, KeyboardRouter.cs,
+KeyBindingSettings.cs ; src/Oryn.Ui.Sdl/SdlWorkspace.cs, nouveau
+SdlKeyboardInput.cs, WorkspacePainter.cs ; nouveau tests/Oryn.App.Tests/
+GraphicalKeyboardTests.cs ; tests/Oryn.Ui.Smoke/Program.cs et nouveau
+KeyboardChecks.cs ; oryn.keybindings.example.json ; README.md,
+docs/m0-verification.md, nouvelle ADR 0007 ; ce log.
+
+VALIDATIONS RÉELLEMENT EXÉCUTÉES
+Linux Debian 13 x64, SDK .NET 10.0.401. Build final solution sans erreur ni
+avertissement ; 92 tests App passés (15 régressions nouvelles). VSTest autorisé
+hors sandbox pour socket locale. Test initial de la tranche : 89 tests ;
+compte final 92 après couverture supplémentaire.
+Smoke SDL Debug avec driver dummy/software : succès ; nouveau mapping SDL
+et 29 phases événementielles avec key-down/key-up, répétitions, AltGr,
+modificateurs gauche/droite, GUI/locks, IME/leader, absence de fuite de texte
+commande, Enter/Shift+Enter/Escape maintenus, focus history→composer,
+clipboard, clic fichier, graphe/membres/chats UUID, profil temporaire,
+resize/dock, molette pendant saisie, quit Super+Q et nettoyage SDL.
+Même suite étendue dans une fenêtre Linux native autorisée : succès, backend
+présentation opengl. Captures /tmp/oryn-keyboard-fixed-native.
+Publication finale Release linux-x64 autonome : succès sous
+/tmp/oryn-keyboard-fixed-release. Smoke CLI/domain sur le binaire publié
+(--check dans cwd temporaire) : succès. Smoke software Release utilisant les
+quatre DLL/PDB exactes publiées : succès ; captures
+/tmp/oryn-keyboard-fixed-release-captures. Capture Chat/footer inspectée.
+Un premier dotnet run Release avec build automatique a retourné build failed
+sans diagnostic ; build explicite -m:1 -nodeReuse:false
+-p:UseSharedCompilation=false puis run --no-build ont réussi.
+Références SDL primaires consultées : KeyboardEvent, KEYCODE_OPTIONS,
+StartTextInput, GetKeyFromScancode. Aucun changement de dépendance.
+git diff --check : succès, contrôle final après ce log.
+
+INSTALLATION LOCALE
+Commande oryn observée à ~/.local/bin/oryn ; dépendance SDL déjà installée.
+Runtime target et jeu de dépendances installés identiques à la publication.
+Approbation obtenue pour écritures hors dépôt : quatre DLL/PDB App et Ui.Sdl
+remplacées atomiquement avec rollback préparé, sous ~/.local/share/oryn.
+Backup : /tmp/oryn-keyboard-backup-20261014-181326-b7091d65.
+Empreintes des quatre fichiers installés égales à la publication vérifiée ;
+oryn installé --check réussi, Super réel Ctrl. Lanceur, runtime, deps,
+paramètres utilisateur, Kitty et profils shell inchangés.
+Fermer/relancer une fenêtre déjà ouverte pour charger les corrections.
+
+VALIDATIONS HISTORIQUES, LIMITES ET SUITE
+Les 77 tests et smoke de migration sont historiques, pas une preuve que les
+anciens contrôles étaient utilisables avec des frappes réelles. Cette correction
+reproduit des séquences enrichies mais injecte encore des événements SDL ;
+aucune frappe physique de l’utilisateur enregistrée. OS peut réserver des
+combinaisons, notamment Alt+Tab ; Windows/macOS et tous layouts non validés.
+Pas de logs de frappes ou prompts ajoutés. Pas d’inférence/persistance/analyse
+ou renderer OpenGL direct ajouté ; rester M0. Prochaine étape : essai utilisateur
+après relance, puis corriger tout cas résiduel à partir d’une séquence ciblée.

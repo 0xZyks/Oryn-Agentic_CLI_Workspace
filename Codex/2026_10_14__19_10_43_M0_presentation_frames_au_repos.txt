@@ -1,0 +1,28 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T19:10:43.871738+02:00
+Commit : aucun commit créé/poussé.
+
+Demande et précision utilisateur
+Clavier toujours problématique, souris visualiseur également, deux derniers caractères de Coucou visibles seulement après deux espaces ; Backspace rend visible un espace déjà présent. Vérifier l'intégration SDL plutôt que refaire les raccourcis.
+
+Observations actuelles
+Structures SDL clavier/texte/souris examinées : pas de divergence ABI évidente avec la documentation. Bibliothèque installée SDL_GetVersion = 3005000 (3.5.0) ; pas d'upgrade sans preuve. Aucun processus oryn trouvé lors de la vérification. Le symptôme évoque un affichage retardé, sans prouver une faute du périphérique/SDL ou du compositeur.
+L'ancienne boucle ne présentait que lors de Dirty/animation. Les callbacks des tests maintenaient artificiellement Dirty=true, ce qui masquait l'arrêt de présentation au repos. Les hit regions correspondaient au raster applicatif actuel ; si l'affichage composité est en retard, cela peut expliquer une divergence avec les contrôles visibles, hypothèse à confirmer.
+
+Résultat et fichiers
+src/Oryn.Ui.Sdl/SdlWorkspace.cs : séparation Draw (raster/upload uniquement si changement) et Present (texture en cache à chaque échéance FPS) ; attente basée sur prochaine présentation ; compteurs RasterFrames/PresentedFrames pour vérification ; rectangle texte IME natif mis à jour seulement si changement/redémarrage.
+Tests Oryn.Ui.Smoke Program.cs et X11KeyboardSmoke.cs : suppression du Dirty forcé, 31 étapes dont Coucou par caractères puis six présentations au repos sans raster supplémentaire. Capture 11-coucou-idle.png.
+README.md : cadence/presentation du cache. Nouvelle ADR 0009 et docs/m0-verification.md.
+Changements précédents conservés ; pas de nouvelle refonte clavier ni dépendance.
+
+Vérifications exécutées
+Build solution initial et build smoke final : zéro avertissement/erreur. Smoke dummy/software passé. Smoke Wayland/OpenGL natif passé avec Coucou+pause et texte/clipboard/souris/graph/dialogues/profil/resize/quit. Capture raster Coucou au repos inspectée (six caractères visibles). Test plateforme X11 40 Ctrl+Tab, Ctrl+Enter depuis Explorer, onglets, Right/Left arbre passé sans forcer Dirty.
+Publication Release autonome Linux passée. Smoke software utilisant exactement les quatre App/SDL DLL/PDB publiées passé. Installation mise à jour avec approbation, comparaison octet par octet, backup /tmp/oryn-keyboard-backup-20261014-191000-79a951b1 ; --check installé passé. git diff --check passé.
+Un smoke Wayland avant changement a échoué sur assertion draft/clipboard ; passé ensuite, mais causalité avec correction de présentation non établie. Ne pas revendiquer disparition empirique de tous les bugs physiques.
+
+Validations historiques et limites
+104 tests App de la refonte précédente : historiques, domaine inchangé et pas rerun sur ce prompt. Captures = bitmap Skia, pas frame lue sur le compositeur. Les événements smokes sont synthétiques, hormis traduction X11 testée. Interaction physique utilisateur et latence écran après correction non encore confirmées. Windows/macOS non exécutés. Présentation continue bornée = davantage de travail GPU au repos, sans reraster/upload inutiles.
+
+Prochaine étape
+Relancer oryn pour charger le nouveau renderer ; confirmer Coucou sans touches de rattrapage puis clavier/souris dans l'app. Si retard persiste, comparer X11/Wayland et mesurer affichage effectif ; ne pas réintroduire de patches keybinds tant que livraison/présentation des entrées n'est pas établie.

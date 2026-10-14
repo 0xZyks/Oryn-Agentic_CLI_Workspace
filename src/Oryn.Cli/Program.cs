@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Oryn.App;
-using Oryn.Tui.Prototype;
+using Oryn.Ui.Sdl;
 
 Console.OutputEncoding = Encoding.UTF8;
 string workingDirectory = Directory.GetCurrentDirectory();
@@ -12,18 +12,18 @@ try
     if (options.ShowHelp)
     {
         Console.WriteLine("""
-            Oryn — local-first terminal engineering workspace (M0)
+            Oryn — local-first graphical engineering workspace (M0)
 
             Usage: oryn [directory] [options]
             Without a directory, opens the caller's current working directory.
 
             --help, -h       Show help
             --version        Show version
-            --check          Check project access and report JSON without opening a TUI
+            --check          Check project access and report JSON without opening a window
             --config <file>  Read explicit JSON settings
             --no-color       Use a monochrome palette (also respects NO_COLOR)
             --ascii          Use ASCII UI decorations
-            --fps auto|N     Follow the terminal's monitor, or set 1–500 Hz manually
+            --fps auto|N     Follow the window's monitor, or set 1–500 Hz manually
             --keybindings <file> Use a custom grouped keybindings file
             --               Treat remaining argument as a directory
 
@@ -54,15 +54,12 @@ try
 
     WorkspaceSettings settings = WorkspaceSettings.Load(options.ConfigPath);
     settings = settings with { UseColor = settings.UseColor && options.UseColor, UseUnicode = settings.UseUnicode && options.UseUnicode };
-    TerminalCapabilities capabilities = TerminalCapabilities.Detect(settings);
     string keybindingsPath = options.KeybindingsPath ?? KeyBindingStore.DefaultPath;
     KeyboardRouter keyboard = new(KeyBindingStore.Load(keybindingsPath));
     RenderCadence cadence = new(options.OverrideRenderCadence ? options.RenderFramesPerSecond : settings.RenderFramesPerSecond);
-    IDisplayRefreshRateProbe refreshRateProbe = NiriDisplayRefreshRateProbe.ForCurrentTerminal();
-    if (cadence.ManualFramesPerSecond is null)
-        cadence.Apply(await refreshRateProbe.ReadAsync(CancellationToken.None));
     LocalWorkspaceFiles files = new(options.ProjectRoot, settings);
-    DirectoryResult directory = await files.ListAsync(options.ProjectRoot, CancellationToken.None);
+    // SDL window creation stays on the process main thread, including on macOS.
+    DirectoryResult directory = files.ListAsync(options.ProjectRoot, CancellationToken.None).GetAwaiter().GetResult();
     if (directory.Error is not null) throw new IOException(directory.Error);
     if (options.Check)
     {
@@ -73,21 +70,17 @@ try
             entryCount = directory.Entries.Count,
             truncated = directory.Truncated,
             warning = directory.Warning,
-            terminal = capabilities,
-            renderCadence = new { cadence.FramesPerSecond, cadence.ManualFramesPerSecond, cadence.Reading },
+            frontend = new { window = "SDL3", drawing = "SkiaSharp", style = "terminal-inspired" },
+            renderCadence = new { manualFramesPerSecond = cadence.ManualFramesPerSecond, auto = cadence.ManualFramesPerSecond is null },
             keybindings = new { path = keybindingsPath, keyboard.Settings.Super }
         }));
         return 0;
     }
-    if (!capabilities.Interactive)
-    {
-        Console.Error.WriteLine("Oryn needs an interactive terminal. Use --check for a non-interactive project check.");
-        return 2;
-    }
-
     WorkspaceState state = new(options.ProjectRoot);
     state.LoadRoot(directory);
-    new TerminalWorkspace(state, files, capabilities, cadence, refreshRateProbe, keyboard, keybindingsPath).Run();
+    using GraphicalWorkspaceController controller = new(state, files, keyboard, keybindingsPath);
+    using SdlWorkspace window = new(controller, settings.UseColor, settings.UseUnicode, cadence.ManualFramesPerSecond);
+    window.Run();
     return 0;
 }
 catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or JsonException)
@@ -98,8 +91,8 @@ catch (Exception ex) when (ex is ArgumentException or IOException or Unauthorize
 }
 catch (Exception ex)
 {
-    // The TUI's using/finally cleanup runs before printing errors to the shell.
-    Console.Error.WriteLine($"oryn: terminal startup or rendering failed: {TerminalText.Sanitize(ex.Message)}");
+    // Native window resources are released before reporting errors.
+    Console.Error.WriteLine($"oryn: window startup or rendering failed: {TerminalText.Sanitize(ex.Message)}");
     if (Environment.GetEnvironmentVariable("ORYN_DEBUG") == "1") Console.Error.WriteLine(ex);
     return 1;
 }

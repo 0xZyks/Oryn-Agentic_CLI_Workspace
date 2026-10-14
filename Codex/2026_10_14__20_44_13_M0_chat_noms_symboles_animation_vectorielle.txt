@@ -1,0 +1,21 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T20:44:13.077816+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Corriger animation Thinking affichée comme glyph manquant ; rétablir Oryn avec symbole et User avec petit point.
+
+Observations/résultat actuel
+Ancien Terminal ChatPreviewTranscript consulté : noms User/Oryn, point utilisateur et losange côté Oryn, spinner Braille Unicode ou diamant ASCII quatre positions. Renderer SDL avait réduit noms à you/oryn et utilisait Braille dans police sans glyphs. Libellés désormais User/Oryn ; point à gauche du User aligné à droite, étoile quatre branches devant Oryn. Dessin géométrique Skia (Circle/Path), aucune dépendance à glyph de police pour symboles.
+Animation Thinking : quatre points en losange avec petite étoile active avançant chaque 200 ms. Fonctionne en normal/ASCII ; capitalisation et symbole aussi pendant pending. Rendu global et chat par UUID partagent DrawChat ; rôle et contenu des messages restent inchangés. Horloge de rendu optionnelle permet images déterministes pour vérifier animation ; aucune modification du provider/demo ou keybinds.
+
+Fichiers
+src/Oryn.Ui.Sdl/WorkspacePainter.cs ; nouveau tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs ; Program.cs (captures/contrôle de rendu). README.md et docs/m0-verification.md. Autres changements antérieurs/utilisateur conservés.
+
+Vérifications réellement exécutées
+Build solution et builds smoke finaux : zéro erreurs/avertissements. Comparaison pixels images rendu temps 0/200 ms : spinner change en mode Unicode et ASCII, changement borné à taille d'icône, état conversation inchangé. Smoke36 dummy/software et Wayland/opengl natif passés. Captures 16-thinking-frame-top.png et 18-thinking-live.png inspectées : Oryn+étoile, User+point, Thinking quatre positions sans missing glyph décoratif. Publication autonome Release Linux passée ; smoke software utilisant quatre assemblies App/SDL exactes publiées passé. --check publié et installé passés. git diff --check passé.
+Installation locale approuvée : backup /tmp/oryn-chat-icons-backup-20261014-204344-c55989dc ; comparaison octet par octet ; aucun runtime/profil/lanceur modifié.
+
+Historique/limites/prochaine étape
+Utilisateur confirme ShiftTab fonctionne ; tests120 du domaine précédents restent historiques (domaine inchangé, pas rerun sur rendu). Glyphs des contenus/emoji, shaping complexe et fallback complet restent limites existantes ; cette correction vise décorations/animation seulement. Native Windows/macOS non exécutés. Relancer oryn pour voir nouveaux noms et animation. Aucun commit/push ou nouveau jalon.

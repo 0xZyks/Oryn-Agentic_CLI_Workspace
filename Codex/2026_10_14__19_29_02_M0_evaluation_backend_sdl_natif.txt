@@ -1,0 +1,17 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T19:29:02.047067+02:00
+Commit associé : aucun.
+
+Demande
+Évaluer si l'intégration SDL en Rust/C aurait été préférable et préparerait les futurs composants natifs.
+
+Observations et évaluation
+README_ORYN maintient C# central en v0.1 et cible SDL+OpenGL v1.0 ; modules Rust/C selon besoin observé ou jalon explicite. SDL utilisée est déjà une bibliothèque native C via ppy.SDL3-CS. Le problème précédent concernait notre présentation de frames et n'aurait pas été intrinsèquement prévenu par un changement de langage.
+Recommandation proposée, non décision approuvée : conserver SDL/SkiaSharp fonctionnel en C# pour M0/v0.1 ; évaluer un backend complet Rust SDL+OpenGL pour v1.0, exporté via ABI C à .NET. L'état, les commandes et identités restent indépendants, échanges batchés/événements normalisés, cycle fenêtre/rendu/ressources détenu par un seul backend avec contraintes de thread respectées. Un simple pont C#/Rust/SDL maintenant ajouterait une couche sans bénéfice démontré ; futurs autres modules natifs n'exigent pas de migrer SDL d'abord. C possible pour petit pont ABI, Rust candidat recommandé pour backend substantiel, à mesurer/prototyper.
+
+Vérifications réellement exécutées
+Lecture sections SDL/FFI/Rust du README, projet UI et dernier log M0. Documentation primaire consultée : wiki SDL3 FrontPage (SDL C, bindings C#/Rust), Microsoft native interop best practices (signatures, types, durée de vie), dépôt vhspace/sdl3-rs. Aucun benchmark ni test ni changement de code/installation pour cette discussion.
+
+Limites/prochaine étape
+Choix natif non figé ; performances, packaging, text rendering et plateformes à vérifier via prototype au jalon choisi. Demande de design antérieure reste à préciser ; aucune migration ou roadmap lancée par cette question. Anciennes validations techniques restent historiques.

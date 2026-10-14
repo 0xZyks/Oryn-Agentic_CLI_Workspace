@@ -13,15 +13,15 @@ This README is both the project vision and an actionable implementation brief. *
 - **[PROPOSED]** Candidate choice requiring benchmarking or a short proof of concept.
 - **[DECIDED]** Product/architectural intent established during design.
 
-**First Codex session:** inspect the repository; if empty, create the solution skeleton and an executable minimal TUI, then proceed milestone by milestone. Present assumptions and short ADRs for decisions that cannot be inferred. Avoid broad rewrites, speculative frameworks, unbounded dependency additions, and features not listed as v0.1 deliverables. Never store credentials in the repository.
+**First Codex session:** inspect the repository; if empty, create the solution skeleton and an executable minimal SDL + SkiaSharp workspace, then proceed milestone by milestone. Present assumptions and short ADRs for decisions that cannot be inferred. Avoid broad rewrites, speculative frameworks, unbounded dependency additions, and features not listed as v0.1 deliverables. Never store credentials in the repository.
 
-**Definition of success:** launching `oryn` in a supported terminal opens a project, browses files, chats with a local model, inspects a navigable project/concept graph, edits/validates proposals, opens contextual element discussions and knowledge cards, and restores that state on restart. Some graph edges, documentation, and agent proposals may be incomplete or manually supplied in v0.1; this must be made explicit rather than fabricated.
+**Definition of success:** launching `oryn` opens a native graphical window and a project, browses files, chats with a local model, inspects a navigable project/concept graph, edits/validates proposals, opens contextual element discussions and knowledge cards, and restores that state on restart. Some graph edges, documentation, and agent proposals may be incomplete or manually supplied in v0.1; this must be made explicit rather than fabricated.
 
 ---
 
 ## 1. Why Oryn exists
 
-Oryn is a **local-first, terminal-native, AI-assisted engineering workspace**. Its original motivation is personal: restore the pleasure of programming, experimenting, designing systems and understanding technical concepts **without losing the practical benefits of modern AI assistance**. It is not intended to be merely another chatbot, autonomous coding agent, or code editor.
+Oryn is a **local-first, native graphical, AI-assisted engineering workspace**. Its original motivation is personal: restore the pleasure of programming, experimenting, designing systems and understanding technical concepts **without losing the practical benefits of modern AI assistance**. It is not intended to be merely another chatbot, autonomous coding agent, or code editor.
 
 The central experience connects four activities:
 
@@ -30,7 +30,7 @@ The central experience connects four activities:
 3. **Understand** each element through a contextual technical knowledge card, linked references and architectural rationale.
 4. **Build and verify** the chosen design, preserving the history of why it was chosen.
 
-The long-term ambition is to **develop Oryn using Oryn**: start with proven libraries and inference engines, then progressively implement a native TUI renderer, specialized scheduling, memory management and potentially parts of the inference stack. Future homelab hardware may host larger models while the terminal frontend remains local and functional offline.
+The long-term ambition is to **develop Oryn using Oryn**: start with proven libraries and inference engines, then progressively implement an SDL + OpenGL renderer for v1.0, specialized scheduling, memory management and potentially parts of the inference stack. Future homelab hardware may host larger models while the graphical frontend remains local and functional offline.
 
 ### Guiding principles
 
@@ -38,7 +38,7 @@ The long-term ambition is to **develop Oryn using Oryn**: start with proven libr
 - **Code is factual; interpretations are not:** distinguish parser/analyzer evidence, AI-generated inference, and human-confirmed decisions.
 - **Local-first, not local-only:** usable with local models and without network; optional remote inference through user-provided API keys.
 - **Progressive enhancement:** file browsing and project knowledge should remain useful even if LSP, graph analysis, remote services or models are unavailable.
-- **Responsive interaction:** terminal input, graph navigation and hover/click/keyboard actions must never wait for LLM inference.
+- **Responsive interaction:** window input, graph navigation and hover/click/keyboard actions must never wait for LLM inference.
 - **Portable:** Windows, Linux, macOS; avoid hardcoding POSIX assumptions into shared application code.
 - **Measurable optimization:** minimize unnecessary model calls and redundant analysis before attempting exotic low-level tuning.
 - **No feature creep:** ideas beyond the agreed v0.1 scope go into the backlog / Idea Box.
@@ -49,7 +49,7 @@ The long-term ambition is to **develop Oryn using Oryn**: start with proven libr
 
 ### 2.1 v0.1 — required product capabilities
 
-1. **Terminal workspace:** launch from CLI, open a project directory, file explorer, top menu/command bar, central tabbed area, dockable or switchable views, keyboard-first navigation and basic mouse support where available. A third-party TUI library is allowed as a temporary implementation.
+1. **Graphical workspace:** launch from CLI into an SDL window, open a project directory, file explorer, top menu/command bar, central tabbed area, dockable or switchable views, keyboard-first navigation and mouse interaction. **[DECIDED] [V0.1]** SDL handles the window and events; SkiaSharp draws the interface. Terminal.Gui is superseded as the frontend choice.
 2. **Project chat:** persisted conversations, streamed model output, references to project files/elements, explicit actions/tools with user-visible status and error handling.
 3. **Multi-agent architecture:** actual distinct agent roles and task routing, with a basic scheduler, cancellation, priority classes and model backend abstraction. Agents may share a physical model.
 4. **Interactive visualizer:** project/module/class/method/concept nodes, relationships, expandable semantic levels where supported, selection and navigation, context menus/actions, statuses and aggregated progress. Basic code-derived graph plus manually/agent-proposed nodes is sufficient initially.
@@ -62,7 +62,7 @@ The long-term ambition is to **develop Oryn using Oryn**: start with proven libr
 
 ### 2.2 Explicitly out of scope for v0.1
 
-- Homemade TUI renderer and complete widget toolkit.
+- Direct OpenGL renderer and a complete general-purpose widget toolkit; SDL + OpenGL is the v1.0 target.
 - Homemade GPU allocator, VRAM scheduler, inference kernels or model runtime.
 - Full language package manager/catalog and plugin marketplace.
 - Exhaustive cross-language call graph, CFG, data-flow and precise dynamic dispatch resolution.
@@ -70,7 +70,7 @@ The long-term ambition is to **develop Oryn using Oryn**: start with proven libr
 - Distributed inference / homelab orchestration (preserve interface seams, not implementation).
 - Advanced RAG infrastructure requiring a heavyweight vector database.
 - Perfect code-entity identity reconciliation after arbitrary refactors.
-- Pixel-accurate vector graphics inside a conventional character-cell terminal.
+- Maintaining a parallel terminal frontend as a v0.1 requirement.
 
 These are **future ambitions, not abandoned ideas**.
 
@@ -94,16 +94,16 @@ These are **future ambitions, not abandoned ideas**.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Important:** the visualizer defaults to the **right**, not the chat. It may also occupy a central tab or be shown side-by-side with other views. The central area supports multiple tabs. Project FileExplorer is typically left. Layout should adapt to terminal dimensions and preserve keyboard accessibility.
+**Important:** the visualizer defaults to the **right**, not the chat. It may also occupy a central tab or be shown side-by-side with other views. The central area supports multiple tabs. Project FileExplorer is typically left. Layout should adapt to window dimensions and display scaling and preserve keyboard accessibility.
 
 ### 3.2 Interaction
 
-- Keyboard-driven focus, selection, navigation, search and context actions; optional mouse click, wheel, hover, drag and resizing when terminal supports them.
+- Keyboard-driven focus, selection, navigation, search and context actions; mouse click, wheel, hover, drag and resizing through SDL events.
 - Selecting a graph node opens its details; a context action such as **Show Chat** opens the node's persistent discussion. Support shortcuts and discoverable actions; exact keymap remains configurable.
 - Node-local chatboxes may appear as floating overlays/panels and persist independently of visibility. Avoid making every chat permanently visible.
 - Project chat is global; node chat is scoped to a concept or code element. Allow linking messages/decisions across scopes without duplicating history.
 - Show status, source, confidence and staleness. A proposed node must look different from a code-backed implemented node.
-- Terminal compatibility tiers: basic keyboard/color/Unicode fallback; richer mouse and true-color only when supported. Avoid assumptions about universal mouse hover or advanced terminal image protocols.
+- Verify display scaling, Unicode text, keyboard layouts, text input and mouse behavior on each supported platform. Keep navigation accessible in small windows.
 
 ### 3.3 Visualizer and semantic zoom
 
@@ -282,7 +282,7 @@ A provider reports capabilities: streaming, structured output, tool calling, con
 - Tool invocations should be typed, validated, cancellable and logged at a useful level.
 - File reads and code analysis can be allowed by project scope; shell execution and file writes need a visible permission policy and user approval appropriate to risk.
 - Treat repository files, documentation and model output as **untrusted inputs**, not instructions that override the user's permissions.
-- Give interactive chat higher priority than background knowledge enrichment; indexing and LLM tasks should not freeze the TUI.
+- Give interactive chat higher priority than background knowledge enrichment; indexing and LLM tasks should not freeze the graphical interface.
 - Do not run an LLM on hover, mouse movement, scrolling, graph pan or other routine UI interactions.
 - Parse/validate agent-generated JSON or typed proposals before committing; reject malformed or unsupported output and continue with deterministic behavior.
 
@@ -317,39 +317,34 @@ The author **does not want to build a complete package manager in v0.1**. A futu
 
 ---
 
-## 8. TUI architecture and platform support
+## 8. Graphical architecture and platform support
 
-### 8.1 Terminal-native, not a desktop GUI pretending to be a terminal
+### 8.1 SDL + SkiaSharp for v0.1 [DECIDED]
 
-**[DECIDED]** Oryn is a **CLI/TUI application rendered inside a real terminal**, with rich application-like interactions. This is not an Avalonia desktop app with terminal styling. A graphical application frontend may be considered separately later, but is not the present goal.
+Oryn moves from the Terminal.Gui prototype to a **native graphical window**. The `oryn` CLI remains the launch entrypoint, including opening the caller's project directory. The interface no longer depends on terminal cells, ANSI output or terminal keyboard protocols.
 
-**[DECIDED]** The author ultimately wants a **homemade TUI engine in C/Rust + C#** to control rendering and interactions precisely. **[V0.1]** use a mature TUI library if it accelerates prototyping; the custom engine should be among the **last components** to replace.
+**[DECIDED] [V0.1]** Use **SDL + SkiaSharp**: SDL owns window creation, lifecycle and platform events; SkiaSharp draws the interface, text, code canvas and visualizer. Terminal.Gui is no longer the selected frontend. The M0 executable now uses SDL3 + SkiaSharp; the former terminal adapter remains historical source outside the active solution. See [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md) for implementation choices and verification limits.
 
-`termios` is useful for POSIX terminal input modes on Linux/macOS, but is **not a TUI engine** and is not natively portable to Windows. Terminal support requires abstractions for POSIX and Windows console/virtual terminal modes, ANSI/VT output, keyboard/mouse input, resize, Unicode, color and feature detection.
+The current M0 adapter pins SDL3 bindings and SkiaSharp versions and uses a raster drawing surface presented through SDL; see ADR 0006. Text/font handling and native packaging need further platform validation. A GPU-backed Skia drawing surface remains an alternative to measure, not the current implementation.
 
 ### 8.2 Critical abstraction boundary
 
-**Do not let the provisional TUI library own Oryn's application state.** Define framework-independent concepts for:
+**Keep application state independent of SDL, SkiaSharp and the future OpenGL renderer.** Preserve framework-independent concepts for:
 
-- workspace state and panel/tab layout;
-- focus, selection, input commands, keybindings and mouse events;
+- workspace state, panel/tab layout and docking;
+- focus, selection, commands, keybindings and event routing;
 - graph viewport and semantic navigation;
-- overlays, contextual chat panels and detail cards;
-- rendering primitives and invalidation;
-- terminal capabilities and fallback behavior.
+- overlays, contextual chats and detail cards;
+- rendering contracts and invalidation;
+- window dimensions, display scaling and platform capabilities.
 
-Replacing the renderer must not require rewriting chats, graph logic or layout state. A renderer-only abstraction is insufficient if focus and event routing remain coupled to the library.
+Adapt the current cell-based geometry to graphical coordinates without introducing graphics-library types into the application model. SDL events map to application commands; file access, inference and indexing run outside the UI loop. Replacing the renderer must preserve chats, graph identities and interaction behavior. A drawing abstraction alone is insufficient if focus and event routing remain coupled to it.
 
-### 8.3 Long-term native renderer ideas [LATER]
+### 8.3 SDL + OpenGL for v1.0 [DECIDED] [LATER]
 
-- Virtual **cell framebuffer**; current and desired frames, diff-based terminal updates.
-- Dirty rectangles/regions, clipping, minimal ANSI output, batched writes.
-- Correct Unicode grapheme clusters, combining marks and double-width glyphs (not merely one `uint32_t` per visible character).
-- Mouse hit testing, terminal capability detection, responsive layout and resize.
-- Optimized graph drawing within character-cell limitations; semantic zoom over naive pixel zoom.
-- Cross-platform terminal backend; possible native C ABI consumed from .NET.
+The **v1.0 rendering target is SDL + OpenGL**, replacing SkiaSharp as the drawing layer while retaining SDL for windowing and events. This is a future milestone, not a v0.1 dependency or an implementation claim.
 
-Evaluate whether a Rust renderer or a C# renderer is simpler to integrate; **do not assume Rust is faster in the actual bottleneck**. Prototype with existing libraries (e.g., Terminal.Gui in C#, or Ratatui + Crossterm in Rust) without prematurely committing to a specific dependency. Benchmark before locking the stack.
+Preserve the application and interaction boundaries during that transition. Evaluate text rendering, clipping, batching, resource lifetime, context creation and platform support when implementing it. Measure input-to-render latency and rendering cost before optimization; choose the OpenGL version/profile and native boundaries through a tested prototype. Keep the direct OpenGL renderer out of the v0.1 scope.
 
 ---
 
@@ -358,7 +353,7 @@ Evaluate whether a Rust renderer or a C# renderer is simpler to integrate; **do 
 **[PROPOSED architectural direction]**
 
 - **C# / .NET:** application logic, workspace state, graph domain model, conversations, agents, task coordination, persistence, external LSP processes and tool integration.
-- **Rust:** later native scheduling/memory/compute components, optional custom TUI renderer and low-level performance-critical infrastructure.
+- **Rust:** later native scheduling/memory/compute components, optional v1.0 rendering components and low-level performance-critical infrastructure.
 - **C / C++:** C ABI interop and reuse of mature native libraries such as llama.cpp/Clang; optional targeted custom low-level experiments.
 
 Avoid pushing trivial operations across a C#/native FFI boundary. Prefer coarse-grained commands, batched results and bounded event streams. Where isolation matters, a separate process and IPC may be preferable to in-process FFI despite overhead.
@@ -419,7 +414,7 @@ Implement a straightforward task abstraction supporting:
 - dependencies and task status/progress;
 - timeouts and failure isolation;
 - bounded concurrency and memory pressure awareness;
-- responsive TUI even during inference/indexing.
+- responsive graphical interface even during inference/indexing.
 
 .NET `Task`, `CancellationToken`, channels and normal process APIs are appropriate starting points. **Do not implement a native work-stealing scheduler just to have one.**
 
@@ -435,7 +430,7 @@ Key trade-offs:
 - Batch compatible inference jobs when latency and backend support permit.
 - Avoid unnecessary CPU↔GPU copies; respect backend ownership of GPU allocations.
 - Use incremental indexing and dependency invalidation rather than reprocessing the entire repository.
-- Consider a remote homelab provider later: local TUI/tools + LAN-hosted heavy models, with local fallback and explicit data routing.
+- Consider a remote homelab provider later: local graphical frontend/tools + LAN-hosted heavy models, with local fallback and explicit data routing.
 
 ### 11.3 Instrumentation before optimization
 
@@ -447,7 +442,7 @@ Record at least:
 - RAM/VRAM usage **where supported by the backend**;
 - parser/indexing duration and invalidation counts;
 - retrieval latency, cache hit rate and repeated work;
-- TUI input-to-render latency and frame/terminal output volume.
+- UI input-to-render latency, frame duration and rendering workload.
 
 Do not claim universal GPU memory observability or portable GPU buffer control through a generic provider. The future native runtime requires platform/backend-specific investigation.
 
@@ -462,7 +457,7 @@ Do not claim universal GPU memory observability or portable GPU buffer control t
 - Require appropriate confirmation for writes, shell commands and potentially destructive actions.
 - Restrict file operations to allowed project roots unless user authorizes more.
 - Parse/validate structured agent proposals against schemas; transactional acceptance; keep audit history.
-- Handle model unavailability, malformed output, LSP crashes, unsupported terminal features and database failures gracefully.
+- Handle model unavailability, malformed output, LSP crashes, window or graphics initialization failures and database failures gracefully.
 - Ensure knowledge cards cite their sources; mark stale, generated or unverified material.
 - Keep source observations separate from human decisions; rescans must not erase intent.
 
@@ -475,13 +470,13 @@ oryn/
 ├── README.md
 ├── docs/
 │   ├── adr/                    # Architecture decision records
-│   ├── architecture/           # Runtime, graph, TUI and agent contracts
+│   ├── architecture/           # Runtime, graph, UI and agent contracts
 │   └── roadmap.md
 ├── src/
 │   ├── Oryn.Cli/               # CLI entrypoint, configuration
 │   ├── Oryn.App/               # Application state and use cases
-│   ├── Oryn.Tui.Abstractions/  # Terminal UI independent contracts
-│   ├── Oryn.Tui.Prototype/     # Temporary TUI adapter
+│   ├── Oryn.Ui.Abstractions/   # Candidate framework-independent UI contracts
+│   ├── Oryn.Ui.Sdl/            # Candidate SDL + SkiaSharp frontend
 │   ├── Oryn.Graph/             # Entities, relations, identity, lifecycle
 │   ├── Oryn.Knowledge/         # Cards, retrieval, provenance
 │   ├── Oryn.Agents/            # Agent roles, orchestration, tools
@@ -503,9 +498,9 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ### M0 — Repository bootstrap and running shell
 
-**Build:** CLI entrypoint, configuration, terminal capability detection, temporary TUI adapter, open project directory, left file tree, central tab and right placeholder panel. Define application state outside TUI library.
+**Build:** CLI entrypoint, configuration, SDL window/events, SkiaSharp drawing, open project directory, left file tree, central tabs and a visualizer placeholder available as a tab with optional docking. Define application state outside the graphics libraries; migrate the existing M0 behavior before advancing to M1.
 
-**Done when:** launches on the primary development OS; keyboard navigation works; resizing doesn't crash; a project folder can be browsed; startup/shutdown restore terminal state.
+**Done when:** launches on the primary development OS; keyboard navigation works; resizing doesn't crash; a project folder can be browsed; window startup/shutdown release native resources cleanly.
 
 ### M1 — Chat + inference provider
 
@@ -545,9 +540,9 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ### M7 — Stabilization and v0.1 release
 
-**Build:** cross-platform smoke tests, terminal fallbacks, model/backend failure handling, backup/export, logging, security review, performance baseline and user documentation.
+**Build:** cross-platform smoke tests, graphics/platform failure handling, model/backend failure handling, backup/export, logging, security review, performance baseline and user documentation.
 
-**Done when:** documented install/run works on Windows, Linux and macOS (with platform limitations documented), no data loss on restart, TUI remains responsive under background tasks, and key workflows have automated tests.
+**Done when:** documented install/run works on Windows, Linux and macOS (with platform limitations documented), no data loss on restart, graphical interface remains responsive under background tasks, and key workflows have automated tests.
 
 **Roadmap note:** milestones are a dependency-oriented guide, not permission to defer core v0.1 features indefinitely. Implement vertical slices and ship a usable result at each stage. If a proposed library proves unsuitable, write a brief ADR and substitute a compatible adapter rather than rewriting the product design.
 
@@ -575,7 +570,7 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 5. Archive an alternative in the Idea Box and retrieve its rationale later.
 6. Rename a code symbol and ensure attached chat is preserved or flagged for manual reconciliation.
 7. Disable inference/network and still browse the project and stored knowledge.
-8. Run with a narrow terminal and with a backend unavailable; recover gracefully.
+8. Run with a small window and with a backend unavailable; recover gracefully.
 
 ---
 
@@ -583,7 +578,7 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ### Decisions to preserve
 
-- Oryn is **terminal-native** and **local-first**.
+- Oryn is **local-first**, with a **native graphical frontend**: **SDL + SkiaSharp in v0.1**, then **SDL + OpenGL for v1.0**.
 - A rich visualizer is a core feature, not an optional later dashboard.
 - The visualizer represents **implemented code and conceptual architecture**.
 - Main lifecycle is **À valider / Validé / En cours / Implémenté**, with a separate Idea Box.
@@ -592,12 +587,12 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 - Stable UUIDs plus conservative reconciliation protect element history.
 - Deterministic analyzers, not LLMs, provide authoritative code/CFG observations.
 - Multi-agent roles are central; agents can share physical models.
-- A custom TUI engine and low-level runtime are future personal engineering projects, **not v0.1 blockers**.
+- The SDL + OpenGL renderer targets **v1.0**; the low-level runtime remains future work. Neither is a v0.1 blocker.
 - Oryn should eventually be able to help build Oryn itself.
 
 ### Choices to verify experimentally
 
-- Temporary TUI: C# library vs Rust library/bridge; choose for speed of prototype and abstraction quality.
+- SDL/.NET bindings, SkiaSharp drawing backend, text input, display scaling and native packaging; the SDL + SkiaSharp frontend choice is decided.
 - Local inference: llama.cpp vs Ollama, packaging and streaming ergonomics.
 - Model lineup: Qwen3 0.6B / 4B / 8B candidates vs a single quantized core model; benchmark real tasks and memory.
 - C# Roslyn-first integration versus a narrower multi-language syntax-only first pass.
@@ -606,21 +601,21 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ### Open questions (do not block first coding session)
 
-- Exact TUI keymap, mouse interaction policy and panel docking UX.
+- Exact graphical UI keymap, mouse interaction policy and panel docking UX.
 - Exact schema for graph proposal diffs and conflict resolution.
 - Granularity of knowledge-card generation and refresh.
 - Packaging/install UX across three OSes.
-- Terminal graphics protocol extensions, if ever used.
+- OpenGL version/profile and platform support for the v1.0 renderer.
 - Homelab inference protocol, model residency policy and remote privacy controls.
-- Long-term in-house TUI, scheduler and inference engine internals.
+- Long-term OpenGL renderer, scheduler and inference engine internals.
 
 ---
 
 ## 17. Future roadmap — vision, not v0.1 obligations
 
-### v1 and beyond
+### v1.0 and beyond
 
-- Custom cross-platform terminal rendering engine, cell buffers, advanced interaction and diff-based updates.
+- **[DECIDED] v1.0: SDL + OpenGL**, replacing the SkiaSharp drawing layer while preserving application state, commands and SDL event handling.
 - Richer language integrations and a Mason/LazyVim-inspired tool catalog/package manager.
 - More accurate and synchronized Call Graph + CFG, deeper semantic zoom and data/event flow views.
 - Stronger identity reconciliation across renames, moves, refactors, splits and merges.
@@ -645,6 +640,6 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 **Do not brainstorm more product features before obtaining a running prototype.**
 
-Start with **M0**. Inspect the current machine, repository and available toolchains. Recommend a concrete v0.1 stack in a short ADR; then implement a minimal terminal workspace with independent application state, left FileExplorer, central chat tab placeholder, right Visualizer placeholder, focus management and clean terminal restoration. Include build/run instructions and at least one smoke test. Keep the code ready for M1 without implementing the full roadmap in one shot.
+Continue **M0**. Inspect the existing prototype, machine and toolchains, then migrate the interface to **SDL + SkiaSharp** according to [ADR 0005](docs/adr/0005-sdl-rendering-direction.md). Preserve independent application state, left FileExplorer, central Chat/Code/Visualizer tabs, optional visualizer docking, focus management and clean window/resource shutdown. Include build/run instructions and at least one smoke test. Keep the code ready for M1 without implementing the full roadmap in one shot.
 
 > **Oryn is not meant to write software instead of its author. It is meant to make exploring, understanding and building software enjoyable again.**

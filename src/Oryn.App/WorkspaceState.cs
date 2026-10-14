@@ -58,7 +58,8 @@ public sealed partial class WorkspaceState(string projectRoot)
             case WorkspaceCommand.ResetPanelSizes: ResetPanelSizes(); break;
             case WorkspaceCommand.Quit: QuitRequested = true; break;
             case WorkspaceCommand.ToggleTabFocus:
-                if (Focus == WorkspacePanel.Center) FocusArea = FocusArea == PanelFocusArea.Content ? PanelFocusArea.Tabs : PanelFocusArea.Content;
+                FocusArea = Focus == WorkspacePanel.Center && FocusArea == PanelFocusArea.Tabs ? PanelFocusArea.Content : PanelFocusArea.Tabs;
+                Focus = WorkspacePanel.Center;
                 break;
             case WorkspaceCommand.ConfirmTab:
                 if (Focus == WorkspacePanel.Center && FocusArea == PanelFocusArea.Tabs) FocusArea = PanelFocusArea.Content;
@@ -139,7 +140,7 @@ public sealed partial class WorkspaceState(string projectRoot)
         if (ExpandedDirectories.Contains(row.Entry.Path)) { CollapseAt(SelectedIndex); return; }
         if (row.Depth == 0) return;
         for (int i = SelectedIndex - 1; i >= 0; i--)
-            if (_rows[i].Depth < row.Depth) { Select(i); CollapseAt(i); return; }
+            if (_rows[i].Depth < row.Depth) { CollapseAt(i); return; }
     }
 
     private void CollapseAt(int index)

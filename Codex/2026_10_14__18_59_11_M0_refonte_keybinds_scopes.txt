@@ -1,0 +1,31 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T18:59:11.587909+02:00
+Commit associé : aucun commit créé.
+
+Demande
+Refaire le système de raccourcis autour du comportement attendu : Ctrl+Tab fiable, accès aux onglets via Ctrl+Entrée, flèches limitées au contexte actif, arbre de fichiers avec développement/repli.
+
+Observations actuelles et résultat
+Router remplacé par tables de commandes compilées par scope explicite, validation des conflits dans ces mêmes tables. Controller dérive un scope unique : Explorer, Tabs, TextEditor, History, Content, Graph, Menu, Details, ElementChat ou Bindings. Suppression des handlers séparés EditKey/OverlayKey et fallback Tab. Groupes Text/Dialog configurables, clipboard via commandes métier. Répétition décidée dans le router, identité d'appui scancode/device suivie par SDL, suppression des doublons down sans repeat. Navigation SDL fondée sur scancodes, lettres selon layout, Unicode/AltGr/IME préservés.
+Ctrl+Entrée accède aux onglets centraux depuis tout panneau. Droite développe un dossier puis sélectionne son premier enfant ; sur fichier n'ouvre rien. Gauche replie le dossier développé, sinon sélectionne le parent sans le replier. Entrée conserve ouverture/toggle. Dialogues isolés du workspace.
+Profils : groupes absents utilisent les defaults ; exacte ancienne paire Explorer Enter/Right migrée en mémoire vers Enter. Ambiguïtés custom (p. ex. Tab pour panel + Tab local, Ctrl+C quitter + copier) rejetées explicitement ; fichier non réécrit. Il faut libérer l'action locale pour remapper volontairement.
+
+Fichiers concernés par ce prompt
+src/Oryn.App/{KeyBindingSettings,KeyboardRouter,GraphicalWorkspaceController,WorkspaceState}.cs
+src/Oryn.Ui.Sdl/{SdlKeyboardInput,SdlWorkspace}.cs
+Tests KeyboardTests, WorkspaceTests, GraphicalKeyboardTests, nouveau ScopedKeyboardTests ; smoke KeyboardChecks, Program et nouveau X11KeyboardSmoke.
+README.md, oryn.keybindings.example.json, docs/m0-verification.md, ADR 0007 supersédée et nouvelle ADR 0008.
+Les autres modifications présentes dans git status proviennent des travaux précédents et ont été conservées.
+
+Vérifications exécutées
+Build solution : 0 erreur/avertissement. 104 tests App passés (300 cycles panel/tabs). Smoke CLI/domain passé. Adaptateur SDL : 100 cycles down/up, double down sans repeat, scancode correct/keycode inconnu, holds, texte, AltGr/MODE, IME, modifiers, leader.
+Test plateforme X11 ciblant seulement sa fenêtre via XSendEvent : 40 Ctrl+Tab consécutifs, Ctrl+Enter depuis Explorer, onglets puis explorer Right/Left passés. Attend disparition des modifiers initiaux : les premiers essais pouvaient recevoir la touche GUI tenue lors de l'acquisition du focus ; ce n'est pas une preuve de corruption des modifiers SDL. Aucun filtrage arbitraire GUI ajouté.
+Smoke queue SDL 29 étapes : dummy/software et X11/opengl natif passés. Publication Release autonome linux-x64 passée. Smoke software avec les 4 DLL/PDB App/SDL exactes publiées passé. Correction du dossier captures temporaire du fixture qui se retrouvait premier item dans la liste de fichiers. Capture native éditeur de bindings inspectée. Exemple JSON validé par --check. git diff --check passé.
+Installation locale mise à jour : 4 App/SDL DLL/PDB, comparaison octet par octet, backup /tmp/oryn-keyboard-backup-20261014-185811-537c0319 ; --check installé passé. Lanceur, runtime et réglages non changés.
+
+Validations historiques
+Les 92 tests et smoke SDL de la correction incrémentale sont historiques. Ils ne démontraient pas l'utilisabilité signalée par l'auteur. ADR 0008 supersède ADR 0007 ; pas de nouvelle fonctionnalité M1+.
+
+Limites et prochaine étape
+Relancer Oryn pour charger les assemblies actualisées. Interaction physique dans la fenêtre de l'auteur non reproduite ; test plateforme X11 ciblé plus proche de la chaîne système que injection SDL directe, mais Wayland physique et Windows/macOS non validés. Aucun log persistant de frappes/prompts ajouté. Continuer depuis ce nouveau routage pour toute régression observée, sans superposer de handlers locaux concurrents. Aucun commit/push.

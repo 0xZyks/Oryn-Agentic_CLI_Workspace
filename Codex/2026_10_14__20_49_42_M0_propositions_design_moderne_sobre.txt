@@ -1,0 +1,20 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T20:49:42.093391+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Avant de commencer, proposer modernisation graphique sobre conservant esprit TUI et usage clavier. Sauvegarder état fonctionnel actuel avant refonte pour rollback ; utilisateur propose éventuellement push Git.
+
+Travail effectué et observations
+Lecture vision/périmètre et dernier log M0, inspection git status. Nombreux fichiers modifiés et non suivis issus de la session (UI SDL, tests, ADR/logs). Aucun changement UI ni snapshot de rollback créé à ce stade : propositions avant implementation conformément à la demande. Sources primaires consultées pour références visuelles : zed.dev et interface VS Code officielle.
+
+Propositions, non décisions approuvées
+Trois directions : TUI raffiné (mono/plat/compact) ; atelier natif sobre recommandé (hiérarchie surfaces, arrondis modestes, menus/titres sans-serif et contenu technique mono, accent lavande/focus évident) ; canvas graphique dominant (cartes plus grandes/outils contextuels, visualiseur davantage central).
+Recommandation : deuxième direction, organisation Explorer/centre/Visualizer conservée ; chrome moins dense, tab indicator discret, explorer lisible, composer mieux séparé, cartes/liaisons soignées, menus proches de leur ancrage, focus immédiat et animations courtes purement visuelles. Pas de nouveau moteur natif, modèle, émulateur de terminal ou changements des keybinds.
+
+Backup envisagé avant modifications
+Snapshot local exact sources y compris fichiers non commités/non suivis pertinents et installation fonctionnelle, chemin et procédure rollback documentés ; pas de simple backup renderer isolé. Commit de référence et branche dédiée peuvent compléter si retenus ; push facultatif, il ne remplace pas sauvegarde des changements non commités. Ne pas prétendre backup déjà effectué. Aucune action distante, commit ou push.
+
+Vérifications/historique/limites
+Aucun build/test/benchmark sur cette discussion sans changement code. Validations du renderer précédent historiques dans dernier log. Direction et typographie à choisir avant refonte ; ne pas lancer la roadmap. Prochaine étape : choix du style puis backup vérifié avant première tranche du design.

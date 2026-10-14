@@ -6,12 +6,12 @@
     <ToolCommandName>oryn</ToolCommandName>
     <PackageId>Oryn.Cli</PackageId>
     <Version>0.1.0-m0</Version>
-    <Description>Local-first terminal engineering workspace.</Description>
+    <Description>Local-first graphical engineering workspace.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <ProjectReference Include="../Oryn.App/Oryn.App.csproj" />
-    <ProjectReference Include="../Oryn.Tui.Prototype/Oryn.Tui.Prototype.csproj" />
+    <ProjectReference Include="../Oryn.Ui.Sdl/Oryn.Ui.Sdl.csproj" />
   </ItemGroup>
 </Project>

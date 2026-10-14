@@ -1,0 +1,20 @@
+Palier : M0
+Fuseau : Europe/Paris (CEST, UTC+02:00)
+Date : 2026-10-14T19:21:04.333379+02:00
+Commit associé : aucun commit créé/poussé.
+
+Demande
+Restaurer Gauche depuis un fichier pour replier directement son dossier parent et sélectionner celui-ci en un appui, plutôt que sélectionner puis replier au deuxième appui. Design à revoir dans une prochaine demande.
+
+Résultat actuel
+WorkspaceState.CollapseSelected replie le parent immédiat via CollapseAt quand la sélection ne désigne pas déjà un dossier développé. La racine reste inchangée. Les descendants repliés sont retirés, les dossiers voisins préservés et le parent sélectionné. README et table ADR 0008 mis à jour ; anciens motifs/validations restent historiques. Aucun changement du renderer ou du design.
+Fichiers : src/Oryn.App/WorkspaceState.cs ; tests/Oryn.App.Tests/{WorkspaceTests,ScopedKeyboardTests}.cs ; README.md ; docs/adr/0008-scoped-keyboard-dispatch.md.
+
+Vérifications réellement exécutées
+104 tests App passés, dont repli sur fichier avec parent imbriqué et navigation via le controller. Publication autonome Release linux-x64 passée sans avertissement/erreur ; --check publié et installé passés. git diff --check passé. Installation App/SDL DLL/PDB mise à jour avec approbation et égalité des octets ; backup /tmp/oryn-keyboard-backup-20261014-192040-5b010c5e. Aucun runtime/profil/lanceur modifié.
+
+Validation utilisateur historique
+L'utilisateur a confirmé que la correction de présentation au repos du prompt précédent a rétabli clavier, texte et souris. Les smokes SDL/Wayland précédents ne sont pas rerun pour cet ajustement limité à l'état de l'arbre.
+
+Limites et prochaine étape
+Relancer oryn pour charger l'assembly actualisée. Revoir le design lorsque l'utilisateur en précisera les ajustements. Aucun changement M1+ ni commit.

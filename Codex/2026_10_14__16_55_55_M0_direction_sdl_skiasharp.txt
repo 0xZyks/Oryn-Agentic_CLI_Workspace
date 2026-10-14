@@ -1,0 +1,26 @@
+Oryn — Nouvelle direction graphique SDL + SkiaSharp
+
+Date : 2026-10-14 16:55:55 CEST (+0200) — Europe/Paris.
+Palier : M0. Commit associé : aucun ; HEAD observé dcf67ae.
+
+Demande : remplacer la TUI par SDL + SkiaSharp. Cette instruction utilisateur
+remplace la décision précédente de frontend terminal natif.
+
+Résultat de ce prompt : inspection préparatoire de CLI, projets, état App,
+layout, routage clavier et profils. Aucun remplacement implémenté ici.
+Question de cadrage envoyée : prototype à côté ou remplacement direct.
+
+Observations actuelles : WorkspaceState, état chat/graphe, fichiers et router
+indépendants de Terminal.Gui ; layout/viewport restent exprimés en cellules.
+CLI compose directement TerminalWorkspace et impose un terminal interactif.
+Adapter graphique devra gérer dessin, événements, saisie et widgets ;
+les widgets Terminal.Gui actuels ne sont pas réutilisables tels quels.
+Version SDL, binding .NET et stratégie de rendu restent à choisir/vérifier.
+
+Fichiers concernés : nouveau log seulement. Code et documentation produit
+inchangés à ce stade. Log de rechargement précédent conservé.
+Vérifications : lectures ciblées, inventaire src et ADR, git status.
+Aucun build, test, ajout de dépendance, commit ou push.
+Validations historiques : consulter la passation M0 ; aucune validation SDL.
+Prochaine étape : préciser la tranche de migration puis consigner une ADR,
+réviser la documentation et produire un frontend graphique utilisable.

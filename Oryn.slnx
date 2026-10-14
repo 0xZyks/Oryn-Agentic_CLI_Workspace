@@ -2,10 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/Oryn.App/Oryn.App.csproj" />
     <Project Path="src/Oryn.Cli/Oryn.Cli.csproj" />
-    <Project Path="src/Oryn.Tui.Prototype/Oryn.Tui.Prototype.csproj" />
+    <Project Path="src/Oryn.Ui.Sdl/Oryn.Ui.Sdl.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Oryn.App.Tests/Oryn.App.Tests.csproj" />
     <Project Path="tests/Oryn.Smoke/Oryn.Smoke.csproj" />
+    <Project Path="tests/Oryn.Ui.Smoke/Oryn.Ui.Smoke.csproj" />
   </Folder>
 </Solution>

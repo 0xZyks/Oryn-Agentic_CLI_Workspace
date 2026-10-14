@@ -18,7 +18,7 @@ public sealed class VisualizerPreviewState
             [Member(101, "Main(args)", "function", PreviewDesignStatus.Implemented), Member(102, "OpenWorkspace()", "function", PreviewDesignStatus.Validated)]),
         new PreviewGraphNode(Id(2), "WorkspaceState", "class", PreviewDesignStatus.InProgress, 1, 0,
             [Member(201, "Dispatch(command)", "method", PreviewDesignStatus.InProgress), Member(202, "Focus", "property", PreviewDesignStatus.Implemented)]),
-        new PreviewGraphNode(Id(3), "TerminalWorkspace", "class", PreviewDesignStatus.Validated, 2, 0,
+        new PreviewGraphNode(Id(3), "SdlWorkspace", "class", PreviewDesignStatus.Validated, 2, 0,
             [Member(301, "Run()", "method", PreviewDesignStatus.Validated), Member(302, "Refresh()", "method", PreviewDesignStatus.InProgress)]),
         new PreviewGraphNode(Id(4), "WorkspaceFiles", "class", PreviewDesignStatus.Implemented, 0, 1,
             [Member(401, "ListAsync(path)", "method", PreviewDesignStatus.Implemented), Member(402, "ReadAsync(path)", "method", PreviewDesignStatus.Implemented)]),
@@ -34,6 +34,7 @@ public sealed class VisualizerPreviewState
         new PreviewGraphLink(Id(1), Id(4), "loads"), new PreviewGraphLink(Id(2), Id(5), "owns"),
         new PreviewGraphLink(Id(3), Id(6), "draws"), new PreviewGraphLink(Id(4), Id(7), "implements")
     });
+    public GraphDragState Placement { get; } = new();
     public Guid SelectedId { get; private set; } = Id(1);
     public PreviewGraphNode Selected => Nodes.First(node => node.Id == SelectedId);
     public Guid? SelectedMemberId { get; private set; }
@@ -61,12 +62,12 @@ public sealed class VisualizerPreviewState
             SelectedMemberId = Selected.Members[Math.Clamp(index + direction, 0, Selected.Members.Length - 1)].Id;
             return;
         }
-        PreviewGraphNode current = Selected;
+        var current = Placement.Position(Selected);
         PreviewGraphNode? next = Nodes.Where(node => dx != 0
-                ? (node.Column - current.Column) * dx > 0 : (node.Row - current.Row) * dy > 0)
+                ? (Placement.Position(node).X - current.X) * dx > 0 : (Placement.Position(node).Y - current.Y) * dy > 0)
             .OrderBy(node => dx != 0
-                ? Math.Abs(node.Row - current.Row) * 10 + Math.Abs(node.Column - current.Column)
-                : Math.Abs(node.Column - current.Column) * 10 + Math.Abs(node.Row - current.Row)).FirstOrDefault();
+                ? Math.Abs(Placement.Position(node).Y - current.Y) * 10 + Math.Abs(Placement.Position(node).X - current.X)
+                : Math.Abs(Placement.Position(node).X - current.X) * 10 + Math.Abs(Placement.Position(node).Y - current.Y)).FirstOrDefault();
         if (next is not null) SelectedId = next.Id;
     }
 
@@ -99,7 +100,7 @@ public sealed class VisualizerPreviewState
         return chat;
     }
 
-    public void EnsureVisible(PanelBounds node, int viewportWidth, int viewportHeight, int sceneWidth, int sceneHeight)
+    public void EnsureVisible(PanelBounds node, int viewportWidth, int viewportHeight, int sceneWidth, int sceneHeight, int minX = 0, int minY = 0)
     {
         if (viewportWidth <= 0 || viewportHeight <= 0) return;
         int x = ScrollX, y = ScrollY;
@@ -107,8 +108,8 @@ public sealed class VisualizerPreviewState
         else if (node.X + node.Width > x + viewportWidth) x = node.X + node.Width - viewportWidth;
         if (node.Height > viewportHeight || node.Y < y) y = node.Y;
         else if (node.Y + node.Height > y + viewportHeight) y = node.Y + node.Height - viewportHeight;
-        ScrollX = Math.Clamp(x, 0, Math.Max(0, sceneWidth - viewportWidth));
-        ScrollY = Math.Clamp(y, 0, Math.Max(0, sceneHeight - viewportHeight));
+        ScrollX = Math.Clamp(x, minX, Math.Max(minX, sceneWidth - viewportWidth));
+        ScrollY = Math.Clamp(y, minY, Math.Max(minY, sceneHeight - viewportHeight));
     }
 }
 

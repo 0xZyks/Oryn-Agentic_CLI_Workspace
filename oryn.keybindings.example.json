@@ -2,7 +2,7 @@
   "Super": "Ctrl",
   "LeaderTimeoutMilliseconds": 1000,
   "Workspace": {
-    "Quit": ["Super+Q", "Ctrl+C"],
+    "Quit": ["Super+Q"],
     "EditKeybindings": ["Super+K"],
     "OpenMenu": ["F10"],
     "ResizeSmaller": ["Super+Left"],
@@ -17,7 +17,7 @@
   },
   "Tabs": {
     "ToggleTabFocus": ["Super+Enter", "F6"],
-    "NextTab": ["Right"],
+    "NextTab": ["Right", "Tab"],
     "PreviousTab": ["Left"],
     "ConfirmTab": ["Enter"],
     "ReturnToContent": ["Esc"]
@@ -25,7 +25,8 @@
   "Explorer": {
     "MoveUp": ["Up"],
     "MoveDown": ["Down"],
-    "OpenSelection": ["Enter", "Right"],
+    "OpenSelection": ["Enter"],
+    "ExpandSelection": ["Right"],
     "Collapse": ["Left"]
   },
   "Graph": {
@@ -40,6 +41,32 @@
     "ContentUp": ["Up"],
     "ContentDown": ["Down"],
     "ContentLeft": ["Left"],
-    "ContentRight": ["Right"]
+    "ContentRight": ["Right"],
+    "ToggleHistory": ["Tab"]
+  },
+  "Text": {
+    "TextSubmit": ["Enter"],
+    "TextNewline": ["Shift+Enter"],
+    "TextSelectAll": ["Ctrl+A"],
+    "TextCopy": ["Ctrl+C"],
+    "TextCut": ["Ctrl+X"],
+    "TextPaste": ["Ctrl+V"]
+  },
+  "Dialog": {
+    "DialogClose": ["Esc"],
+    "DialogNext": ["Down", "Tab"],
+    "DialogPrevious": ["Up", "Shift+Tab"],
+    "DialogConfirm": ["Enter"],
+    "BindingNext": ["Tab"],
+    "BindingPrevious": ["Shift+Tab"],
+    "BindingApply": ["Alt+A"],
+    "BindingSave": ["Alt+S"]
+  },
+  "Navbar": {
+    "ToggleNavbarFocus": ["Shift+Tab", "F9"],
+    "NextNavbar": ["Right", "Tab"],
+    "PreviousNavbar": ["Left"],
+    "ConfirmNavbar": ["Enter"],
+    "LeaveNavbar": ["Esc"]
   }
 }
