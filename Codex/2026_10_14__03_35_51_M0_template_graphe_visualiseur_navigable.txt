@@ -1,0 +1,87 @@
+Oryn — Template de graphe navigable dans le visualiseur
+
+Date : 2026-10-14 03:35:51 CEST (+0200), Europe/Paris.
+Palier principal : M0. Référence future : zoom sémantique M6,
+modèle/analyse M2-M3. Aucun de ces jalons lancé. Aucun commit/push créé.
+
+DEMANDE
+Générer un mock du graphe, éventuellement inspiré du code d'Oryn,
+pour discuter rendu visuel et zoom/dézoom ; aucune exactitude d'analyse exigée.
+Consignes/vision déjà lues dans la session, frontière TUI et roadmap connues.
+Dernier log M0 connu, rédigé au prompt précédent :
+2026_10_14__03_18_06_M0_taxonomie_elements_visualiseur.txt.
+Aucun log d'un autre palier consulté. Changements précédents conservés.
+
+RÉSULTAT ET DÉCISIONS
+- VisualizerPreviewState indépendant du toolkit : sept nœuds à UUID fixes,
+  six liens, quatre statuts fictifs, sélection, preset et viewport en cellules.
+  Fixture dédiée à M0, pas une nouvelle base de connaissances ou mémoire IA.
+- Program, WorkspaceState, TerminalWorkspace, WorkspaceFiles, ChatPreviewState,
+  Visualizer conceptuel, IWorkspaceFiles. Noms inspirés du dépôt mais relations,
+  membres affichés et états explicitement simulés, non issus d'un analyseur.
+- PreviewGraphLayout dans App : géométrie par preset et largeur disponible.
+- VisualizerPreviewView compose View/Label natifs ; cartes à fonds différenciés,
+  titre, type, statut coloré/texte, membres aux détails ; liens orthogonaux
+  nommés avec flèches. Aucun moteur de rendu terminal maison ni nouvelles libs.
+- Sélection par clic et flèches du contenu ; accent/tint de carte active.
+  Viewport suit la sélection et respecte les dimensions du terminal.
+- Trois presets : Overview (nom/statut compact), Standard (type et espacement),
+  Details (membres fictifs). UUID sélectionné conservé au changement/dock/resize.
+  Ceci prépare la présentation ; pas zoom sémantique complet projet/type/méthode.
+- +/PageUp pour augmenter, -/PageDown pour réduire, Home pour reset Standard.
+  Groupe Graph de keybindings, compatible avec profils existants sans ce groupe.
+  GraphActive dans contexte du router ; zoom ne vole pas les touches Code/Chat
+  ou les flèches de sélection d'onglets. Conflits avec Content et toggle vérifiés.
+- Contrôles découverts dans footer du graphe. Dock/menu déjà existants conservés.
+- Affichage marqué DEMO/fictitious graph. Pas d'analyse de projet, de modèle
+  distant/local, de persistance ou de transition réelle de conception.
+
+FICHIERS DE CE PROMPT
+src/Oryn.App/VisualizerPreviewState.cs (nouveau)
+src/Oryn.App/WorkspaceState.cs : propriété Graph.
+src/Oryn.App/KeyBindingSettings.cs et KeyboardRouter.cs
+src/Oryn.Tui.Prototype/VisualizerPreviewView.cs (nouveau)
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+tests/Oryn.App.Tests/VisualizerPreviewTests.cs (nouveau)
+scripts/visualizer-smoke.py (nouveau)
+scripts/terminal-smoke.py : attente du mock remplace l'ancien placeholder.
+oryn.keybindings.example.json : groupe Graph.
+README.md, docs/visualizer-elements.md, docs/m0-verification.md, ce log.
+
+VÉRIFICATIONS ACTUELLES
+- Build final dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 63 réussis,
+  VSTest autorisé hors sandbox pour socket locale.
+- scripts/visualizer-smoke.py : succès final Unicode/couleur et ASCII/mono,
+  clic et flèches, membres Details, Overview/Standard, +/- et PageUp/PageDown,
+  groupe Graph du formulaire, navigation des tabs distincte, dock, resize
+  étroit, nœud sélectionné maintenu, fermeture et restauration.
+- scripts/keyboard-smoke.py : succès final Ctrl/Alt/Space, focus/scopes,
+  formulaire Apply/Save/reset/remapping/redémarrage.
+- scripts/terminal-smoke.py : succès pendant ce prompt Unicode/couleur et
+  ASCII/mono, code canvas, tab/docks, souris, resize/cancel, compact/tiny,
+  menu et restauration. Précède uniquement l'ajout des hints de zoom au footer.
+- oryn --check --keybindings oryn.keybindings.example.json : succès,
+  contexte CLI et nouveau groupe validés. Niri bloqué dans sandbox donne
+  fallback cadence, sans empêcher ce check.
+- Captures PTY des trois presets et dock sous /tmp, image Standard reconstruite
+  et inspectée. Cartes, liens/libellés et états visibles ; pas screenshot natif.
+- git diff --check : succès.
+
+AJUSTEMENTS ET LIMITES
+Le helper initial Text(...) masquait View.Text ; renommé MakeLabel, build propre.
+Une carte plus haute que le viewport s'aligne par son haut pour garder son nom.
+Groupes Graph/Content et Graph/ToggleTabFocus ont des portées communes prises
+en compte dans la validation des conflits.
+Pas de pan libre/wheel zoom, layout automatique général, vraie hiérarchie
+sémantique, CFG, source reconciling, graphe persistant ou analyseur.
+Les liens de cette fixture ne sont pas des preuves sur le code réel.
+Les validations chat/cadence précédentes restent historiques ; pas de nouveau
+backend ni changement du composer dans ce prompt.
+Validation présente Linux ; Windows/macOS et packaging non exécutés.
+Binaire Debug reconstruit ; installation utilisateur non actualisée.
+
+SUITE
+Essai utilisateur du visualiseur via F4, puis réglages fins des cartes,
+couleurs, connexions, densité et navigation, une tranche visuelle à la fois.

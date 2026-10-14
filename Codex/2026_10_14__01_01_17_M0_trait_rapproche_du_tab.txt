@@ -1,0 +1,22 @@
+Date : 2026-10-14 01:01:17 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit créé.
+
+Demande : rapprocher le trait de la box lavande de l'onglet, avec un
+petit écart de 2–5 pixels ; conserver la couleur du dernier changement.
+Dernier log M0 : 2026_10_14__00_59_04_M0_soulignement_onglets_adouci.txt,
+déjà lu/rédigé dans cette session. Aucun autre palier consulté.
+
+Résultat : le caractère ▁ en bas de la ligne suivante est remplacé
+par ‾ (overline), près du haut de cette même ligne. Couleur inchangée.
+Le fallback ASCII utilise -. Position, focus et routage inchangés.
+Fichier : src/Oryn.Tui.Prototype/TerminalWorkspace.cs.
+
+Vérifications actuelles : build Oryn.slnx --no-restore -m:1
+-nodeReuse:false -p:UseSharedCompilation=false réussi, zéro erreur et
+avertissement ; git diff --check réussi.
+Les smoke tests PTY du prompt précédent restent historiques ; non
+réexécutés pour cette substitution de glyphe.
+
+Limite : le terminal positionne par cellules ; l'écart réel dépend de
+la police et de sa métrique pour l'overline, sans garantie de 2–5 pixels.
+Prochaine étape : validation visuelle de cet écart par l'utilisateur.

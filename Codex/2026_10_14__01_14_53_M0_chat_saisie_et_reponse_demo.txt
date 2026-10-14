@@ -1,0 +1,77 @@
+Oryn — Maquette du chat avec saisie et réponse fixe
+
+Date : 2026-10-14 01:14:53 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Champ de saisie des prompts, bouton Send/Entrée, messages utilisateur
+à droite et Oryn à gauche avec repères d'identité ; réponse fixe Hello World!.
+Consignes AGENTS et vision README_ORYN consultées dans la session.
+Dernier log M0 : 2026_10_14__01_01_17_M0_trait_rapproche_du_tab.txt,
+déjà connu/rédigé dans cette session. Aucun log d'un autre palier lu.
+
+RÉSULTAT ET DÉCISIONS
+- ChatPreviewState dans App, indépendant de Terminal.Gui : brouillon,
+  messages ordonnés par rôle, refus des prompts vides, réponse fixe et
+  vidage du champ après envoi. Conversation conservée pendant la session.
+- TextField dans le bas de Chat et contrôle Send cliquable/focusable,
+  Entrée soumet depuis le champ ou Send ; retour au champ après envoi.
+- Historique TextView read-only, utilisateur à droite, Oryn à gauche,
+  repères ●/◆ ou * en ASCII, wrapping selon largeur du panneau et
+  colonnes des runes. Défilement vers le dernier message après envoi.
+- Tab/Shift+Tab circulent dans les contrôles du chat ; Super+Tab reste
+  traversée de panneaux. Flèches du champ déplacent son curseur ;
+  celles des onglets continuent à changer de tab. Space comme leader
+  demeure un espace dans le champ ; F6 donne accès au focus des tabs.
+- Bandeau Demo chat explicite : pas d'inférence réelle, pas de réseau,
+  pas de stockage. M1 non implémenté. Composer masqué sous quatre lignes.
+- Ancien texte/welcome placeholder remplacé par cette maquette.
+
+FICHIERS DE CE PROMPT
+src/Oryn.App/ChatPreviewState.cs (nouveau)
+src/Oryn.App/WorkspaceState.cs : état Chat.
+src/Oryn.Tui.Prototype/ChatPreviewTranscript.cs (nouveau)
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+tests/Oryn.App.Tests/ChatPreviewTests.cs (nouveau)
+scripts/chat-smoke.py (nouveau)
+scripts/keyboard-smoke.py : options de session et F6 depuis saisie
+avec Space comme leader.
+README.md, docs/m0-verification.md, ce log.
+Changements précédents et lockfiles conservés.
+
+VÉRIFICATIONS ACTUELLES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès final, zéro warning/erreur.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 58 passés.
+  Première tentative sandbox bloquée sur socket VSTest ; relance
+  autorisée hors sandbox réussie.
+- python3 scripts/chat-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès final Unicode/couleur et ASCII/mono. Entrée, Send au clavier,
+  clic souris, draft conservé, édition par flèche, focus tabs/contenu,
+  resize étroit, plusieurs échanges/défilement, restauration terminal.
+  Profil Space : espaces du prompt conservés, réponse correcte.
+- Suites scripts/keyboard-smoke.py et scripts/terminal-smoke.py : succès
+  pendant le prompt, groupes/settings et parcours M0 non régressés.
+- Reconstruction PTY en SVG/PNG inspectée : alignements gauche/droite,
+  saisie et Send visibles. Artefacts sous /tmp ; pas screenshot natif.
+- git diff --check : succès.
+
+AJUSTEMENTS OBSERVÉS
+Le retour Code→Chat choisissait le focus avant de rétablir la visibilité
+du champ ; choix déplacé après layout pour retrouver le bon contrôle.
+Le Button natif avec une hauteur d'une ligne dessinait son adornment
+sans libellé visible. Send utilise le même Label avec commandes Accept
+et souris que les contrôles plats existants. Un test exige Send visible.
+Palette du panneau réappliquée après initialisation du framework.
+Le test du leader Space depuis Chat utilise désormais F6, conformément
+à la protection des entrées texte déjà prévue dans le router.
+Cache Python produit par import du helper supprimé ; création désactivée
+pour ce script avec sys.dont_write_bytecode.
+
+LIMITES, HISTORIQUE ET SUITE
+Conversation et brouillon non persistés après fermeture ; comportement
+de maquette M0, aucune revendication de chat M1 complet.
+Validation exécutée sous Linux ; pas de test Windows/macOS ni provider.
+Cadence/Niri et packaging des précédents prompts restent historiques.
+Binaire Debug reconstruit, installation utilisateur non actualisée.
+Prochaine étape : essai utilisateur et ajustements de présentation M0.

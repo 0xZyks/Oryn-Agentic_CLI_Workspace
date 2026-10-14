@@ -1,0 +1,57 @@
+Oryn — Visualizer en onglet au démarrage
+
+Date : 2026-10-13 21:25:43 CEST (+0200), Europe/Paris.
+Palier : M0.
+Commit associé : aucun commit créé. Base : 7fd5544.
+
+DEMANDE
+Supprimer le dock Visualizer au lancement et conserver son onglet.
+Rester sur M0 pour améliorer l'interface ; framerate et nouveau setup
+du docking à traiter ultérieurement.
+
+OBSERVATIONS ACTUELLES ET RÉSULTAT
+- Dernier log M0 consulté : préparation_reprise_validation_linux,
+  horodaté 2026_10_13__21_19_53. Consignes et vision déjà lues dans la session.
+- WorkspaceLayoutOptions utilise désormais Tab comme placement initial.
+  Chat reste actif, explorateur et zone centrale sont visibles ; aucun
+  panneau ni séparateur Visualizer latéral au lancement.
+- Le focus parcourt les deux panneaux présents. Visualizer reste accessible
+  par son onglet et F4. Actions de docking existantes conservées.
+- README et ADR 0002 alignés avec cette demande explicite de l'auteur.
+- Tests existants adaptés à la nouvelle disposition initiale ; vérification
+  de l'absence du dock au lancement ajoutée au smoke PTY.
+
+FICHIERS CONCERNÉS
+src/Oryn.App/WorkspaceLayout.cs
+tests/Oryn.App.Tests/WorkspaceTests.cs
+tests/Oryn.Smoke/Program.cs
+scripts/terminal-smoke.py
+README.md
+docs/adr/0002-visualizer-docking-and-resize.md
+Ce log ; ancien log non suivi conservé.
+
+VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : réussi, zéro avertissement/erreur.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 25 réussis,
+  zéro échec/ignoré ; exécution hors sandbox pour la socket VSTest.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : réussi.
+- python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  Unicode/couleur et ASCII/monochrome réussis sous Linux. Absence de dock
+  initial, accès aux onglets, docking explicite, souris, resize,
+  sortie et restauration du terminal vérifiés.
+- git diff --check : réussi avant écriture du log et répété ensuite.
+
+VALIDATIONS HISTORIQUES
+Voir le précédent log pour le baseline Linux avant modification.
+Les validations macOS antérieures ne sont pas réexécutées ici.
+
+DÉCISIONS, LIMITES ET SUITE
+- Changement limité au placement initial ; pas de travail sur le framerate.
+- Pas d'installation ni de publication : binaire Debug reconstruit.
+  Une installation existante doit être mise à jour pour refléter le changement.
+- Windows/macOS non testés dans cette session.
+- Prochaine étape selon la demande de l'auteur : poursuivre les ajustements
+  d'interface M0 et rediscuter le setup du docking avant M1.
+- Aucun commit ni push.

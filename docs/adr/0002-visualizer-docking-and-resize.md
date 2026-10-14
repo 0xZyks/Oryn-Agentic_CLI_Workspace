@@ -4,7 +4,7 @@ Status: implemented following the author's request.
 
 ## Decision
 
-The visualizer has its own central tab and can move to a dock on either side of the center. Keep the initial right dock from the product specification. Clicking its tab moves the same view into the center; dock controls and shortcuts move it back. Preserve the most recent Chat/Code tab, visualizer view/scroll state and last dock side when switching placement.
+The visualizer has its own central tab and can move to a dock on either side of the center. Following the author's M0 refinement on 2026-10-13, start with the visualizer in tab mode and Chat active, with no visualizer dock. Clicking its tab shows the same view in the center; dock controls and shortcuts can move it to a side. Preserve the most recent Chat/Code tab, visualizer view/scroll state and last dock side when switching placement. The initial target for an explicit docking action remains the right side.
 
 Placement, preferred widths, focus order, splitter hit areas and resize transactions live in `Oryn.App`. The Terminal.Gui adapter maps mouse and keyboard input to that state. A tabbed visualizer is part of the Center focus group; left docking makes keyboard panel traversal follow the visual order. Render a single visualizer view and show it only in the active location.
 

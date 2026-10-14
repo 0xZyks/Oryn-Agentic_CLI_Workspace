@@ -1,0 +1,66 @@
+Oryn — Entrée valide l'onglet sélectionné
+
+Date : 2026-10-14 04:17:23 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Super+Entrée pour enclencher le défilement des tabs ; Entrée seule pour
+valider l'onglet et passer au contenu. Super+Entrée peut rester valide en
+confirmation conventionnelle. Consignes/vision déjà lues dans la session.
+Dernier log M0 connu, rédigé au prompt précédent :
+2026_10_14__04_03_42_M0_ctrl_tab_kittty_interception_corrigee.txt.
+Aucun autre palier consulté. Changements précédents conservés.
+
+RÉSULTAT
+- Nouvelle action KeyboardAction.ConfirmTab et commande domaine associée,
+  défaut Enter dans groupe Tabs. Application seulement en sélection du bandeau.
+- Confirmation conserve ActiveTab et passe FocusArea.Content ; Refresh
+  donne le focus au contenu correct. Enter normal de Chat non capturé par router.
+- Super+Entrée/F6 ouvre la sélection depuis contenu et confirme depuis
+  bandeau ; Escape conserve le retour au contenu existant.
+- Tab/Shift+Tab local au bandeau dispatchent NextTab/PreviousTab : sélection
+  dans l'état App et contrôle natif restent synchronisés, pas de focus d'un
+  onglet différent de celui qui serait validé par Entrée.
+- Hint du bandeau indique Enter → Content. CLI help, README et profil exemple
+  mis à jour ; réglage ConfirmTab disponible dans l'éditeur de keybinds.
+
+FICHIERS
+src/Oryn.App/KeyBindingSettings.cs et WorkspaceState.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+src/Oryn.Cli/Program.cs
+tests/Oryn.App.Tests/KeyboardTests.cs
+scripts/keyboard-smoke.py
+oryn.keybindings.example.json, README.md, docs/m0-verification.md, ce log.
+
+VÉRIFICATIONS ACTUELLES
+- Build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 65 passés,
+  VSTest hors sandbox autorisé pour socket locale. ConfirmTab scope,
+  Enter disponible en contenu et Explorer, état/preset sélectionné conservé.
+- scripts/keyboard-smoke.py : succès Ctrl/Alt/Space, Enter confirme Code,
+  retour Esc, Tab/Shift+Tab sélection du bandeau et Enter confirme,
+  navigation locale/globale et formulaire keybindings.
+- scripts/visualizer-smoke.py : succès Unicode/couleur et ASCII/mono,
+  sélection/détail presets, scope tabs, dock, resize et restauration.
+- Publication Release linux-x64 self-contained --no-restore sous
+  /tmp/oryn-tab-confirm : succès.
+- Sonde PTY Release publiée : Enter confirme Chat, Code et Visualizer,
+  Ctrl+Enter ouvre le bandeau ; envoi de prompt après confirmation Chat
+  fonctionne. Scope Kitty et terminal restaurés à la fermeture.
+- Mise à jour autorisée hors dépôt des six assemblies/PDB App/Tui/Cli dans
+  /home/zyks/.local/share/oryn, remplacements atomiques depuis Release testé.
+  Config Kitty, runtime, launcher et profils shell inchangés.
+- Sonde PTY du binaire réellement installé après mise à jour : Super+Tab,
+  Super+Enter, sélection par flèche et Enter confirme Code ; fermeture,
+  scope et restauration réussis.
+- git diff --check : succès.
+
+HISTORIQUE, LIMITES ET SUITE
+Suite terminal générale et suite chat complètes des prompts précédents
+restent historiques ; pas de réexécution intégrale, sonde cible l'envoi
+depuis Chat après confirmation. Validation actuelle Linux seulement.
+Modification de navigation uniquement, pas de persistance ou d'analyse M1-M3.
+Binaire Debug et installation Release à jour ; Oryn déjà ouvert doit être
+relancé pour charger les nouvelles assemblies.
+Prochaine étape : essai utilisateur Super+Entrée → flèches → Entrée et suite M0.

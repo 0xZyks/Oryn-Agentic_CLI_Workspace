@@ -1,0 +1,76 @@
+Oryn — Navigation des composants et menus contextuels
+
+Date : 2026-10-14 04:46:09 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Entrée pour entrer dans une carte du visualiseur et parcourir ses composants
+internes. Alt+Entrée ouvre les options de la carte ou du membre ciblé, pour
+préparer les chats par composant. Maquette M0 uniquement.
+Consignes et vision lues ; reprise du dernier log M0 nommé
+2026_10_14__04_17_23_M0_entree_valide_onglet.txt. Aucun log hors M0 consulté.
+Changements précédents et lockfiles de l'utilisateur conservés.
+
+OBSERVATIONS ET RÉSULTAT ACTUELS
+- Fixture : membres typés avec UUID stables distincts des cartes et des
+  membres homonymes. Target contient UUID, parent, nom, type, statut simulé.
+- État de sélection, déplacement, viewport et niveau de présentation dans App,
+  indépendamment de Terminal.Gui. Enter entre et passe Details ; flèches
+  parcourent les membres sans quitter la carte ; Escape restaure le niveau
+  précédent. Entrée sur un membre affiche sa fiche. Clic sur membre ciblé.
+- Membre actif : signe >, fond lavande plus clair et texte accentué.
+- Alt+Enter ouvre Options sur l'UUID exact, avec Show details, Show chat
+  (demo), Back. Modales natives, commandes globales suspendues pendant leur
+  ouverture. Fiche : UUID, parent, type et origine explicitement fictive.
+- Chat démo distinct par UUID ; réponse Hello World! immédiate, brouillon
+  et historique retenus à la réouverture dans la même session. Séparation
+  parent/membres/homonymes/global. Shift+Enter newline, Enter envoi.
+- Calcul de transcript corrigé sur largeur réelle du viewport après layout,
+  pour éviter la troncature des messages alignés à droite à la réouverture.
+  Dialogue chat à 95% de hauteur pour garder les contrôles utilisables à 45x16.
+- Actions GraphEnterComponent, GraphExitComponent, GraphOptions configurables
+  dans groupe Graph. Super=Alt : exception de conflit restreinte au couple
+  GraphOptions/ToggleTabFocus sur Alt+Enter ; options prioritaires dans le
+  contenu graphe, F6 reste disponible pour les onglets. Ailleurs Alt+Enter
+  conserve ToggleTabFocus. Resize/Escape prioritaire lors d'un drag.
+- Publication linux-x64 self-contained puis mise à jour autorisée des six
+  assemblies/PDB App/Tui/Cli dans ~/.local/share/oryn via remplacement atomique.
+  Runtime, lanceur, Kitty et shell non modifiés pour cette tâche.
+
+FICHIERS CONCERNÉS
+src/Oryn.App/VisualizerPreviewState.cs, KeyBindingSettings.cs, KeyboardRouter.cs
+src/Oryn.Tui.Prototype/VisualizerPreviewView.cs, WorkspaceTheme.cs,
+TerminalWorkspace.cs, nouveau GraphPreviewDialogs.cs
+Tests : tests/Oryn.App.Tests/VisualizerPreviewTests.cs
+Nouveau scripts/component-smoke.py ; README.md, oryn.keybindings.example.json,
+docs/m0-verification.md et ce log.
+
+VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 68 tests passés.
+  Runner autorisé hors sandbox pour socket locale. Nouveaux tests : UUID
+  membres, navigation bornée, retour/preset, chats isolés, scope et Super Alt.
+- scripts/keyboard-smoke.py Debug : succès Ctrl/Alt/Space, onglets, éditeur,
+  remapping et restauration.
+- scripts/visualizer-smoke.py Debug : succès couleur et ASCII/mono, souris,
+  navigation cartes, presets/zoom, groupes, dock, resize, restauration.
+- scripts/chat-smoke.py Debug : succès couleur, Space leader, ASCII/mono,
+  multiline, saisie, focus souris, wrapping, scrolling et restauration.
+- scripts/component-smoke.py : succès Debug et Release publiée, Ctrl/Alt,
+  menus cartes/membres, fiche UUID/parent, Enter/Escape, clic membre,
+  brouillons/historiques réouverts, isolation, chat 45x16 et restauration.
+- Même suite composant profil Ctrl sur le binaire réellement installé
+  ~/.local/bin/oryn : succès après mise à jour.
+- Reconstruction ANSI de la sélection membre inspectée visuellement.
+- git diff --check : succès.
+
+VALIDATIONS HISTORIQUES, LIMITES ET SUITE
+Validations terminal générales et cadence des prompts antérieurs restent
+historiques, non réexécutées intégralement ici. Linux uniquement testé.
+Aucune analyse du projet, inférence, persistance ou transition réelle de
+conception. Données statiques ; chats démo perdus à la fermeture du processus.
+Cette tranche prépare l'usage M0 ; persistance et chats réels restent M2/M4.
+Dialogue limité aux terminaux >=45x16 ; un statut demande d'agrandir en dessous.
+Relancer Oryn déjà ouvert pour charger la Release installée. Prochaine étape :
+essai utilisateur et affinage du rendu des composants/options au M0.

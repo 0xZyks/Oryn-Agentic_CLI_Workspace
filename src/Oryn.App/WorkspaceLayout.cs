@@ -7,7 +7,7 @@ public enum WorkspaceSplitter { Explorer, Visualizer }
 
 public sealed record WorkspaceLayoutOptions
 {
-    public VisualizerPlacement VisualizerPlacement { get; init; } = VisualizerPlacement.Right;
+    public VisualizerPlacement VisualizerPlacement { get; init; } = VisualizerPlacement.Tab;
     public int? ExplorerWidth { get; init; }
     public int? VisualizerWidth { get; init; }
 }
@@ -30,7 +30,8 @@ public sealed record WorkspaceLayout(PanelBounds Explorer, PanelBounds Center, P
     {
         options ??= new();
         width = Math.Max(0, width);
-        int top = height >= 12 ? 4 : 1;
+        // Keep a dedicated accent row between the app bar and compact panels.
+        int top = height >= 12 ? 4 : 2;
         int bottom = height >= 12 ? 3 : 1;
         int bodyHeight = Math.Max(0, height - top - bottom);
         int inset = width >= 12 ? 2 : 0;

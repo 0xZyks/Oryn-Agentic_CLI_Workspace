@@ -1,0 +1,42 @@
+Oryn — Barre d'accent collée au bord supérieur du panneau
+
+Date : 2026-10-13 22:59:10 CEST (+0200), Europe/Paris.
+Palier : M0. Base : 7fd5544. Aucun commit/push créé.
+
+DEMANDE ET CONTEXTE
+Coller visuellement la barre au panneau plutôt qu'à la navbar.
+Consignes/vision déjà lues dans la session ; dernier log M0 lu :
+2026_10_13__22_52_50_M0_barre_accent_et_contraste_focus.txt.
+Aucun autre palier consulté. Changements antérieurs préservés.
+
+RÉSULTAT ET FICHIERS
+- PanelFocusAccent.cs : glyph Unicode ▔ remplacé par ▁. La ligne est toujours
+  celle juste au-dessus du panneau, mais le trait est dessiné en bas de la
+  cellule et touche son bord supérieur. Le trait précédent était dessiné
+  en haut de la cellule, donnant l'impression d'un soulignement de navbar.
+- Largeur, resize, palette, géométrie, titres, contenu et cadence inchangés.
+  Fallback ASCII = conservé.
+- scripts/terminal-smoke.py : attentes de glyph mises à jour et absence
+  du précédent caractère vérifiée au lancement.
+- README.md et docs/m0-verification.md : placement visuel et glyph actualisés.
+- Ce log.
+
+VÉRIFICATIONS ACTUELLES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- ORYN_SMOKE_CAPTURE_DIR=/tmp/oryn-attached-accent-captures python3
+  scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn : succès
+  Unicode/couleur et ASCII/mono, incluant focus, largeur de barre, drag,
+  palettes, mode compact/tiny, preview, menus, sortie et restauration.
+- Capture ANSI Chat rejouée sous /tmp en SVG/PNG par le helper existant,
+  puis inspectée par view_image : barre rapprochée du haut du panneau.
+  Approximation des métriques de police, pas une capture native de Kitty.
+- git diff --check : succès, répété après rédaction du log.
+
+HISTORIQUE, LIMITES ET SUITE
+- Les 42 tests du prompt précédent ne sont pas réexécutés : correction
+  d'un caractère décoratif, sans modification du domaine ou du layout.
+- Vérification présente Linux PTY ; Windows/macOS non exercés.
+- Binaire Debug reconstruit ; installation existante non actualisée.
+- Prochaine étape : appréciation visuelle par l'auteur, poursuite de M0.
+  M1 non commencé.

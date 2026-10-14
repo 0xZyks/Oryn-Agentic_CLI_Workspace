@@ -1,0 +1,82 @@
+Oryn — Ctrl+Tab intercepté par Kitty, exception limitée à Oryn
+
+Date : 2026-10-14 04:03:42 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Ctrl+Tab ne change pas de panneau dans l'utilisation réelle. L'utilisateur
+confirme que le focus reste immobile, sans aller-retour rapide.
+Consignes/vision déjà lues dans la session. Dernier log M0 connu :
+2026_10_14__03_47_27_M0_super_tab_panels_tab_local.txt, rédigé précédemment.
+Aucun autre palier consulté. Changements précédents conservés.
+
+OBSERVATIONS ET CAUSE IDENTIFIÉE
+- Profil utilisateur absent, defaults Ctrl chargés. Binaire installé du 03:48
+  contient bien les nouveaux raccourcis ; --help/--check vérifiés.
+- Debug et installation routent CSI-u Ctrl+Tab, événements press/release
+  et séquences avec texte associé. Caps/Num Lock CSI-u fonctionnent aussi.
+- Pas de remapping Ctrl+Tab dans les fichiers utilisateur Kitty/Niri lus.
+- Les defaults installés de Kitty réservent pourtant Ctrl+Tab à next_tab et
+  Ctrl+Shift+Tab à previous_tab. Avec un seul tab, aucune action visible.
+- Les tests PTY injectaient les octets directement dans Oryn et contournaient
+  la couche de raccourcis de l'émulateur : ils ne détectaient pas ce conflit.
+- Documentation primaire locale Kitty conf/mapping/keyboard-protocol consultée.
+
+CORRECTION
+- KittyShortcutScope : variable de fenêtre oryn définie à l'entrée TUI par
+  OSC 1337 SetUserVar et supprimée après fermeture/disposal Terminal.Gui.
+  Activée seulement dans l'environnement Kitty et sortie interactive.
+- Deux exceptions Kitty map --when-focus-on var:oryn ctrl+tab et
+  ctrl+shift+tab, sans action : le terminal transmet les touches à Oryn.
+  Raccourcis usuels Kitty conservés hors Oryn, indépendants des titres/modalités.
+- scripts/configure-kitty-shortcuts.py : dry-run, backup, écriture atomique,
+  conservation des permissions, idempotence, refus d'un bloc existant différent.
+- Test Session.close vérifie que le marqueur de scope reçu est supprimé.
+
+FICHIERS DU DÉPÔT
+src/Oryn.Tui.Prototype/KittyShortcutScope.cs (nouveau)
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+scripts/configure-kitty-shortcuts.py (nouveau)
+scripts/keyboard-smoke.py, README.md, docs/m0-verification.md, ce log.
+
+APPLICATION AUTORISÉE HORS DÉPÔT
+Après préparation et tests, demande d'escalade explicite pour les chemins hors
+workspace. Approbation reçue ; action exécutée avec succès :
+- /home/zyks/.config/kitty/kitty.conf : bloc d'exceptions ajouté.
+- Backup : kitty.conf.oryn-shortcuts.bak dans le même dossier.
+- Oryn.Tui.Prototype.dll et .pdb remplacés atomiquement dans
+  /home/zyks/.local/share/oryn depuis la publication Release testée sous /tmp.
+  Pas de changements aux profils shell ou aux autres paramètres Kitty.
+- Kitty rechargé via SIGUSR1 après vérification du nom de processus kitty.
+
+VÉRIFICATIONS ACTUELLES
+- Build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- Publication Release linux-x64 self-contained --no-restore dans
+  /tmp/oryn-kitty-fix : succès, sans téléchargement.
+- Sonde PTY Release publiée : scope start/end, Ctrl+Tab et Ctrl+Shift+Tab
+  press/release, changement de panel, fermeture/restauration réussis.
+- Même sonde après mise à jour sur binaire réellement installé : succès.
+- Writer testé sous /tmp : dry-run sans écritures, backup identique à l'original,
+  conservation de contenu/permissions, idempotence.
+- Kitty parse_map accepte les deux règles ; chargement/finalisation de la
+  vraie configuration confirme deux règles conditionnelles sans action.
+- Deux warnings de thème Kitty déjà présent (scrollbar_handle_color et
+  scrollbar_track_color non reconnus) observés ; thème utilisateur non modifié.
+- Premier essai de vérification utilisait opts.keymap, absent dans cette version
+  Kitty ; corrigé vers keyboard_modes pour validation réussie.
+- git diff --check : succès.
+
+HISTORIQUE ET LIMITES
+64 tests App et suites générales du prompt précédent restent historiques,
+non relancés pour cette intégration de scope externe ; routeur App inchangé.
+Séquence xterm modifyOtherKeys testée et non gérée dans cette sonde ; aucune
+revendication de correction de ce protocole, cas présent Kitty CSI-u.
+Pas de capture d'une frappe physique de l'utilisateur après correction.
+Le test confirme binaire, séquences et configuration ; essai final dans
+sa fenêtre nécessaire après relance d'Oryn pour activer le nouveau marqueur.
+Validation Linux/Kitty ; Windows/macOS/tmux non exécutés.
+
+SUITE
+Relancer Oryn installé, tester Ctrl+Tab et Ctrl+Shift+Tab ; Tab simple
+reste local aux contrôles. Continuer l'ergonomie M0.

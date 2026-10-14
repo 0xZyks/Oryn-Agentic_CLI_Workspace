@@ -3,16 +3,21 @@ namespace Oryn.App;
 public enum WorkspaceCommand
 {
     NextPanel, PreviousPanel, MoveUp, MoveDown, Collapse, ChatTab, CodeTab, VisualizerTab,
-    ShowVisualizer, ToggleVisualizerDock, DockVisualizerLeft, DockVisualizerRight, ResetPanelSizes, Quit
+    ShowVisualizer, ToggleVisualizerDock, DockVisualizerLeft, DockVisualizerRight, ResetPanelSizes, Quit,
+    ToggleTabFocus, NextTab, PreviousTab, ConfirmTab, ReturnToContent
 }
+public enum PanelFocusArea { Content, Tabs }
 public sealed record ExplorerRow(FileEntry Entry, int Depth);
 public sealed record SelectionResult(FileEntry Entry, DirectoryResult? Directory, FilePreview? Preview);
 
 public sealed partial class WorkspaceState(string projectRoot)
 {
     public string ProjectRoot { get; } = projectRoot;
+    public ChatPreviewState Chat { get; } = new();
+    public VisualizerPreviewState Graph { get; } = new();
     public WorkspacePanel Focus { get; private set; } = WorkspacePanel.Explorer;
     public WorkspaceTab ActiveTab { get; private set; } = WorkspaceTab.Chat;
+    public PanelFocusArea FocusArea { get; private set; } = PanelFocusArea.Content;
     public IReadOnlyList<ExplorerRow> Rows => _rows;
     public int SelectedIndex { get; private set; }
     public ExplorerRow? Selected => _rows.Count == 0 ? null : _rows[SelectedIndex];
@@ -22,10 +27,11 @@ public sealed partial class WorkspaceState(string projectRoot)
     public bool QuitRequested { get; private set; }
     private readonly List<ExplorerRow> _rows = [];
 
-    public void SetFocus(WorkspacePanel panel)
+    public void SetFocus(WorkspacePanel panel, PanelFocusArea area = PanelFocusArea.Content)
     {
         if (panel == WorkspacePanel.Visualizer) ShowVisualizer();
         else Focus = panel;
+        FocusArea = Focus == WorkspacePanel.Center ? area : PanelFocusArea.Content;
     }
 
     public void Select(int index)
@@ -42,8 +48,8 @@ public sealed partial class WorkspaceState(string projectRoot)
             case WorkspaceCommand.MoveUp: if (Focus == WorkspacePanel.Explorer) Select(SelectedIndex - 1); break;
             case WorkspaceCommand.MoveDown: if (Focus == WorkspacePanel.Explorer) Select(SelectedIndex + 1); break;
             case WorkspaceCommand.Collapse: if (Focus == WorkspacePanel.Explorer) CollapseSelected(); break;
-            case WorkspaceCommand.ChatTab: ActiveTab = _contentTab = WorkspaceTab.Chat; Focus = WorkspacePanel.Center; break;
-            case WorkspaceCommand.CodeTab: ActiveTab = _contentTab = WorkspaceTab.Code; Focus = WorkspacePanel.Center; break;
+            case WorkspaceCommand.ChatTab: ActiveTab = _contentTab = WorkspaceTab.Chat; Focus = WorkspacePanel.Center; FocusArea = PanelFocusArea.Content; break;
+            case WorkspaceCommand.CodeTab: ActiveTab = _contentTab = WorkspaceTab.Code; Focus = WorkspacePanel.Center; FocusArea = PanelFocusArea.Content; break;
             case WorkspaceCommand.VisualizerTab: SetVisualizerPlacement(VisualizerPlacement.Tab); break;
             case WorkspaceCommand.ShowVisualizer: ShowVisualizer(); break;
             case WorkspaceCommand.ToggleVisualizerDock: ToggleVisualizerDock(); break;
@@ -51,6 +57,15 @@ public sealed partial class WorkspaceState(string projectRoot)
             case WorkspaceCommand.DockVisualizerRight: SetVisualizerPlacement(VisualizerPlacement.Right); break;
             case WorkspaceCommand.ResetPanelSizes: ResetPanelSizes(); break;
             case WorkspaceCommand.Quit: QuitRequested = true; break;
+            case WorkspaceCommand.ToggleTabFocus:
+                if (Focus == WorkspacePanel.Center) FocusArea = FocusArea == PanelFocusArea.Content ? PanelFocusArea.Tabs : PanelFocusArea.Content;
+                break;
+            case WorkspaceCommand.ConfirmTab:
+                if (Focus == WorkspacePanel.Center && FocusArea == PanelFocusArea.Tabs) FocusArea = PanelFocusArea.Content;
+                break;
+            case WorkspaceCommand.ReturnToContent: FocusArea = PanelFocusArea.Content; break;
+            case WorkspaceCommand.NextTab: CycleTab(1); break;
+            case WorkspaceCommand.PreviousTab: CycleTab(-1); break;
         }
     }
 
@@ -99,11 +114,20 @@ public sealed partial class WorkspaceState(string projectRoot)
             Preview = preview;
             ActiveTab = _contentTab = WorkspaceTab.Code;
             Focus = WorkspacePanel.Center;
+            FocusArea = PanelFocusArea.Content;
             Status = preview.Error ?? (preview.Truncated ? "Preview truncated · read-only" : "Read-only preview");
         }
     }
 
     public void SetStatus(string status) => Status = status;
+
+    private void CycleTab(int direction)
+    {
+        if (Focus != WorkspacePanel.Center || FocusArea != PanelFocusArea.Tabs) return;
+        WorkspaceTab next = (WorkspaceTab)(((int)ActiveTab + direction + 3) % 3);
+        Dispatch(next switch { WorkspaceTab.Chat => WorkspaceCommand.ChatTab, WorkspaceTab.Code => WorkspaceCommand.CodeTab, _ => WorkspaceCommand.VisualizerTab });
+        FocusArea = PanelFocusArea.Tabs;
+    }
 
     private void SetDirectoryStatus(DirectoryResult result) => Status = result.Error ??
         (result.Truncated ? "Directory truncated: entry limit reached." : $"{result.Entries.Count} entries · local") +

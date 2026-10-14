@@ -1,0 +1,116 @@
+Oryn — Raccourcis par groupe et Super configurable
+
+Date : 2026-10-14 00:26:21 CEST (+0200), Europe/Paris.
+Palier : M0. Base observée : 7fd5544. Aucun commit/push créé.
+
+DEMANDE ET CONTEXTE
+Ergonomie clavier : Super propre à Oryn, Ctrl par défaut mais modifiable ;
+groupes cohérents ; Super+Tab pour changer de panneau ; focus distinct du
+bandeau d'onglets et du contenu, Super+Enter pour basculer, flèches selon portée.
+L'auteur évoque aussi Space comme leader et Win/Command.
+Consignes/vision déjà lues dans la session. Dernier log M0 lu au début :
+2026_10_13__22_59_10_M0_barre_collee_au_panneau.txt. Aucun autre palier lu.
+Passage à la date du 14 octobre pendant ce prompt, toujours Europe/Paris.
+Changements antérieurs et lockfiles conservés.
+
+RÉSULTAT ET DÉCISIONS
+- KeyBindingSettings et KeyboardRouter indépendants de Terminal.Gui dans App.
+  Groupes : Workspace, Panels, Tabs, Explorer, Content. Normalisation des
+  touches, actions connues, validation de conflits dans les portées communes,
+  interdiction de supprimer toutes les commandes essentielles de navigation
+  et de récupération. Les actions omises conservent leurs bindings par défaut.
+- Super=Ctrl par défaut. Ctrl/Alt/Shift et combinaisons sont des modificateurs
+  maintenus ; Space, une lettre ou une touche fonction sont des leaders suivis
+  d'une commande. Timeout par défaut 1000 ms, borné 100..5000 ms ; Escape annule.
+  Indicateur de leader, pas de récupération ambiguë de touches en entrée texte.
+- Ctrl+Tab/Ctrl+Shift+Tab changent de panneau. Tab/Shift+Tab restent disponibles
+  sauf contenu déclarant qu'il réserve Tab. Ctrl+Enter ou F6 bascule le panneau
+  central entre onglets et contenu. Flèches de bandeau changent Chat/Code/Viz ;
+  flèches d'explorateur et contenu gardent leur navigation respective.
+- PanelFocusArea appartient à WorkspaceState. Passage visuel par soulignement
+  de l'onglet sélectionné et libellé Tabs/Content dans le statut. Clic onglet
+  cible le bandeau ; clic contenu revient au contenu. Explorer et Viz docké
+  n'ont pas de bandeau d'onglets dans M0. Cycle de panneau revient au contenu.
+- Ctrl+K ou Help > Keybindings : formulaire groupé, Super libre, bindings par
+  action, Apply pour session, Save pour persistance, Reset group, Cancel.
+  Draft séparé du profil courant ; validation et écriture avant remplacement
+  du router. Alt+W/P/T/E/O pour groupes, Alt+U Super, Alt+B champ de bindings,
+  Tab/Shift+Tab liste/champ, Alt+A Apply, Alt+S Save, Escape Cancel.
+- Profil JSON dans ApplicationData/oryn/keybindings.json, ou chemin explicite
+  --keybindings. Aucun chargement automatique de fichier dans un projet ouvert.
+  Profil absent : defaults, aucune création de fichier/dossier. Save atomique
+  via fichier temporaire dans le même dossier et remplacement. Taille 64 KiB.
+  Le dossier par défaut ne retombe pas sur le cwd si ApplicationData manque.
+- Formulaire disponible à partir de 80x22 ; sinon message d'agrandissement,
+  navigation du workspace conservée, profil explicite utilisable.
+- Raccourcis hardcodés des menus retirés pour ne pas contourner le profil.
+  Le router possède l'activation du menu ; menus/formulaires conservent leurs
+  touches locales. Quit et commandes workspace restent utilisables depuis menu.
+- Terminal.Gui 2.5.0 expose Ctrl/Alt/Shift, pas de masque System/Super.
+  Win/Command directs rejetés clairement ; autre modifier/leader ou remapping
+  terminal possible. Les raccourcis réservés par l'OS et les ambiguïtés legacy
+  Ctrl+Tab/Enter dépendent du terminal. F6 constitue le fallback de focus.
+  Frontière prête pour un autre adapter, sans moteur d'entrée natif prématuré.
+
+FICHIERS DE CE PROMPT
+src/Oryn.App/KeyBindingSettings.cs (nouveau)
+src/Oryn.App/KeyboardRouter.cs (nouveau)
+src/Oryn.App/WorkspaceState.cs et WorkspaceState.Layout.cs
+src/Oryn.App/StartupOptions.cs
+src/Oryn.Cli/Program.cs
+src/Oryn.Tui.Prototype/KeybindingsDialog.cs (nouveau)
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+tests/Oryn.App.Tests/KeyboardTests.cs (nouveau)
+scripts/keyboard-smoke.py (nouveau)
+scripts/terminal-smoke.py : profil temporaire explicite, nouveau focus souris
+et activation du menu réellement contrôlée.
+oryn.keybindings.example.json (nouveau)
+docs/adr/0004-keyboard-scopes-and-super.md (nouveau)
+README.md, docs/m0-verification.md et ce log.
+
+VÉRIFICATIONS EXÉCUTÉES
+- Plusieurs builds, dont build final : dotnet build Oryn.slnx --no-restore
+  -m:1 -nodeReuse:false -p:UseSharedCompilation=false. Succès final,
+  zéro avertissement/erreur.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 55 réussis,
+  aucun échec/ignoré, via VSTest hors sandbox. Domain focus, scopes, conflits,
+  leaders, texte/Tab passthrough, cancellation resize, sauvegarde/restart.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès.
+- python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès Unicode/couleur et ASCII/mono ; focus, souris, preview, docks,
+  resize/cancel, compact/tiny, F10, fermeture du menu, quit/restauration.
+- python3 scripts/keyboard-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès final des profils Ctrl, Alt, Space. Traversée panneaux, focus onglets,
+  flèches sans collision, contenu, F6 et restauration.
+  Formulaire : Apply sans écriture, Save persistant, remap actif immédiatement,
+  Reset group, redémarrage, navigation après fermeture de menu, édition du
+  champ par Tab depuis la liste. Alt+B a également été vérifié dans une
+  exécution antérieure réussie. Toutes écritures de profil sous dossier temporaire.
+- oryn --check --keybindings oryn.keybindings.example.json : succès ; chemin
+  explicite et Super=Ctrl rapportés. Niri indisponible dans le sandbox donne
+  correctement fallback cadence 60, sans empêcher ce check.
+- git diff --check : succès, répété après rédaction du log.
+
+AJUSTEMENTS DE VALIDATION
+- MenuBar.Active est en lecture seule malgré une mention get/set dans la doc
+  XML ; activation via InvokeCommand et fermeture via HideActiveItem.
+- Quit pouvait être ignoré après fermeture de menu ; routage workspace ajusté.
+- Ne pas attendre la réémission du footer inchangé après Save : assertions
+  inspectent le profil persistant et le nouveau comportement du raccourci.
+- Navigation native Tab du formulaire n'atteignait pas le champ après choix
+  de groupe. Focus différé par timeout et gestion explicite Tab/Shift+Tab entre
+  liste d'actions et champ, puis test complet avec Tab réussi.
+- Les essais échoués précèdent les validations finales ci-dessus ; aucun
+  contournement par modification des réglages réels de l'utilisateur.
+
+VALIDATIONS HISTORIQUES, LIMITES ET SUITE
+- Halo/barre, cadence et Niri natif des anciens prompts restent historiques.
+  Pas de nouveau test de déplacement réel de fenêtres ni de packaging ici.
+- Validation présente Linux PTY, SDK 10.0.401 ; Windows/macOS non exécutés.
+  Win/Command natifs non pris en charge par l'adaptateur actuel.
+- Focus/layout du workspace toujours éphémères dans M0 ; seules préférences
+  clavier enregistrées explicitement survivent au redémarrage.
+- Binaire Debug reconstruit. Installation de l'auteur non actualisée.
+- Prochaine étape : essai utilisateur de Ctrl+Tab, Ctrl+Enter/F6, flèches,
+  et formulaire Ctrl+K, puis poursuite de l'ergonomie M0. M1 non commencé.

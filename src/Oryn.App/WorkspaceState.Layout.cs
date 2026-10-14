@@ -13,6 +13,7 @@ public sealed partial class WorkspaceState
 
     public void ShowVisualizer()
     {
+        FocusArea = PanelFocusArea.Content;
         if (LayoutOptions.VisualizerPlacement == VisualizerPlacement.Tab)
         {
             ActiveTab = WorkspaceTab.Visualizer;
@@ -23,6 +24,7 @@ public sealed partial class WorkspaceState
 
     public void SetVisualizerPlacement(VisualizerPlacement placement)
     {
+        FocusArea = PanelFocusArea.Content;
         EndResize();
         LayoutOptions = LayoutOptions with { VisualizerPlacement = placement };
         if (placement == VisualizerPlacement.Tab)
@@ -52,6 +54,7 @@ public sealed partial class WorkspaceState
                 : [WorkspacePanel.Explorer, WorkspacePanel.Center, WorkspacePanel.Visualizer];
         int index = Array.IndexOf(panels, Focus);
         Focus = panels[(Math.Max(0, index) + direction + panels.Length) % panels.Length];
+        FocusArea = PanelFocusArea.Content;
     }
 
     public bool BeginResize(int x, int y, int terminalWidth, int terminalHeight)

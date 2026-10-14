@@ -1,0 +1,62 @@
+Oryn — Super+Tab pour les panneaux, Tab local
+
+Date : 2026-10-14 03:47:27 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Réserver la traversée des panneaux à Super+Tab ; libérer Tab pour les
+comportements propres aux panneaux et éviter les conflits d'usage.
+Consignes/vision déjà lues dans la session. Dernier log M0 identifié par
+nom, connu du prompt précédent :
+2026_10_14__03_35_51_M0_template_graphe_visualiseur_navigable.txt.
+Aucun log d'un autre palier lu. Changements précédents conservés.
+
+RÉSULTAT
+- Defaults NextPanel=[Super+Tab], PreviousPanel=[Super+Shift+Tab].
+  Super configurable conservée, Ctrl par défaut.
+- Tab/Shift+Tab non capturés comme commandes globales par défaut.
+- Adapter limite leur déplacement de focus aux contrôles du panneau
+  courant pour empêcher le traversal natif Terminal.Gui vers une autre pane.
+  Files/Code restent sur leur contrôle ; Chat alterne saisie/historique ;
+  header de tabs alterne les contrôles ; graphe alterne graph/dock visibles.
+  Menus et dialogues conservent leur navigation locale native.
+- Profils enregistrés avec anciens couples de defaults migrés exactement
+  en mémoire au chargement ; pas d'écriture automatique du fichier.
+  Autres remappings explicites conservés, dont choix délibéré de Tab.
+- Aide CLI, README et profil exemple mis à jour. Scripts PTY utilisent
+  maintenant Super+Tab pour la traversée et testent aussi le Tab local.
+
+FICHIERS
+src/Oryn.App/KeyBindingSettings.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+src/Oryn.Cli/Program.cs
+tests/Oryn.App.Tests/KeyboardTests.cs
+scripts/keyboard-smoke.py, visualizer-smoke.py et terminal-smoke.py
+oryn.keybindings.example.json, README.md, docs/m0-verification.md, ce log.
+
+VÉRIFICATIONS ACTUELLES
+- Build final Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 64 passés,
+  VSTest autorisé hors sandbox pour socket locale. No global Tab dans
+  scopes Explorer/Tabs/Content, traversal Super, compat profils anciens,
+  pas de réécriture du profil et remapping custom conservé.
+- scripts/keyboard-smoke.py : succès Ctrl/Alt/Space, Tab/Shift+Tab restent
+  dans Files/Chat/Code, focus scopes et formulaire Apply/Save/reset/restart.
+- scripts/visualizer-smoke.py : succès Unicode/couleur et ASCII/mono,
+  Tab local au visualiseur, clics, flèches, zoom et groupe Graph,
+  tabs, docking, resize et restauration.
+- scripts/terminal-smoke.py : succès Unicode/couleur et ASCII/mono,
+  traversal Super+Tab, preview, souris, docks, resize/cancel, compact/tiny,
+  menu, fermeture et restauration.
+- oryn --help exécuté : nouveaux libellés Tab local et Super+Tab visibles.
+- git diff --check : succès.
+
+HISTORIQUE, LIMITES ET SUITE
+Suites exécutées sur le changement fonctionnel ; build final supplémentaire
+actualise seulement les textes d'aide CLI. Composer/réponse fictive inchangés,
+suite chat complète du prompt antérieur reste historique.
+Validation Linux ; Windows/macOS non exécutés. Les limites de transport du
+terminal pour Ctrl+Tab et les leaders imprimables restent celles documentées.
+Binaire Debug reconstruit, installation utilisateur non actualisée.
+Prochaine étape : essai utilisateur de Super+Tab et usages locaux de Tab M0.

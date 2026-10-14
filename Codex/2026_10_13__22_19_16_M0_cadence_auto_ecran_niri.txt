@@ -1,0 +1,112 @@
+Oryn — Cadence initiale et suivi de l'écran du terminal
+
+Date : 2026-10-13 22:19:16 CEST (+0200), Europe/Paris.
+Palier : M0. Base : 7fd5544. Aucun commit associé créé, aucun push.
+
+DEMANDE
+Détecter la fréquence de l'écran du terminal avant le premier affichage,
+la suivre pendant l'exécution si la fenêtre change d'écran, et permettre
+un réglage manuel. C/Rust autorisés si nécessaires.
+
+CONTEXTE ET OBSERVATIONS ACTUELLES
+- Consignes et vision déjà lues dans cette session ; dernier log M0 lu :
+  2026_10_13__21_43_03_M0_cadence_rendu_60hz.txt. Aucun autre palier consulté.
+- Linux Debian 13 x64, SDK 10.0.401 ; environnement Wayland/Niri, terminal Kitty.
+- Lecture des types IPC officiels Niri et diagnostic read-only réel.
+  Niri fournit PID/fenêtre, workspace, output et mode actif en millihertz.
+- Deux sorties réelles : HDMI-A-2 à 60000 mHz, HDMI-A-1 à 143998 mHz.
+  Le diagnostic Oryn réel associe le terminal hérité à fenêtre 2, workspace 2,
+  HDMI-A-2 à 60 Hz. Ni titre de fenêtre, ni numéro de série de moniteur conservé.
+- Changements antérieurs et lockfiles modifiés avant ce prompt conservés.
+
+RÉSULTAT ET DÉCISIONS
+- Auto par défaut ; détection bornée avant création de la TUI, configuration
+  de Terminal.Gui avant init et réaffirmation après init avant première frame.
+- IPC Niri local en .NET via Unix socket : pas de module C/Rust nécessaire,
+  aucune nouvelle dépendance. Probe et politique indépendants du renderer.
+- KITTY_PID puis ascendance de processus fournissent des PID candidats.
+  Choisir une fenêtre unique, épingler son ID et suivre son output via workspace.
+  Ne jamais choisir arbitrairement la fenêtre focalisée ou l'écran le plus rapide.
+  Ambiguïté ou fenêtre disparue : fallback plutôt que réattribution silencieuse.
+- Vérification en arrière-plan toutes les secondes ; résultat appliqué sur
+  thread UI, sans bloquer les entrées/rendu. Annulation et arrêt propres.
+- Timeout de 750 ms par lecture, replies limitées à 1 MiB, erreurs/mauvais
+  JSON traités comme indisponibilité. Repli 60 Hz et récupération ultérieure.
+- Sessions SSH/tmux/screen, autres compositeurs et autres plateformes : fallback.
+- --fps auto|1..500, RenderFramesPerSecond null|nombre dans config explicite,
+  menu View pour Auto/60/120/144 Hz et détails ; mode visible dans barre d'état.
+  Réglage menu pour la session ; aucun fichier de configuration réécrit.
+- Mode manuel ignore les résultats Auto et suspend le polling ; retour Auto
+  repart d'un état de détection frais. Pas de redraw périodique forcé.
+- ADR 0003 explique la portée et les alternatives. La boucle Terminal.Gui
+  quantifie son budget en millisecondes : à 144 la valeur interne est 6 ms.
+  Ce réglage n'est pas une VSync et ne garantit pas des FPS exacts/soutenus.
+
+FICHIERS DE CE PROMPT
+src/Oryn.App/RenderCadence.cs (nouveau)
+src/Oryn.App/NiriDisplayRefreshRateProbe.cs (nouveau)
+src/Oryn.App/StartupOptions.cs
+src/Oryn.App/WorkspaceSettings.cs
+src/Oryn.Cli/Program.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+oryn.settings.example.json
+tests/Oryn.App.Tests/RenderCadenceTests.cs (nouveau)
+scripts/refresh-rate-smoke.py (nouveau)
+scripts/terminal-smoke.py et scripts/render-benchmark.py : exclure NIRI_SOCKET
+du PTY synthétique qui n'a pas de vraie fenêtre de compositor.
+README.md, docs/m0-verification.md, docs/adr/0003-monitor-refresh-rate.md,
+et ce log.
+
+VÉRIFICATIONS RÉELLEMENT EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : succès final,
+  42 tests, aucun échec/ignoré, via VSTest hors sandbox.
+  Couverture : identité de fenêtre, focus d'une autre app, mode courant,
+  ambiguïté PID, ID épinglé, fréquence fractionnaire, déplacement,
+  settings/CLI invalides, manuel/auto, transport IPC, réponses malformées,
+  déconnexion, annulation, timeout et limites de taille.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès.
+- python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  Unicode/couleur et ASCII/mono réussis (navigation, docks, resize, restauration).
+- python3 scripts/refresh-rate-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès final hors sandbox avec faux Niri et PTY : startup 144, mouvement
+  144/60/144, menu manuel/Auto, erreur/récupération IPC, fermeture/restauration.
+- src/Oryn.Cli/bin/Debug/net10.0/oryn --check : diagnostic natif Niri réel
+  hors sandbox, fenêtre/output correctement associés, 60 Hz initial.
+- --check --fps 144 : override manuel rapporté correctement.
+- python3 scripts/render-benchmark.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  fallback 60, 47,3 bursts/s ; médiane 16,16 ms ; p95 54,60 ms ;
+  910816 octets/3 s ; 752 octets/s au repos. CPU et FPS écran non mesurés.
+- git diff --check : succès, répété après rédaction du log.
+
+AJUSTEMENTS PENDANT LA VALIDATION
+- Premier faux serveur xUnit envoyait des fixtures JSON multilignes alors
+  que le protocole exige une reply par ligne ; helper corrigé pour sérialiser
+  en JSON compact. Un test avait échoué avant cette correction.
+- Le script PTY tentait F10 puis droite pour ouvrir View ; navigation ne
+  sélectionnait pas View dans ce scénario. Le harness utilise désormais
+  Alt+V, attend le menu, puis sa mnemonic. Actions runtime vérifiées ensuite.
+  Pas de refonte de la navigation du menu dans cette tâche.
+- Sandbox bloque sockets Niri/VSTest/fake serveur ; essais natifs/read-only
+  et tests IPC effectués avec escalade. Aucun réglage desktop modifié.
+
+VALIDATIONS HISTORIQUES
+Les mesures avant/après du passage fixe 25 vers 60 Hz et les validations
+macOS antérieures restent dans leurs logs/documents ; pas réexécutées ici.
+
+LIMITES ET PROCHAINE ÉTAPE
+- Détection automatique native de cette tranche : Niri Linux uniquement.
+  L'interface de probe permet d'autres backends sans imposer un module natif.
+- Déplacements réels de fenêtre entre les moniteurs non exécutés : les tests
+  simulent les changements IPC. Détection initiale réelle séparément vérifiée.
+- Polling 1 s plus durée de détection, pas de synchronisation frame par frame
+  avec le moniteur. Terminal et budget milliseconde limitent la cadence réelle.
+- PID commun à plusieurs fenêtres : fallback sans deviner. Sessions multiplexées
+  et distantes exclues ; fenêtres/moniteurs non exposés par Niri : fallback.
+- Windows/macOS, publication et installation non vérifiés dans ce prompt.
+  Recompiler/réinstaller pour actualiser une commande oryn déjà installée.
+- Prochaine étape : l'auteur déplace sa fenêtre entre les écrans et confirme
+  l'indicateur Auto et la fluidité ; poursuivre le polish M0 selon ses retours.
+  M1 non commencé.

@@ -1,0 +1,74 @@
+Oryn — Composer de chat multiligne et arrondi
+
+Date : 2026-10-14 01:29:18 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Agrandir la hauteur de la chatbox, multiligne avec Shift+Entrée pour
+retour à la ligne, texte centré dans la zone, retirer Send, ajouter
+des coins légèrement arrondis et éventuellement le repère >.
+Consignes et vision déjà lues dans la session. Dernier log connu M0 :
+2026_10_14__01_14_53_M0_chat_saisie_et_reponse_demo.txt, rédigé au prompt
+précédent. Aucun log d'un autre palier consulté.
+
+RÉSULTAT ACTUEL
+- TextView éditable provisoire, multiligne et word-wrap, dans un View
+  avec bordure Rounded, couleur douce et fond légèrement éclairci.
+- Hauteur jusqu'à sept cellules ; réduit à trois sur terminaux moins
+  hauts, masqué sous cinq lignes de panneau. Historique au-dessus.
+- Bloc de texte centré verticalement selon les lignes du brouillon et
+  le wrapping ; le composant gère le défilement au-delà de cinq lignes
+  de contenu. Centrage discret à la cellule, pas au pixel.
+- Repère > à gauche de la première ligne. Le texte reste aligné à gauche.
+- Entrée envoie, Shift+Entrée invoque NewLine sans envoyer.
+  Ctrl+A sélectionne tout, Tab/Shift+Tab alternent saisie et historique.
+- Send supprimé. Focus panels/tabs et Super configurables préservés.
+- Fond Editable défini explicitement pour éviter un rectangle lavande
+  dérivé automatiquement dans le champ. Cadre et saisie partagent le fond.
+- ASCII : bordure Single avec glyphes ASCII existants.
+- État du brouillon toujours dans App, via TextChanged pour affectations
+  et ContentsChanged pour éditions. Conversation demo Hello World conservée.
+
+FICHIERS
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+scripts/chat-smoke.py : nouvelles attentes multiligne et Send absent.
+scripts/terminal-smoke.py : coins arrondis du composer attendus.
+README.md, docs/m0-verification.md, ce log.
+Changements précédents conservés ; App et persistance inchangés.
+
+VÉRIFICATIONS EXÉCUTÉES
+- Build final dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- scripts/chat-smoke.py sur binaire Debug : succès Unicode/couleur et
+  ASCII/mono ; draft de deux lignes conservé lors de changement de tab,
+  envoi des deux lignes ensemble, Entrée vide ignorée, curseur, Ctrl+A,
+  Tab, souris, resize étroit, échanges répétés et restauration.
+  Profil Space : espaces conservés dans la saisie.
+- scripts/keyboard-smoke.py : succès final profils Ctrl, Alt, Space,
+  focus/scopes et formulaire des keybinds avec sauvegarde/redémarrage.
+- scripts/terminal-smoke.py : succès couleur/Unicode et ASCII/mono
+  pendant le prompt, focus, preview, docks, resize/cancel, compact/tiny,
+  menu et restauration. Précède uniquement le changement de rôle Editable.
+- Captures PTY du brouillon reconstruites en SVG/PNG sous /tmp et
+  inspectées : cadre arrondi, >, centrage et fond uniforme confirmés.
+  Reconstruction, pas screenshot du terminal réel.
+- git diff --check : succès.
+
+ESSAIS ET CORRECTIONS
+Premier build : Border n'expose pas SetScheme ; couleur héritée depuis
+le parent avec une couleur dédiée au champ.
+Focus du sous-composant nécessitait CanFocus sur le View composer.
+TextChanged seul ne reflétait pas la frappe TextView : ajout ContentsChanged.
+Le test ne doit pas interdire la réémission de Hello World dans un redraw
+après Shift+Entrée ; vérifie que les deux lignes restent dans le même draft.
+Ancien smoke interdisait tous les coins arrondis : expectation mise à jour
+pour le composer explicitement demandé, sans réintroduire le contour focus.
+
+VALIDATIONS HISTORIQUES, LIMITES ET SUITE
+58 tests App du prompt précédent restent historiques, non réexécutés.
+Shift+Entrée nécessite un protocole terminal distinguant les modificateurs ;
+les tests utilisent CSI-u. Aucun fallback legacy ne peut distinguer les deux
+si le terminal transmet la même séquence. Windows/macOS non exécutés.
+Toujours maquette M0, réponse fixe et conversation non persistante.
+Binaire Debug reconstruit ; installation utilisateur non actualisée.
+Prochaine étape : validation visuelle utilisateur et ajustements M0.

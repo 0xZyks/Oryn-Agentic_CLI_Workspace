@@ -23,9 +23,15 @@ try
             --config <file>  Read explicit JSON settings
             --no-color       Use a monochrome palette (also respects NO_COLOR)
             --ascii          Use ASCII UI decorations
+            --fps auto|N     Follow the terminal's monitor, or set 1–500 Hz manually
+            --keybindings <file> Use a custom grouped keybindings file
             --               Treat remaining argument as a directory
 
-            Tab / Shift+Tab  Switch panels
+            Tab / Shift+Tab  Move within the active panel
+            Ctrl+Tab         Switch panels (Oryn Super+Tab)
+            Ctrl+Enter / F6  Select central tabs (or confirm when already there)
+            Enter in tabs    Confirm the selected tab and focus its content
+            Ctrl+K           Edit grouped keybindings (Super defaults to Ctrl)
             Up / Down        Select or scroll
             Enter / Right    Open file or expand folder
             Left             Collapse folder
@@ -49,6 +55,12 @@ try
     WorkspaceSettings settings = WorkspaceSettings.Load(options.ConfigPath);
     settings = settings with { UseColor = settings.UseColor && options.UseColor, UseUnicode = settings.UseUnicode && options.UseUnicode };
     TerminalCapabilities capabilities = TerminalCapabilities.Detect(settings);
+    string keybindingsPath = options.KeybindingsPath ?? KeyBindingStore.DefaultPath;
+    KeyboardRouter keyboard = new(KeyBindingStore.Load(keybindingsPath));
+    RenderCadence cadence = new(options.OverrideRenderCadence ? options.RenderFramesPerSecond : settings.RenderFramesPerSecond);
+    IDisplayRefreshRateProbe refreshRateProbe = NiriDisplayRefreshRateProbe.ForCurrentTerminal();
+    if (cadence.ManualFramesPerSecond is null)
+        cadence.Apply(await refreshRateProbe.ReadAsync(CancellationToken.None));
     LocalWorkspaceFiles files = new(options.ProjectRoot, settings);
     DirectoryResult directory = await files.ListAsync(options.ProjectRoot, CancellationToken.None);
     if (directory.Error is not null) throw new IOException(directory.Error);
@@ -61,7 +73,9 @@ try
             entryCount = directory.Entries.Count,
             truncated = directory.Truncated,
             warning = directory.Warning,
-            terminal = capabilities
+            terminal = capabilities,
+            renderCadence = new { cadence.FramesPerSecond, cadence.ManualFramesPerSecond, cadence.Reading },
+            keybindings = new { path = keybindingsPath, keyboard.Settings.Super }
         }));
         return 0;
     }
@@ -73,7 +87,7 @@ try
 
     WorkspaceState state = new(options.ProjectRoot);
     state.LoadRoot(directory);
-    new TerminalWorkspace(state, files, capabilities).Run();
+    new TerminalWorkspace(state, files, capabilities, cadence, refreshRateProbe, keyboard, keybindingsPath).Run();
     return 0;
 }
 catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or JsonException)

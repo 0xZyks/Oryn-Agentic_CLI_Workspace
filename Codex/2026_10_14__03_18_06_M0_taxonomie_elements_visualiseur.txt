@@ -1,0 +1,54 @@
+Oryn — Taxonomie proposée pour la template du visualiseur
+
+Date : 2026-10-14 03:18:06 CEST (+0200), Europe/Paris.
+Palier principal : M0. Références futures : modèle M2, analyse M3,
+connaissances M4 ; aucun de ces jalons implémenté. Aucun commit/push créé.
+
+DEMANDE
+Préparer un test visuel par template fictive, sans analyse d'un vrai projet,
+puis avancer progressivement sur composants, liens, flow et états.
+Première étape demandée : identifier les types d'éléments génériques
+indépendamment des langages.
+
+CONTEXTE
+Consignes/vision déjà lues dans la session. Sections UX, modèle unifié,
+statuts et intégrations README_ORYN revérifiées pour cette proposition.
+Dernier log M0 par nom :
+2026_10_14__02_09_06_M0_canvas_code_et_roadmap_analyse.txt,
+déjà connu/rédigé au prompt précédent. Aucun log d'un autre palier lu.
+Changements précédents conservés.
+
+RÉSULTAT
+Nouveau docs/visualizer-elements.md : proposition, pas décision figée.
+- Familles de nœuds : dépôt/projet, conteneurs physiques/logiques,
+  types/contrats/alias, éléments exécutables, données/signatures,
+  événements, dépendances, ressources, unités build/runtime et concepts.
+- Variantes conservées sans prétendre classes/struct/interfaces équivalentes.
+- Test/callback/point d'entrée/handler comme rôles possibles d'un symbole.
+- Relations distinctes : contient, référence, appelle, dépend/importe,
+  hérite, implémente, redéfinit, instancie, lit/écrit, événements, données,
+  contrôle, réalisation conceptuelle, connaissance et historique.
+- Appel = relation dans vue d'ensemble ; site d'appel = occurrence possible
+  dans détail du flot. Call graph et CFG distincts. Pas de CFG inventé
+  pour de vrais fichiers ; faits futurs selon capacités de l'analyseur.
+- Connaissances/conversations/décisions rattachables sans obligation de
+  tout montrer sous forme de boîtes dans la vue d'architecture.
+- UUID, origine, sources, confiance/obsolescence, statut et présence séparés.
+  Focus/sélection restent navigation ; Idea Box reste archivage.
+- Proposition d'une première petite template et séquence de travail visuel.
+  Données fictives explicites, pas modification du vrai graphe Oryn.
+
+FICHIERS
+docs/visualizer-elements.md (nouveau)
+Ce log.
+
+VALIDATIONS ACTUELLES
+Cohérence relue avec README_ORYN sections 3.3/3.4, 4.1 et 7.1.
+git diff --check réussi. Aucun build/test exécuté pour documentation seule.
+
+HISTORIQUE, LIMITES ET SUITE
+Build/tests des prompts précédents restent historiques.
+Aucun code UI changé ; visualiseur actuel reste placeholder.
+Taxonomie extensible et proposée, aucun enum exhaustif ou schéma figé.
+Prochaine étape : discussion utilisateur sur ces familles puis premier
+composant de nœud dans une template M0 limitée, sans analyse de dépôt.

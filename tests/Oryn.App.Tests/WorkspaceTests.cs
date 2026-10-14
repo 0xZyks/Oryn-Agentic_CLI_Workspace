@@ -35,8 +35,13 @@ public sealed class WorkspaceTests : IDisposable
     public void FocusAndTabsAreIndependentOfRenderer()
     {
         WorkspaceState state = new(_root);
+        Assert.Equal(VisualizerPlacement.Tab, state.LayoutOptions.VisualizerPlacement);
+        Assert.Equal(WorkspaceTab.Chat, state.ActiveTab);
+        WorkspaceLayout initial = WorkspaceLayout.Calculate(120, 30, state.Focus, state.LayoutOptions);
+        Assert.Equal(0, initial.Visualizer.Width);
+        Assert.Equal(0, initial.VisualizerSplitter.Width);
         state.Dispatch(WorkspaceCommand.PreviousPanel);
-        Assert.Equal(WorkspacePanel.Visualizer, state.Focus);
+        Assert.Equal(WorkspacePanel.Center, state.Focus);
         state.Dispatch(WorkspaceCommand.NextPanel);
         Assert.Equal(WorkspacePanel.Explorer, state.Focus);
         state.Dispatch(WorkspaceCommand.CodeTab);
@@ -66,13 +71,13 @@ public sealed class WorkspaceTests : IDisposable
             }
             if (layout.Compact && width > 0 && height > 2)
             {
-                PanelBounds visible = focus switch
+                PanelBounds visible = layout.VisiblePanel switch
                 {
                     WorkspacePanel.Explorer => layout.Explorer,
                     WorkspacePanel.Center => layout.Center,
                     _ => layout.Visualizer
                 };
-                Assert.Equal(focus, layout.HitTest(visible.X, visible.Y));
+                Assert.Equal(layout.VisiblePanel, layout.HitTest(visible.X, visible.Y));
             }
         }
     }

@@ -1,0 +1,55 @@
+Oryn — Indicateur de sélection des onglets adouci
+
+Date : 2026-10-14 00:59:04 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Conserver le repère du mode de sélection des onglets, mais descendre la
+petite barre et réduire sa luminosité, jugée trop agressive.
+Consignes et README_ORYN lus dans cette session ; dernier log M0 consulté :
+2026_10_14__00_26_21_M0_keybinds_groupes_et_super_oryn.txt.
+Aucun log d'un autre palier consulté. Changements précédents conservés.
+
+OBSERVATIONS ET RÉSULTAT
+L'ancien soulignement était un style SGR de la police, donc directement
+attaché au texte et de même couleur. Remplacé par un Label décoratif,
+non focusable, sur la ligne immédiatement sous l'onglet sélectionné.
+Position relative au widget de l'onglet ; largeur 8 cellules Chat/Code,
+14 Visualizer, identique à leurs zones existantes.
+Couleur indépendante violet atténué #85769f, fond du panneau actif.
+Trait fin avec ▁ en Unicode, _ en ASCII ; style Faint en monochrome.
+Visible uniquement avec focus central et FocusArea.Tabs ; masqué quand
+le focus revient au contenu ou à un autre panneau. Texte des onglets
+et grande barre de focus du panneau conservés.
+Dans un panneau de moins de sept lignes, le repère est masqué pour ne
+pas recouvrir le contenu ; le statut indique toujours tabs/content.
+
+FICHIERS
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+src/Oryn.Tui.Prototype/WorkspaceTheme.cs
+Ce log.
+
+VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, 0 avertissement/erreur.
+- python3 scripts/keyboard-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès Ctrl, Alt, Space, focus onglets/contenu, flèches, formulaire,
+  Apply/Save, remapping, reset de groupe et redémarrage.
+- ORYN_SMOKE_CAPTURE_DIR=/tmp/oryn-soft-tab-captures python3
+  scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn : succès
+  Unicode/couleur et ASCII/mono, souris, preview, docks, resize,
+  compact/tiny, menu, fermeture et restauration du terminal.
+- Reconstruction visuelle de la capture PTY color-visualizer-tab en
+  SVG/PNG via script temporaire : barre sous Visualizer et couleur
+  adoucie inspectées. Reconstitution, pas capture du terminal réel.
+- git diff --check : succès.
+
+VALIDATIONS HISTORIQUES ET LIMITES
+Les 55 tests unitaires réussis du prompt précédent restent historiques ;
+non réexécutés pour ce changement de présentation sans modification App.
+Validation présente sous Linux ; Windows/macOS non exécutés.
+Le rendu Faint dépend du terminal. Binaire Debug reconstruit ;
+installation utilisateur non actualisée.
+
+SUITE
+Essai visuel par l'utilisateur puis poursuite de l'ergonomie M0.

@@ -9,6 +9,7 @@ public sealed record WorkspaceSettings
     public bool ShowHiddenFiles { get; init; }
     public int MaxDirectoryEntries { get; init; } = 1000;
     public int MaxPreviewCharacters { get; init; } = 65536;
+    public int? RenderFramesPerSecond { get; init; }
 
     public static WorkspaceSettings Load(string? path)
     {
@@ -20,6 +21,7 @@ public sealed record WorkspaceSettings
             ?? throw new InvalidDataException("Configuration must be a JSON object.");
         if (settings.MaxDirectoryEntries is < 1 or > 10000 || settings.MaxPreviewCharacters is < 256 or > 1048576)
             throw new InvalidDataException("Invalid directory or preview limit in configuration.");
+        RenderCadence.Validate(settings.RenderFramesPerSecond);
         return settings;
     }
 }

@@ -1,0 +1,73 @@
+Oryn — Préparation de reprise et validation Linux du prototype
+
+Date : 2026-10-13 21:19:53 CEST (+0200), Europe/Paris.
+Palier : M0.
+Commit associé : aucun commit créé. Base observée : 7fd5544,
+« Added script for linux and windows ».
+
+DEMANDE
+
+Lire AGENTS.md et préparer le contexte nécessaire à la suite.
+Consulter uniquement les logs M0.
+
+OBSERVATIONS ACTUELLES ET RÉSULTAT
+
+- Lecture de AGENTS.md, README_ORYN.md, README.md, des deux ADR M0
+  et de docs/m0-verification.md.
+- Logs sélectionnés par l'horodatage du nom : dernier log
+  2026_10_13__20_59_12_M0_installation_path_linux_windows.txt,
+  puis synthèse M0 2026_10_13__19_46_58_M0_synthese_etat_projet.txt.
+  Aucun log d'un autre palier consulté.
+- Dépôt propre au départ ; prototype existant, pas de bootstrap nécessaire.
+- Machine actuelle : Debian 13 Linux x64, SDK .NET 10.0.401,
+  runtime .NET 10.0.12. SDK compatible avec global.json.
+- Stack M0 existante conservée : .NET 10, Terminal.Gui 2.5.0,
+  état applicatif indépendant dans Oryn.App, adaptateur et CLI séparés.
+- Dépendances locales suffisantes pour compiler sans restauration réseau.
+- Aucun code applicatif ni configuration utilisateur modifié.
+  Fichier créé : ce log. Binaires Debug reconstruits dans bin/obj ignorés.
+
+VÉRIFICATIONS EXÉCUTÉES DANS CETTE SESSION
+
+1. dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+   -p:UseSharedCompilation=false
+   Réussi, zéro avertissement et zéro erreur.
+2. dotnet test tests/Oryn.App.Tests --no-build --no-restore
+   Premier essai dans le sandbox interrompu : VSTest ne peut pas ouvrir
+   sa socket locale (Permission denied). Réexécution avec escalade :
+   25 tests réussis, zéro échec et zéro test ignoré.
+3. dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+   src/Oryn.Cli/bin/Debug/net10.0/oryn
+   Réussi : racine du dossier appelant sans argument de chemin,
+   explorateur paresseux, aperçu, focus et disposition compacte.
+4. python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+   Deux scénarios PTY Linux réussis : Unicode/couleur et ASCII/monochrome.
+   Lancement, souris, aperçu, onglet visualiseur/docking, séparateurs,
+   annulation de drag, resize clavier/reset, resize terminal, menu,
+   sortie et restauration de l'écran alternatif et des réglages terminal.
+5. git status --short : propre avant création de ce log.
+   git diff --check : réussi avant création du log ; contrôle répété ensuite.
+
+VALIDATIONS HISTORIQUES
+
+Les documents existants rapportent des validations sur macOS ARM64,
+dont packaging et tests simulés de l'installateur Linux.
+Ces validations historiques sont distinctes des vérifications Linux
+du binaire Debug réalisées ici. Le README et le bilan M0 restent rédigés
+sur la base de leur session macOS ; ce log ajoute les preuves Linux.
+
+DÉCISIONS, LIMITES ET PROCHAINE ÉTAPE
+
+- La demande porte sur la préparation : aucun lancement de M1,
+  aucune nouvelle dépendance ni décision d'architecture.
+- Le shell M0 compile et passe les vérifications automatisées existantes
+  sur la machine Linux actuelle. Cela ne couvre pas tous les émulateurs
+  de terminal ni une appréciation visuelle humaine.
+- Installateurs, installation réelle dans le PATH, publication autonome,
+  packaging et Windows non vérifiés dans cette session.
+- Chat et visualiseur restent des placeholders ; aucune inférence,
+  aucun graphe réel ou historique de chat persistant annoncé.
+- Contexte prêt pour la prochaine demande. Une tâche d'installation
+  pourrait vérifier le packaging Linux ; une tâche de développement
+  pourrait aborder M1 après évaluation du backend local.
+- Aucun commit ni push effectué.

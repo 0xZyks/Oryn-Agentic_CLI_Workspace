@@ -1,0 +1,76 @@
+Oryn — Halo discret du panneau actif
+
+Date : 2026-10-13 22:38:22 CEST (+0200), Europe/Paris.
+Palier : M0. Base : 7fd5544. Aucun commit/push créé.
+
+DEMANDE
+Rendre le panneau ciblé identifiable par un contour doux évoquant un halo,
+avec titre plus lumineux et éléments d'interface des panneaux inactifs discrets.
+Conserver la lisibilité du contenu et la disposition.
+
+OBSERVATIONS ACTUELLES
+- AGENTS.md et vision déjà lus dans cette session. Dernier log M0 sélectionné
+  par le nom et lu : 2026_10_13__22_19_16_M0_cadence_auto_ecran_niri.txt.
+  Aucun log d'autre palier consulté.
+- État applicatif/focus indépendant dans Oryn.App ; panneaux Terminal.Gui
+  sans cadre, avec marges internes utilisables pour une décoration.
+- Changements antérieurs, fichiers non suivis et lockfiles conservés.
+
+RÉSULTAT ET DÉCISIONS
+- Nouveau PanelFocusHalo : quatre labels décoratifs non focusables formant
+  un seul contour autour du panneau actif. Coins arrondis Unicode, accent
+  lavande en haut/bas et côtés plus doux. Pas de halo multicellule ni animation.
+- Décoration dans les marges existantes ; aucune réduction de viewport,
+  modification des coordonnées de clic ou transaction de layout.
+- Le contour suit Explorer, zone centrale Chat/Code/Visualizer et Visualizer
+  docké. En onglet, contour de la zone centrale entière, incluant les tabs.
+- Titres actifs lavande ; titres inactifs atténués. L'onglet sélectionné
+  reste identifiable mais devient plus discret si la zone centrale perd le focus.
+- Mode monochrome : contour clair ; ASCII : +, - et |. Pour hauteur de panneau
+  inférieure à 7 lignes ou largeur inférieure à 4 colonnes, pas de contour,
+  afin de laisser accessibles les commandes et le marqueur de titre.
+- Cache des bounds/surface pour ne pas reconstruire la décoration inchangée.
+- Aucun changement de politique de cadence, détection Niri, domaine ou docking.
+
+FICHIERS CONCERNÉS DANS CE PROMPT
+src/Oryn.Tui.Prototype/PanelFocusHalo.cs (nouveau)
+src/Oryn.Tui.Prototype/WorkspaceTheme.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+scripts/terminal-smoke.py
+README.md
+docs/m0-verification.md
+Ce log.
+
+VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès (racine de l'appelant,
+  explorateur, aperçu, focus et disposition compacte).
+- ORYN_SMOKE_CAPTURE_DIR=/tmp/oryn-focus-captures python3
+  scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  deux exécutions réussies. La première vérifie le contour et focus normal ;
+  la seconde ajoute le terminal 30x6 et le retour vers la disposition large.
+  Scénarios Unicode/couleur et ASCII/mono : contour initial, focus Chat/Files,
+  Visualizer tab/docks, resize compact/tiny, clics et previews, séparateurs,
+  annulation, menu, fermeture et restauration complète du terminal.
+- Captures ANSI rejouées par un helper temporaire sous /tmp en SVG/PNG avec
+  ImageMagick ; inspection visuelle couleur et monochrome via view_image.
+  Contour correctement placé, ancienne position effacée et contenu dégagé.
+  Ce rendu est une approximation des métriques de police, pas une capture
+  de l'émulateur réel de l'auteur. Aucun asset bitmap ajouté au dépôt.
+- git diff --check : succès, répété après écriture du log.
+
+VALIDATIONS HISTORIQUES
+Les 42 tests xUnit et le smoke de cadence Niri du précédent prompt restent
+des validations historiques, non réexécutées pour ce changement de renderer.
+Les validations macOS ne sont pas réexécutées.
+
+LIMITES ET PROCHAINE ÉTAPE
+- Vérification actuelle Linux PTY ; aspect sur Windows/macOS et police de
+  l'auteur non vérifié. L'impression de halo provient de l'accent discret
+  et de la hiérarchie des couleurs, pas d'un flou graphique véritable.
+- Pas d'installation/publication ; binaire Debug reconstruit. Recompiler ou
+  actualiser l'installation existante pour bénéficier de ce visuel.
+- Prochaine étape : retour de l'auteur sur intensité et lisibilité du contour,
+  puis poursuite du polish M0. Pas de démarrage de M1.

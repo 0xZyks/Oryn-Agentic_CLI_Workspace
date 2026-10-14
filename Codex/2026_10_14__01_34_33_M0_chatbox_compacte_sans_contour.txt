@@ -1,0 +1,52 @@
+Oryn — Chatbox compacte, hauteur adaptative, sans contour
+
+Date : 2026-10-14 01:34:33 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Chatbox trop haute : seulement 15–25 pixels d'air au-dessus et dessous
+du texte, croissance selon le multiligne. Retirer bordure et coins arrondis.
+Consignes/vision déjà lues dans la session. Dernier log M0 connu, rédigé
+au prompt précédent : 2026_10_14__01_29_18_M0_chatbox_multiligne_arrondie.txt.
+Aucun log d'un autre palier consulté ; changements précédents conservés.
+
+RÉSULTAT
+- Composer sans BorderStyle ; fond et > discret conservés.
+- Une ligne de padding haut et bas : trois lignes au repos ou pour un
+  prompt simple, quatre pour deux lignes de texte, etc.
+- Hauteur recalculée à la saisie, effacement, envoi et resize, selon
+  les retours explicites et le nombre de colonnes du texte wrapé.
+- Croissance bornée pour conserver l'historique, au plus moitié du
+  panneau et moins sur petites dimensions ; défilement natif ensuite.
+- Texte à Y=1 dans le composer, largeur adaptée à l'absence de bordure.
+- Entrée envoie, Shift+Entrée ajoute une ligne, draft et focus conservés.
+- Surface uniforme pour saisie et padding. Token ChatInputBorder renommé
+  ChatPromptMarker, puisqu'il n'y a plus de contour.
+
+FICHIERS
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+scripts/terminal-smoke.py : attente absence de coins arrondis.
+scripts/chat-smoke.py : coordonnée de clic adaptée au composer compact.
+README.md, docs/m0-verification.md, ce log.
+
+VÉRIFICATIONS ACTUELLES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- scripts/chat-smoke.py sur binaire Debug : succès Unicode/couleur,
+  ASCII/mono et Space leader ; draft multiligne, Entrée/Shift+Entrée,
+  changement de tab, flèches, Ctrl+A, souris, resize, échanges et restauration.
+- scripts/terminal-smoke.py : succès Unicode/couleur et ASCII/mono,
+  démarrage, focus, souris, preview, docks, resize/cancel, compact/tiny,
+  menu et fermeture/restauration.
+- Capture PTY du draft à deux lignes reconstruite en SVG/PNG sous /tmp,
+  inspectée : quatre lignes de composer, une ligne vide haut/bas, sans
+  bordure. Reconstruction, pas screenshot du terminal réel.
+- git diff --check : succès.
+
+HISTORIQUE, LIMITES ET SUITE
+Tests unitaires App et suite keyboard du prompt précédent non réexécutés,
+état domaine et routage inchangés. Validation présente sous Linux uniquement.
+Padding d'une cellule, pas garantie de 15–25 pixels : hauteur selon police.
+Toujours réponse demo Hello World!, pas d'inférence ni de persistance M1.
+Binaire Debug reconstruit ; installation utilisateur non actualisée.
+Prochaine étape : validation esthétique utilisateur et suite M0.

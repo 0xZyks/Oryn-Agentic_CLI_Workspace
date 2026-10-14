@@ -1,0 +1,88 @@
+Oryn — Barre d'accent au-dessus du panneau et contraste de focus
+
+Date : 2026-10-13 22:52:50 CEST (+0200), Europe/Paris.
+Palier : M0. Base : 7fd5544. Aucun commit associé créé, aucun push.
+
+DEMANDE
+Retirer le contour, afficher une barre d'accent réellement au-dessus du panneau
+actif sur toute sa largeur, suivant son resize. Éclaircir légèrement fond et
+texte du panneau actif, atténuer les panneaux inactifs de façon uniforme.
+
+OBSERVATIONS ACTUELLES
+- Consignes et README_ORYN.md déjà lus dans la session. Dernier log M0 lu :
+  2026_10_13__22_38_22_M0_halo_focus_panneaux.txt. Aucun autre palier consulté.
+- Le contour précédent utilisait quatre labels décoratifs dans les marges.
+  L'auteur a préféré remplacer cette direction par une barre sans boxing.
+- Changements précédents, lockfiles et logs non suivis conservés.
+
+RÉSULTAT ET DÉCISIONS
+- PanelFocusHalo.cs supprimé ; remplacement par PanelFocusAccent.cs.
+  Un seul label non focusable à X = panneau.X, Y = panneau.Y - 1,
+  Width = panneau.Width. Glyph ▔ Unicode, = ASCII. Aucun côté/bas de contour.
+- Le panneau central entier est ciblé pour Chat/Code/Visualizer en onglet ;
+  le visualiseur docké dispose de sa propre barre. Le resize réutilise les
+  bounds indépendants du renderer. Cache géométrique pour éviter le travail
+  quand le panneau n'a pas changé.
+- WorkspaceLayout réserve une ligne d'accent en mode court : top passe de 1
+  à 2. Mode large inchangé. Contrôles des panneaux courts remontés d'une ligne
+  pour préserver le contenu et séparer barre/titres/app bar.
+- Palettes coordonnées de background et texte selon focus : actifs légèrement
+  plus lumineux, inactifs plus sombres. Captions, previews, onglets, contrôles
+  du visualiseur et sélection d'explorateur suivent la même présentation.
+  Pas d'overlay réel interceptant les événements. Cache de focus/placement
+  pour éviter de restyler les panneaux à chaque mise à jour de statut/resize.
+- Monochrome conserve blanc/noir lisible, barre claire et titres accentués ;
+  la variation de couleurs s'applique au mode couleur.
+- Aucun changement de cadence, inférence, persistance ou setup du docking.
+
+FICHIERS DE CE PROMPT
+src/Oryn.Tui.Prototype/PanelFocusHalo.cs : supprimé (ancien fichier non suivi).
+src/Oryn.Tui.Prototype/PanelFocusAccent.cs : nouveau.
+src/Oryn.Tui.Prototype/WorkspaceTheme.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs
+src/Oryn.App/WorkspaceLayout.cs
+scripts/terminal-smoke.py
+README.md
+docs/m0-verification.md
+Ce log.
+
+VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 42 réussis,
+  zéro échec/ignoré ; VSTest hors sandbox pour sa socket locale.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès.
+- ORYN_SMOKE_CAPTURE_DIR=/tmp/oryn-accent-captures python3
+  scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn : succès final
+  Unicode/couleur et ASCII/mono. Largeurs observées : Explorer 24, Center 90,
+  Compact 56, Dock 30 puis 36 après drag, Tiny 26 ; retour large 24.
+  Couleurs de fond et de texte vérifiées dans le vrai flux ANSI après focus.
+  Navigation, clics, previews, docking, resize/annulation, terminal 30x6,
+  menu, fermeture et restauration complète vérifiés.
+- La première assertion de resize recherchait la barre dans la seule sortie
+  du mouse release ; elle avait déjà changé durant le mouvement. Harness
+  corrigé pour inspecter mouvement et release. Aucun correctif applicatif
+  nécessaire pour ce cas ; scénarios complets réexécutés avec succès.
+- Captures ANSI Explorer/Chat rejouées via le helper temporaire de la session
+  précédente en SVG/PNG sous /tmp avec ImageMagick, puis inspectées par
+  view_image. Barre au-dessus de la surface, largeur correspondante,
+  suppression du contour et contraste uniforme constatés. Ces previews
+  approchent les métriques de police et ne sont pas des captures de Kitty.
+- Recherche source : aucune référence restante à FocusHalo ou _focusHalo.
+- git diff --check : succès, répété après écriture du log.
+
+VALIDATIONS HISTORIQUES
+La vérification du halo et les précédents bilans de cadence sont conservés
+dans les anciens logs. Le test runtime Niri/manuel/Auto du précédent jalon
+M0 n'est pas répété ici ; ses sources/politique sont inchangées.
+
+LIMITES ET SUITE PRÉVUE
+- Vérification présente : Linux x64 PTY, SDK 10.0.401. Apparence native
+  Windows/macOS, publication et installation non testées ici.
+- Variation de fond/texte volontairement modérée ; monochrome s'appuie sur
+  la barre et le gras. Aucune animation ou transparence graphique native.
+- Binaire Debug reconstruit. Recompiler/réinstaller une commande oryn
+  déjà installée pour actualiser son visuel.
+- Prochaine étape : retour de l'auteur sur épaisseur de barre et intensité
+  du contraste, puis poursuite des ajustements M0. M1 non commencé.

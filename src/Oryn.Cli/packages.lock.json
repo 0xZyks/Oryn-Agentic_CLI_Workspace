@@ -201,6 +201,13 @@
           "Terminal.Gui": "[2.5.0, )"
         }
       }
+    },
+    "net10.0/linux-x64": {
+      "Onigwrap": {
+        "type": "Transitive",
+        "resolved": "1.0.11",
+        "contentHash": "5/WAxSYWfiiPzp1X13qqdqjFmYLKDD/U7Vh3WCkKxWG9BjqdrXnQE5fCKCFJX+xWvuYLTxwZIVWBwBWObViE8g=="
+      }
     }
   }
 }

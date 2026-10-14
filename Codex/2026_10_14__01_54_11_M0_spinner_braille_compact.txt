@@ -1,0 +1,35 @@
+Date : 2026-10-14 01:54:11 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Essayer une animation Braille Unicode pour rapprocher les points verticalement.
+Consignes et vision déjà lues dans la session ; dernier log M0 connu,
+rédigé précédemment : 2026_10_14__01_45_15_M0_animation_points_resserres.txt.
+Aucun log d'un autre palier lu.
+
+RÉSULTAT
+Unicode : spinner sur une cellule, cycle ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ toutes les
+100 ms, avec Thinking... sur la même ligne. Animation plus compacte.
+ASCII : ancien losange trois colonnes/trois lignes et période 200 ms conservés.
+Attente factice 1600 ms, saisie et état de chat inchangés.
+Fichiers : ChatPreviewTranscript.cs, TerminalWorkspace.cs, README.md et ce log.
+
+VÉRIFICATIONS ACTUELLES
+- Build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- Sonde PTY temporaire Unicode : au moins deux glyphes Braille différents
+  reçus pendant l'attente, réponse ensuite, fermeture et restauration réussies.
+- Même sonde avec --ascii --no-color : absence de Braille, étoile du motif
+  de secours animée, réponse et restauration réussies.
+- Capture Unicode reconstruite en SVG/PNG sous /tmp et inspectée ;
+  Thinking tient sur une ligne. La police de cette reconstruction ne
+  dessine pas le glyphe Braille ; son émission et sa progression sont
+  confirmées par PTY, rendu du glyphe à valider dans le terminal réel.
+- git diff --check : succès.
+
+HISTORIQUE ET LIMITES
+59 tests unitaires et suite chat du prompt animation restent historiques,
+non relancés pour cette variante de rendu ; état du domaine inchangé.
+Font-size imposée par le terminal ; Braille nécessite un glyphe disponible
+dans sa police. --ascii fournit le secours explicite. Windows/macOS non testés.
+Binaire Debug reconstruit. Prochaine étape : essai visuel utilisateur M0.

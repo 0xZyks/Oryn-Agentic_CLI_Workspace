@@ -1,0 +1,18 @@
+Date : 2026-10-14 01:45:15 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit créé.
+
+Demande : rapprocher les points/étoiles de l'animation Thinking.
+Dernier log M0 connu, rédigé au prompt précédent :
+2026_10_14__01_41_08_M0_animation_thinking_demo.txt.
+Consignes et vision déjà lues ; aucun autre palier consulté.
+
+Résultat : losange réduit de cinq à trois colonnes, toujours trois lignes.
+Espaces superflus retirés ; texte Thinking, cadence et attente inchangés.
+Fichier : src/Oryn.Tui.Prototype/ChatPreviewTranscript.cs.
+Écart vertical imposé par les cellules et la police du terminal.
+
+Vérifications : build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+-p:UseSharedCompilation=false réussi, zéro erreur/avertissement.
+git diff --check réussi. Tests du prompt précédent restent historiques,
+non relancés pour cette suppression de deux espaces dans le motif.
+Binaire Debug reconstruit. Prochaine étape : essai visuel utilisateur M0.

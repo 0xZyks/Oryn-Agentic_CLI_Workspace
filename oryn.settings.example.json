@@ -3,5 +3,6 @@
   "UseUnicode": true,
   "ShowHiddenFiles": false,
   "MaxDirectoryEntries": 1000,
-  "MaxPreviewCharacters": 65536
+  "MaxPreviewCharacters": 65536,
+  "RenderFramesPerSecond": null
 }

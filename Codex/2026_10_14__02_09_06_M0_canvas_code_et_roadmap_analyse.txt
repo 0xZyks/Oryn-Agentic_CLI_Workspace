@@ -1,0 +1,62 @@
+Oryn — Canvas de code et position de l'analyse dans la roadmap
+
+Date : 2026-10-14 02:09:06 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Afficher le code sur un canvas comparable à un bloc Markdown/Discord.
+Demander si LSP/Tree-sitter pour coloration vaut la peine maintenant et
+rappeler la roadmap. Canvas demandé explicitement comme obligatoire.
+Consignes/vision déjà lues ; sections intégrations et roadmap README_ORYN
+revérifiées. Dernier log M0 connu, rédigé précédemment :
+2026_10_14__01_54_11_M0_spinner_braille_compact.txt.
+Aucun log d'un autre palier consulté. Changements antérieurs conservés.
+
+RÉSULTAT ACTUEL
+- View codeCanvas dédié : surface active #151820/inactive #0f1117,
+  marges internes, texte et indentation via l'aperçu read-only existant.
+- Canvas suit le panneau central et l'onglet Code ; accès souris/clavier,
+  focus et défilement gérés par les contrôles Terminal.Gui existants.
+- Aucun cadre en couleur ; en monochrome une bordure Single distingue
+  la zone malgré l'absence de différence de fonds. Glyphes ASCII existants.
+- Padding vertical réduit si le panneau est très court.
+- Pas de coloration ni nouvelle dépendance de parser/LSP ajoutée.
+
+ROADMAP ET AVIS
+M0 : shell/UI et ergonomie actuels. M1 : inférence locale, vrai chat
+streamé/annulable/persisté. M2 : persistance et graphe fondamental.
+M3 : première analyse de langage, C#/Roslyn candidat, données vérifiables
+et réconciliation. Puis M4 chats contextuels/cartes, M5 propositions,
+M6 recherche/contexte, M7 stabilisation multiplateforme.
+Canvas utile immédiatement pour M0. Intégration complète de langages à
+garder pour M3 ; coloration syntaxique peut être une tranche visuelle
+antérieure si l'utilisateur la priorise. Tree-sitter décrit la syntaxe,
+LSP peut fournir des capacités sémantiques selon serveur ; ne pas ajouter
+un catalogue de serveurs/languages ou une architecture spéculative ici.
+
+FICHIERS
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et WorkspaceTheme.cs
+scripts/terminal-smoke.py : surface canvas contrôlée et capture ajoutée.
+README.md, docs/m0-verification.md, ce log.
+État App et source preview inchangés.
+
+VÉRIFICATIONS ACTUELLES
+- Build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- scripts/terminal-smoke.py sur binaire Debug : succès Unicode/couleur
+  et ASCII/mono ; code preview et restauration d'onglet, couleur du
+  canvas, focus, souris, docks, resize/cancel, compact/tiny, menu,
+  fermeture et restauration du terminal.
+- scripts/keyboard-smoke.py : succès Ctrl/Alt/Space, focus onglets/contenu,
+  flèches et formulaire keybinds Apply/Save/reset/redémarrage.
+- Capture PTY code-canvas couleur reconstruite en SVG/PNG sous /tmp,
+  inspectée : surface distincte, marges et texte visibles. Pas screenshot natif.
+- git diff --check : succès.
+
+HISTORIQUE, LIMITES ET SUITE
+59 tests App précédents restent historiques, non réexécutés pour style.
+Validation présente Linux seulement ; Windows/macOS non exécutés.
+Code toujours en lecture seule et non coloré. Pas de capacité LSP annoncée.
+Binaire Debug reconstruit ; installation utilisateur non actualisée.
+Prochaine étape : essai du canvas et poursuite des finitions M0 ; coloration
+ou intégration de langage à décider selon la priorité de l'utilisateur.

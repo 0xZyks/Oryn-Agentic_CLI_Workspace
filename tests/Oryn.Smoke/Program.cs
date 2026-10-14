@@ -20,7 +20,7 @@ try
     state.Apply((await state.LoadSelectionAsync(files, default))!);
     Require(state.Preview?.Content == "Oryn smoke test", "File should open as a read-only preview.");
     state.Dispatch(WorkspaceCommand.NextPanel);
-    Require(state.Focus == WorkspacePanel.Visualizer, "Focus should follow application commands.");
+    Require(state.Focus == WorkspacePanel.Explorer, "Focus should cycle through the two startup panels.");
     Require(WorkspaceLayout.Calculate(60, 20, state.Focus).Compact, "Narrow terminal should use switchable panels.");
     if (args.Length == 1)
     {

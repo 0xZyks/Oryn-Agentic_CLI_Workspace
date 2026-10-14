@@ -1,0 +1,76 @@
+Oryn — Cadence de rendu du workspace
+
+Date : 2026-10-13 21:43:03 CEST (+0200), Europe/Paris.
+Palier : M0. Commit associé : aucun. Base observée : 7fd5544.
+
+DEMANDE
+Améliorer la fluidité de l'interface, perçue comme limitée à 25 FPS.
+
+OBSERVATIONS ACTUELLES
+- Dernier log M0 lu : 2026_10_13__21_25_43_M0_visualizer_onglet_au_demarrage.
+  AGENTS.md et README_ORYN.md déjà lus dans cette session.
+- Les modifications antérieures et les changements des lockfiles présents
+  au début de ce prompt ont été conservés sans les réécrire.
+- Version installée Terminal.Gui 2.5.0, commit upstream
+  ece73d25c37df9bb17cb0c0d2171abd4d98eeaff (nuspec).
+- Documentation XML du package et sources officielles exactes examinées :
+  Terminal.Gui/App/Application.cs et App/MainLoop/ApplicationMainLoop.cs.
+  MaximumIterationsPerSecond vaut 25 par défaut ; l'implémentation
+  calcule un budget 1000 / cadence en millisecondes, traite entrées/layout/
+  rendu puis attend le temps restant. La mention XML « Defaults to 25ms »
+  est imprécise : le code utilise 25 itérations/s, soit un budget de 40 ms.
+- Lecture des sources via curl hors sandbox après erreur DNS ; fichiers
+  upstream temporaires sous /tmp. Pas de changement de dépendance.
+
+RÉSULTAT ET FICHIERS
+- src/Oryn.Tui.Prototype/TerminalWorkspace.cs : fixe la cadence cible à 60
+  après app.Init(). Pas de timer de redraw forcé ni de boucle maison.
+  L'état applicatif reste indépendant et les vues inchangées ne redessinent
+  pas systématiquement.
+- scripts/render-benchmark.py : mesure réutilisable sur PTY POSIX du débit
+  de sorties pendant un drag du séparateur explorateur, entrées à 120 Hz,
+  fenêtre 120x30, durée 3 s. Grouper les chunks à moins de 4 ms fournit
+  une approximation des mises à jour ; pas une mesure écran de l'émulateur.
+  Le script vérifie aussi sortie et restauration du terminal.
+- README.md : cible, limites et commande de mesure.
+- docs/m0-verification.md : bilan Linux avant/après distinct de l'historique.
+- Ce log.
+
+MESURES EXÉCUTÉES — DEBIAN 13 X64, SDK 10.0.401, DEBUG
+Commande : python3 scripts/render-benchmark.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+Avant (25) : 23,7 bursts/s ; médiane 40,20 ms ; p95 59,09 ms ;
+582588 octets pendant 3 s ; 308 octets/s au repos.
+Après (60) : 47,7 bursts/s ; médiane 16,36 ms ; p95 52,99 ms ;
+938046 octets pendant 3 s ; 764 octets/s au repos.
+La mesure après a tourné en parallèle du smoke PTY fonctionnel.
+La médiane s'améliore nettement ; les intervalles longs persistent.
+Les positions arrondies en colonnes répètent parfois la même largeur,
+donc le nombre de bursts ne correspond pas au nombre d'itérations.
+Un 60 FPS visible et soutenu n'est pas établi. CPU non mesuré.
+
+AUTRES VÉRIFICATIONS EXÉCUTÉES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro avertissement/erreur.
+- dotnet run --project tests/Oryn.Smoke --no-build --no-restore --
+  src/Oryn.Cli/bin/Debug/net10.0/oryn : succès.
+- python3 scripts/terminal-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn :
+  succès Unicode/couleur et ASCII/mono, incluant startup sans dock,
+  navigation, souris, docking explicite, resize, annulation, sortie
+  et restauration terminal.
+- git diff --check : succès, répété après écriture du log.
+
+VALIDATIONS HISTORIQUES
+Les 25 tests applicatifs ont réussi lors du prompt précédent.
+Ils ne sont pas réexécutés pour ce réglage limité à l'adaptateur.
+Les validations macOS historiques ne sont pas réexécutées.
+
+LIMITES ET SUITE PRÉVUE
+- Cible 60 Hz, pas de synchronisation avec le moniteur ; dépend de
+  l'émulateur, de la taille du terminal et du coût du rendu.
+- Boucle plus fréquente : davantage de sorties et CPU potentiellement accru.
+- Pas d'animation, nouveau renderer ou changement de docking ajouté.
+- Packaging, installateurs, Windows/macOS non vérifiés dans ce prompt.
+  Binaire Debug reconstruit ; installation existante non mise à jour.
+- Prochaine étape : appréciation de la fluidité par l'auteur dans son
+  terminal habituel, puis mesure ciblée si des saccades restent présentes.
+- Aucun commit/push ; M1 non commencé.

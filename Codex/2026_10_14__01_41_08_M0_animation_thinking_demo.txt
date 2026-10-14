@@ -1,0 +1,60 @@
+Oryn — Animation d'attente de réponse factice
+
+Date : 2026-10-14 01:41:08 CEST (+0200), Europe/Paris.
+Palier : M0. Aucun commit/push créé.
+
+DEMANDE
+Ajouter une animation de réflexion/attente avant la réponse demo,
+points en cercle et petit texte Thinking... pour mettre le visuel en place.
+Consignes et vision déjà lues dans la session. Dernier log M0 connu,
+rédigé au prompt précédent :
+2026_10_14__01_34_33_M0_chatbox_compacte_sans_contour.txt.
+Aucun log d'un autre palier lu. Changements précédents conservés.
+
+RÉSULTAT ET DÉCISIONS
+- ChatPreviewState expose IsThinking : Send ajoute le message User,
+  vide le draft et démarre l'attente ; CompleteReply ajoute Hello World!
+  une fois seulement. Aucune dépendance Terminal.Gui dans cet état.
+- Refus d'un second envoi tant que la réponse est attendue ; le brouillon
+  suivant peut être saisi et n'est pas effacé à l'arrivée de la réponse.
+- Indicateur sous Oryn, à gauche : quatre points en losange, étoile
+  tournante toutes les 200 ms et Thinking... ; caractères ASCII utilisables
+  aussi en monochrome. Même style discret que l'historique.
+- Timeout applicatif existant pilote l'animation, sans sleep ni blocage
+  de la saisie. Réponse factice après 1600 ms. Pas de nouveau thread/provider.
+- Frames non redessinées quand Chat est masqué ; la réponse se termine
+  quand même. Aucun déplacement de focus ou nettoyage du prochain draft.
+- Animation transitoire, pas un message persisté ni une réponse de modèle.
+
+FICHIERS
+src/Oryn.App/ChatPreviewState.cs
+src/Oryn.Tui.Prototype/TerminalWorkspace.cs et ChatPreviewTranscript.cs
+tests/Oryn.App.Tests/ChatPreviewTests.cs
+scripts/chat-smoke.py : attentes fin de réponse explicites pour éviter de
+  confondre un redraw d'ancien Hello World avec une réponse nouvelle.
+README.md, docs/m0-verification.md, ce log.
+
+VÉRIFICATIONS ACTUELLES
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false
+  -p:UseSharedCompilation=false : succès, zéro erreur/avertissement.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore : 59 passés,
+  avec socket VSTest autorisée hors sandbox. États d'attente, refus d'envoi
+  concurrent, draft conservé, fin idempotente et ordre des messages.
+- scripts/chat-smoke.py : succès Unicode/couleur, ASCII/mono, Space leader,
+  attente visible avant réponse, saisie du draft suivant, multiligne,
+  tab/focus, cursor/mouse, resize, échanges répétés et restauration.
+- Sonde PTY temporaire : Thinking... et étoile réémis au frame suivant,
+  passage à Code pendant l'attente, fin en arrière-plan, puis retour Chat
+  affiche Hello World sans Thinking. Quit/restauration réussis.
+- Capture PTY Thinking reconstruite en SVG/PNG sous /tmp et inspectée.
+  Reconstruction et non screenshot du terminal réel.
+- git diff --check : succès.
+
+HISTORIQUE, LIMITES ET SUITE
+Suites générales keyboard/terminal des prompts précédents restent
+historiques ; non relancées ici, la suite chat couvre les entrées touchées.
+Police du terminal inchangée : taille plus petite impossible à garantir
+dans une TUI à cellules ; texte rendu discret sans prétendre la réduire.
+Validation présente Linux uniquement. Aucune inférence réelle/persistance M1.
+Binaire Debug reconstruit ; installation utilisateur non actualisée.
+Prochaine étape : essai visuel utilisateur puis suite de l'ergonomie M0.

@@ -1,0 +1,114 @@
+Oryn — Passation pour reprise sur macOS
+Date : 2026-10-14 06:34:16 CEST (+0200) — Europe/Paris.
+Palier en cours : M0. Prochain travail : continuer le visuel et l'ergonomie M0.
+
+DEMANDE ET RÉSULTAT DE CE PROMPT
+L'utilisateur demande une mise à jour des logs avant son propre push et la
+reprise sur Mac demain. Création de cette synthèse ; aucun changement de code,
+aucune installation, aucun commit ni push effectué pendant ce prompt.
+Consignes/vision déjà lues ; noms des logs consultés, dernier log M0 lu :
+2026_10_14__04_46_09_M0_navigation_membres_menu_composant.txt.
+Aucun log d'un autre palier consulté. Anciens logs conservés.
+
+ÉTAT OBSERVÉ DU DÉPÔT
+HEAD local observé : 7fd5544 — Added script for linux and windows.
+Les changements de la session ne sont pas encore commités : fichiers suivis
+modifiés et nombreux fichiers nouveaux non suivis (classes App/TUI, tests,
+scripts, ADR, profil exemple et logs). Un commit limité à git commit -a ne
+prendra pas les nouveaux fichiers : les inclure dans le staging avant le push.
+Le commit futur de l'utilisateur est inconnu au moment de cette passation.
+Les lockfiles modifiés préexistants sont conservés.
+Les binaires bin/obj, artifacts et installations sous ~/.local sont hors Git.
+Le Mac devra restaurer et compiler sa propre version ; ne pas copier la
+publication linux-x64 installée sur cette machine.
+
+SYNTHÈSE M0 À PRÉSERVER
+- Visualizer uniquement disponible en onglet au lancement ; pas de dock
+  initial. Dock gauche/droite optionnel, tailles adaptables et resize clavier/souris.
+- Barre lavande pleine largeur collée au-dessus du panneau actif ; fond/texte
+  actifs plus lumineux, panneaux inactifs assombris. Pas de contour/halo.
+- Navigation groupée configurable : Super Ctrl par défaut ; Super+Tab/Shift+Tab
+  change de panneau. Tab reste local au panneau. Super+Enter/F6 sélectionne
+  les onglets ; flèches choisissent, Enter confirme, Escape retourne au contenu.
+- Chat global de démonstration : saisie compacte sans bordure, multiligne,
+  Shift+Enter newline, Enter envoi ; messages utilisateur à droite, Oryn à
+  gauche ; réponse Hello World! après attente et spinner Braille.
+- Code dans un canvas en lecture seule ; coloration Tree-sitter/LSP non faite.
+- Visualizer : graphe fictif de sept cartes, relations légendées, quatre
+  statuts simulés, trois niveaux de présentation, suivi du viewport.
+- Enter dans une carte sélectionne ses membres (fonction, propriété, etc.) ;
+  flèches parcourent la carte ; Escape retrouve cartes et présentation initiale.
+  Membre actif marqué > et fond plus clair ; sélection à la souris disponible.
+  Enter sur un membre ouvre ses détails. Alt+Enter ouvre les options de la
+  carte ou du membre ciblé : Show details, Show chat (demo), Back.
+- UUID stables de fixture pour chaque carte et membre. Chats démo séparés par
+  UUID : historiques et brouillons conservés uniquement dans le processus.
+  Aucune persistance, analyse réelle, inférence ou validation réelle de statut.
+  Les chats persistants par élément restent M4 ; graphe persistant M2,
+  analyse M3, niveaux sémantiques réels M6.
+- Avec Super=Alt, Alt+Enter dans le contenu graphe ouvre les options ; F6 reste
+  utilisable pour sélectionner les onglets. Ailleurs Super+Enter fonctionne.
+
+REPRISE MAC — COMMANDES PRÉVUES, NON EXÉCUTÉES ICI
+Prérequis : SDK .NET 10 (global.json 10.0.100 + latestFeature ; Linux de cette
+session utilisait 10.0.401), terminal interactif, accès NuGet au premier restore.
+Depuis le dépôt actualisé :
+  dotnet restore Oryn.slnx
+  dotnet build Oryn.slnx --no-restore
+  dotnet run --project src/Oryn.Cli --no-build
+Pour tester dans un répertoire projet précis, se référer à README.md/CLI help.
+Vérifications conseillées pour cette reprise :
+  dotnet test tests/Oryn.App.Tests --no-restore
+  dotnet run --project tests/Oryn.Smoke --no-restore
+  python3 scripts/keyboard-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+  python3 scripts/visualizer-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+  python3 scripts/component-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+  python3 scripts/chat-smoke.py src/Oryn.Cli/bin/Debug/net10.0/oryn
+Python 3 requis pour les suites PTY POSIX. L'application fonctionne depuis le
+build, sans installation. Pour une publication autonome sur Apple Silicon :
+  dotnet publish src/Oryn.Cli -c Release -r osx-arm64 --self-contained true -o artifacts/osx-arm64
+Sur Mac Intel, utiliser osx-x64. Garder les fichiers de publication ensemble.
+Les installeurs existants ciblent Linux et Windows ; aucun installeur Mac dédié.
+
+PARTICULARITÉS MAC ET TERMINAL À VÉRIFIER
+- Détection écran/Hz auto actuelle : Niri/Linux uniquement. Sur Mac, fallback
+  explicite 60 Hz ; ce n'est pas une dépendance à Niri pour démarrer. --fps 144
+  permet un réglage manuel, --fps auto revient au mode auto/fallback.
+- Les profils utilisateur et réglages du terminal sont hors dépôt ; ils ne
+  suivent pas le push. Sans profil de keybindings, défauts chargés normalement.
+- Kitty intercepte Ctrl+Tab et Ctrl+Shift+Tab par défaut. Si Kitty est utilisé
+  sur Mac et que le focus reste immobile, voir README.md et le script optionnel
+  scripts/configure-kitty-shortcuts.py (--dry-run d'abord). Oryn marque sa
+  session avec OSC SetUserVar ; les mappings scoped se configurent par machine.
+- Les autres terminaux peuvent transmettre différemment Ctrl+Tab et
+  Shift/Alt+Enter. Vérifier les touches physiques : les PTY synthétiques
+  contournent les raccourcis de l'émulateur. Option/Alt doit parvenir comme Alt
+  à l'application. F1–F6 peuvent dépendre du réglage clavier macOS/Fn.
+- Win/Command n'est pas directement exposé par cet adaptateur ; Ctrl/Alt ou
+  leader Space/F12 sont disponibles. Vérifier UTF-8/Braille et utiliser les
+  options --ascii --no-color en cas de capacité terminal limitée.
+- Tester démarrage/fermeture, état shell restauré, resize, dock, focus, chats,
+  menus cartes/membres. Minimum dialogues composants : 45x16 ; keybindings80x22.
+
+VALIDATIONS HISTORIQUES DE LA TRANCHE PRÉCÉDENTE
+Ces vérifications ont réellement été exécutées sur Linux au prompt précédent,
+mais ne sont pas de nouvelles exécutions dans ce prompt de documentation :
+- Build solution : zéro erreur/avertissement ; 68 tests App passés.
+- Suites keyboard Ctrl/Alt/Space, visualizer couleur et ASCII/mono, chat et
+  composants : succès. Composants testés au clavier/souris, UUID/parent,
+  conservation brouillon/historique, isolation, terminal 45x16 et restauration.
+- Publication Release linux-x64 : succès. Mise à jour autorisée de six
+  assemblies/PDB dans ~/.local/share/oryn ; suite composant Ctrl sur le binaire
+  réellement installé : succès. Installation locale indépendante du dépôt.
+- Reconstruction ANSI de la sélection membre inspectée.
+README.md rapporte une ancienne validation PTY macOS ARM64 ; elle ne prouve
+pas que les fonctionnalités ajoutées cette session sont déjà validées sur Mac.
+La tranche actuelle n'a été testée ni sur macOS ni sur Windows.
+
+VÉRIFICATIONS DE CE PROMPT ET SUITE
+Lectures du dernier log M0, README.md, global.json, projets .csproj, gitignore ;
+inspection des noms de scripts, git status et HEAD. Contrôle git diff --check
+après création du présent log. Aucun test runtime relancé pour cette doc.
+Fichier concerné : ce nouveau log uniquement.
+Demain : restaurer/compiler/tester sur Mac puis reprendre le M0 avec les retours
+utilisateur ; ne pas lancer les jalons suivants simplement à cause de la reprise.

@@ -1,0 +1,45 @@
+{
+  "Super": "Ctrl",
+  "LeaderTimeoutMilliseconds": 1000,
+  "Workspace": {
+    "Quit": ["Super+Q", "Ctrl+C"],
+    "EditKeybindings": ["Super+K"],
+    "OpenMenu": ["F10"],
+    "ResizeSmaller": ["Super+Left"],
+    "ResizeLarger": ["Super+Right"],
+    "ToggleDock": ["Super+D"],
+    "DockLeft": ["Super+Shift+Left"],
+    "DockRight": ["Super+Shift+Right"]
+  },
+  "Panels": {
+    "NextPanel": ["Super+Tab"],
+    "PreviousPanel": ["Super+Shift+Tab"]
+  },
+  "Tabs": {
+    "ToggleTabFocus": ["Super+Enter", "F6"],
+    "NextTab": ["Right"],
+    "PreviousTab": ["Left"],
+    "ConfirmTab": ["Enter"],
+    "ReturnToContent": ["Esc"]
+  },
+  "Explorer": {
+    "MoveUp": ["Up"],
+    "MoveDown": ["Down"],
+    "OpenSelection": ["Enter", "Right"],
+    "Collapse": ["Left"]
+  },
+  "Graph": {
+    "GraphZoomIn": ["PageUp", "Plus", "Shift+Plus"],
+    "GraphZoomOut": ["PageDown", "Minus"],
+    "GraphResetZoom": ["Home"],
+    "GraphEnterComponent": ["Enter"],
+    "GraphExitComponent": ["Esc"],
+    "GraphOptions": ["Alt+Enter"]
+  },
+  "Content": {
+    "ContentUp": ["Up"],
+    "ContentDown": ["Down"],
+    "ContentLeft": ["Left"],
+    "ContentRight": ["Right"]
+  }
+}
