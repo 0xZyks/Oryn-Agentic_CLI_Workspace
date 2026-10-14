@@ -1,0 +1,50 @@
+Palier : M0
+Date : 2026-10-14T21:40:25.580376+02:00 — Europe/Paris
+
+Demande
+Renommer Architecture en Visualiser et le placer après le chat (deuxième ou troisième). Remonter légèrement la saisie du chat. Augmenter les bandeaux des panneaux de 5 à 10 pixels. Rendre le panneau actif plus lumineux, les autres plus sombres, remplacer son petit indicateur violet par une barre en haut sur toute sa largeur.
+
+Résultat / décisions
+Ordre retenu : Chat / Sources / Visualiser. L'ordre visuel correspond désormais directement au cycle d'onglets existant Chat/Code/Visualizer. Titre du visualiseur docké également renommé. CLI ouvre Chat et le focus central ; le zoom Overview du graphe initial reste disponible à l'ouverture du Visualiser. Aide CLI et documentation ajustées.
+Bandeaux : 30 px au lieu de 22 (+8 px), titres centrés verticalement, bandeau d'onglets et zones de clic agrandis ensemble. Texte racine de l'explorateur et commandes du visualiseur docké décalés de 8 px pour conserver l'espace sous les bandeaux, sans déplacer la géométrie du graphe.
+Saisie chat : remontée de 10 px, marge abandonnée uniquement si vue trop petite (moins de 7 lignes de contenu). Historique adapté ; position du curseur, sélection et hit-testing correspondent au rendu décalé. Cela s'applique aussi au chat d'élément via le composant partagé.
+Focus : surface du panneau actif plus claire, contenu des panneaux inactifs légèrement assombri ; barre violette de 2 px sur toute la largeur du bord supérieur du panneau actif. Plus de marqueur vertical de focus de panneau. Marqueur de sélection de ligne de l'explorateur conservé (rôle distinct). Aucun panneau ne prétend posséder le focus lorsque la navbar ou un dialogue le possède.
+Régions de clic du painter désormais en pixels, avec conversion des coordonnées vers les actions logiques existantes. SDL PointerDown conserve la précision pixel ; Click(int,int) reste un adaptateur pour les scénarios en grille. Les coordonnées de drag des cartes et le pipeline de présentation SDL restent inchangés.
+
+Fichiers modifiés dans cette passe
+src/Oryn.Ui.Sdl/WorkspacePainter.cs
+src/Oryn.Cli/Program.cs
+tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs
+README.md
+docs/design/workshop-prototype.md
+docs/adr/0012-architecture-workshop-design.md
+Présent log.
+Les modifications antérieures non commitées restent présentes.
+
+Vérifications réellement exécutées
+- Build solution Debug sans restore : 0 warnings/0 erreurs. Rebuild runner smoke après ajout des checks : réussi.
+- Tests Oryn.App.Tests : 120/120.
+- Nouveaux checks offscreen : clic dans les 8 px ajoutés de l'onglet Sources, ordre clavier jusqu'au Visualiser, clic dans la saisie remontée positionnant le curseur au bon caractère, clic dans la marge du bas ne déplaçant pas le curseur.
+- Smoke SDL dummy complet : réussite (clavier, saisie Unicode/multiligne/presse-papiers, clic fichier, graphe/membres/chats UUID, resize/docking, drag/collision/liens, idle presentation, navbar).
+- Checks de centrage du graphe et d'animation du chat existants : réussite.
+- Captures examinées : Chat focalisé, Sources focalisé et Visualiser docké ; contraste, barres sur toute la largeur, ordre d'onglets, bandeaux et marge de saisie visibles.
+- Publish Release autonome linux-x64 sans restore : réussi.
+- Smoke Wayland réel avec DLL App/SDL exactes du publish dans runner temporaire : réussite. Backend de présentation SDL opengl ; dessin toujours Skia raster.
+- Mise à jour atomique des six DLL/PDB CLI/App/SDL dans ~/.local/share/oryn, comparaison des bytes au publish : réussite.
+- Commande installée oryn --check : réussite.
+- git diff --check : réussite.
+
+Sauvegardes / artefacts
+Copie des fichiers avant modifications : .local/panel-refinement-before-20261014-213654/.
+Sauvegarde installation remplacée : /tmp/oryn-panel-refinement-backup-20261014-213949-7321662e.
+Baseline initiale .local/design-baseline-20261014-205948/ conservée.
+Captures locales : .local/design-preview/panel-focus-chat.png, panel-focus-sources.png et panel-focus-dock.png.
+
+Historique et limites
+Validation X11 et tests de rollback effectif proviennent des passes précédentes et n'ont pas été relancés ici. Pas de nouveau contrôle Windows/macOS ni de validation physique utilisateur de cette passe. Graphe/chat restent les démos M0.
+
+Commit
+Aucun nouveau commit ni push. Référence de baseline : 203b03f97193cec3a4bd9f8f98f06c0ff49aee33.
+
+Prochaine étape
+Retour utilisateur sur le contraste et l'espacement des panneaux. Continuer le raffinement global demandé avant de traiter les capacités/contenus des onglets.

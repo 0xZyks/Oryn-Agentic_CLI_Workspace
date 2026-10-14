@@ -1,10 +1,12 @@
 # Oryn — M0 engineering workspace
 
-Oryn is a local-first engineering workspace with a **native SDL3 + SkiaSharp interface**. Its appearance keeps the TUI spirit: monospace text, dark flat surfaces, compact controls, keyboard navigation and a lavender focus accent. **SDL + OpenGL remains the v1.0 rendering target.** Product vision: [README_ORYN.md](README_ORYN.md); implementation choice: [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md).
+Oryn is a local-first engineering workspace with a **native SDL3 + SkiaSharp interface**. Its TUI-inspired frame uses monospace typography, compact bars, closely spaced panels, thin nearly square outlines, dark blue-black surfaces and a restrained lavender focus accent. Oryn assists engineering and architecture alongside existing code editors. **SDL + OpenGL remains the v1.0 rendering target.** Product vision: [README_ORYN.md](README_ORYN.md); implementation choice: [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md).
 
-M0 provides a lazy file explorer, Chat/Code/Visualizer tabs, read-only file previews, optional visualizer docking and resizable panels. At startup Chat is active, with the visualizer available as a central tab. The same application state handles keyboard and mouse interaction independently of SDL and SkiaSharp.
+M0 provides a lazy file explorer, read-only file previews, optional visualizer docking and resizable panels. Chat opens at startup. The central tabs are Chat, Sources (read-only previews) and Visualiser, in that order; a contextual inspector appears when the map has enough width. The focused panel is brighter and marked by a thin violet bar across its top. Panel headers are 30 pixels high, and the chat composer leaves a 10-pixel bottom margin when space permits. The same application state handles keyboard and mouse interaction independently of SDL and SkiaSharp.
 
 The global chat and chats attached to graph members are **demos**: every prompt receives `Hello World!` after a short animated wait. Drafts and histories survive view/dialog switches during the session, but not process exit. The graph is an explicitly fictitious seven-card fixture with stable UUIDs, typed members, labeled relationships and simulated statuses. There is no inference, real source analysis, persistent graph or human status-validation workflow yet. No project files are edited or sent over the network.
+
+See [the workshop prototype and rollback instructions](docs/design/workshop-prototype.md).
 
 ## Build and run
 

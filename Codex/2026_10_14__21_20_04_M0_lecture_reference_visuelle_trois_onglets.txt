@@ -1,0 +1,28 @@
+Palier : M0
+Date : 2026-10-14T21:20:04.880550+02:00 — Europe/Paris
+
+Demande
+Examiner le seul PNG de /home/zyks/Documents/Lab/Pics, montage de plusieurs vues destiné à guider le design. Se concentrer sur les onglets déjà présents. Git et terminal explicitement exclus de cette passe.
+
+Observations actuelles
+Image ouverte et examinée : /home/zyks/Documents/Lab/Pics/Oryn_Neon_Developer_Workspace.png. Vues utiles : Chat en haut à gauche, Code en haut à droite, Visualizer en bas à gauche. Comparaison avec .local/design-preview/workshop.png et discussion.png, et vérification de WorkspacePainter actuel.
+La référence privilégie un fond noir bleuté, une typographie technique compacte, des séparateurs fins, des accents violet/bleu/turquoise localisés et des surfaces moins massives. Les onglets occupent une barre principale compacte. Chat : contexte à gauche, messages regroupés avec en-tête et alignés dans une colonne de lecture, compositeur bas. Code : arborescence, source colorisée avec numéros de lignes, colonne symboles/références. Visualizer : canvas dominant, barre latérale de commandes, petites cartes à icônes/types, connexions fines et sélection lumineuse localisée.
+Comparaison : la passe actuelle réserve davantage d'espace aux conteneurs, en-têtes et inspecteur permanent ; les messages User/Oryn sont très éloignés horizontalement. La référence suggère une révision de composition et de densité au-delà d'un changement de palette.
+
+Interprétation / direction proposée, pas implémentée
+Transposer le langage visuel aux trois vues existantes : Discussion/Chat, Sources/Code en lecture seule, Architecture/Visualizer. Préserver les identités Oryn/User et la navigation clavier. Utiliser les types d'éléments pour icônes/couleurs du graphe tout en gardant un indicateur distinct pour les statuts de conception. Adapter les panneaux contextuels aux actions réellement disponibles. Symboles/références automatiques, filtres de couches, layouts automatiques et statistiques de la maquette ne sont pas des capacités acquises du M0.
+
+Résultat / fichiers
+Aucune modification applicative ou d'installation dans ce tour. Seul ce log est ajouté. Les changements non commités de la passe précédente restent en place. Référence image conservée à son emplacement, aucune génération ni copie/modification du PNG.
+
+Vérifications réellement exécutées
+Inventaire Pics, état git, lecture des consignes/vision et dernier log par horodatage, inspection visuelle du PNG et des deux captures locales, lecture ciblée du renderer. Aucun build/test relancé : tâche de lecture et revue.
+
+Validations historiques
+Les tests/builds de la passe précédente figurent dans le log 2026_10_14__21_15_17 ; ils ne valident pas une implémentation de cette référence, qui n'existe pas encore.
+
+Commit
+Aucun commit ni push. Baseline historique : 203b03f97193cec3a4bd9f8f98f06c0ff49aee33.
+
+Prochaine étape
+Poursuivre le choix de transposition à partir de cette référence, puis implémenter les adaptations demandées dans le périmètre des vues existantes.

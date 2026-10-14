@@ -30,11 +30,11 @@ public sealed record WorkspaceLayout(PanelBounds Explorer, PanelBounds Center, P
     {
         options ??= new();
         width = Math.Max(0, width);
-        // Keep a dedicated accent row between the app bar and compact panels.
-        int top = height >= 12 ? 4 : 2;
-        int bottom = height >= 12 ? 3 : 1;
+        // Two app-bar rows and two status rows; panels use the remaining space.
+        const int top = 2;
+        const int bottom = 2;
         int bodyHeight = Math.Max(0, height - top - bottom);
-        int inset = width >= 12 ? 2 : 0;
+        int inset = width >= 12 ? 1 : 0;
         bool docked = options.VisualizerPlacement != VisualizerPlacement.Tab;
         if (!docked && focus == WorkspacePanel.Visualizer) focus = WorkspacePanel.Center;
         if (width < 90 || height < 12)
@@ -45,7 +45,7 @@ public sealed record WorkspaceLayout(PanelBounds Explorer, PanelBounds Center, P
                 focus == WorkspacePanel.Visualizer ? visible : default, true, focus);
         }
 
-        const int gap = 2;
+        const int gap = 1;
         int available = width - inset * 2 - (docked ? gap * 2 : gap);
         int explorer = Math.Clamp(options.ExplorerWidth ?? Math.Clamp(width / 5, 20, 30),
             MinExplorerWidth, available - MinCenterWidth - (docked ? MinVisualizerWidth : 0));

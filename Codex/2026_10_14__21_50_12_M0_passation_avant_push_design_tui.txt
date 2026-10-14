@@ -1,0 +1,48 @@
+Palier : M0
+Date locale : 2026-10-14T21:50:12.677485+02:00 — Europe/Paris
+
+Demande et retour utilisateur
+L'utilisateur juge le dernier résultat « pas mal », demande la mise à jour des logs, annonce qu'il va pousser puis reprendre plus tard. Ce retour accepte cette base pour la reprise ; ce n'est pas une validation exhaustive de tous les comportements ni une fin de M0. Aucun développement supplémentaire demandé dans cette passation.
+
+État de référence à reprendre
+Oryn reste un outil d'assistance à l'ingénierie et à l'architecture, complément des éditeurs. Frontend natif SDL3 + SkiaSharp avec esprit TUI ; SDL + OpenGL direct reste la cible v1.0. L'usage clavier et la distinction claire du focus priment. Priorité actuelle : habillage global de l'app, avant le contenu des onglets. Pas d'ajout de coloration syntaxique, Git ni terminal dans cette passe.
+La référence visuelle est /home/zyks/Documents/Lab/Pics/Oryn_Neon_Developer_Workspace.png. La palette/densité sont pertinentes, mais l'utilisateur trouve le montage trop IDE. Ce fichier externe n'est pas inclus dans le dépôt. Le rendu retenu emploie du monospace, un fond noir bleuté, des bordures fines presque carrées, des barres compactes et des accents violets sobres.
+
+Dernier comportement retenu
+- Onglets visibles dans l'ordre Chat / Sources / Visualiser, cohérent avec le cycle clavier Chat/Code/Visualizer interne. Chat ouvert et focus central au démarrage. Sources demeure un aperçu en lecture seule. Visualiser reste disponible en onglet et en dock gauche/droite.
+- Panneaux proches des bords : deux lignes d'app bar, deux lignes de statut, marges/gouttières d'une colonne.
+- Bandeaux de panneaux de 30 px (+8 px). Zones de clic de l'onglet étendues à cette hauteur ; titres et premières lignes/commandes des panneaux décalés en conséquence.
+- Panneau actif plus lumineux, panneaux inactifs légèrement assombris, barre violette de 2 px sur tout le bord supérieur du panneau actif. La navbar et les dialogues possèdent le focus lorsqu'ils sont actifs ; aucun panneau sous-jacent n'affiche alors sa barre de focus.
+- Saisie du chat remontée de 10 px pour laisser une marge sous le compositeur, sauf vue très petite. La conversion des clics respecte ce décalage. Rendu et événements restent alignés grâce à des régions de clic en pixels dans le painter ; les actions applicatives restent indépendantes du renderer.
+- Graphe démo à 7 cartes et UUID stables, drag libre avec collisions/contournement et liens attachés, positions en mémoire. Centrage uniquement aux changements de viewport/zoom, pas au relâchement du drag. Inspecteur à droite sur les vues suffisamment larges, ouvrant détails ou chat du UUID sélectionné.
+- Chat global et par élément toujours démos Hello World!, noms User/Oryn et icônes/spinner vectoriels. Aucun modèle, stockage durable ou analyse réelle ajouté.
+- Raccourcis à préserver : Ctrl+Tab panneaux ; Ctrl+Enter/F6 sélection des onglets puis flèches/Enter ; Shift+Tab/F9 navbar puis flèches/Enter. Explorateur Left ferme directement le parent depuis un enfant, Right développe/descend.
+- Ne pas régresser la présentation SDL : raster/upload si changement, mais présentation de la texture en cache à chaque frame bornée, y compris au repos. C'est la correction antérieure des caractères/événements semblant arriver en retard.
+
+État Git et fichiers
+HEAD observé à la passation : 203b03f97193cec3a4bd9f8f98f06c0ff49aee33, « Switch to SDL + SkiaSharp + Interactive Visualiser ».
+Aucun nouveau commit ni push effectué par l'agent. Le prochain commit/push appartient à l'utilisateur et n'est pas encore constaté ; relire git status/log à la reprise, ne pas supposer ce HEAD toujours courant.
+Modifications applicatives/documentaires dans le working tree : README.md ; src/Oryn.App/WorkspaceLayout.cs ; src/Oryn.Cli/Program.cs ; src/Oryn.Ui.Sdl/SdlWorkspace.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs.
+Nouveaux fichiers à inclure dans le push utilisateur : docs/adr/0012-architecture-workshop-design.md ; docs/design/workshop-prototype.md ; scripts/restore-design-baseline.py ; logs Codex des passes de 21:15, 21:20, 21:29, 21:40 et présent log.
+
+Installation, sauvegardes et reprise du rendu
+Commande locale ~/.local/bin/oryn, installation ~/.local/share/oryn, mise à jour lors de la dernière passe. Relancer le processus pour charger la version installée.
+Baseline complète avant redesign : .local/design-baseline-20261014-205948/, archive des sources du commit 203b03f et copie de l'installation avec hashes SHA-256. Documentation et script de rollback dans docs/design/workshop-prototype.md et scripts/restore-design-baseline.py. Les sauvegardes .local sont ignorées par Git ; le commit de référence assure la récupération des sources sur une autre machine.
+Copie des fichiers avant la dernière retouche : .local/panel-refinement-before-20261014-213654/.
+Sauvegarde des six assemblies remplacés lors de la dernière installation : /tmp/oryn-panel-refinement-backup-20261014-213949-7321662e (temporaire).
+Derniers aperçus locaux : .local/design-preview/panel-focus-chat.png, panel-focus-sources.png et panel-focus-dock.png. Non suivis par Git.
+
+Validations historiques de la dernière passe (non relancées dans ce tour documentaire)
+- Solution Debug : build réussi, 0 warnings/0 erreurs ; tests applicatifs 120/120.
+- Smoke SDL dummy complet, checks offscreen d'animation et du graphe : réussis.
+- Nouveaux checks : clic dans les 8 px ajoutés aux onglets ; ordre clavier ; curseur au bon caractère après clic dans le compositeur remonté ; clic dans la marge inférieure sans déplacement du curseur.
+- Publish autonome Release linux-x64 réussi ; mêmes DLL App/SDL dans le smoke sous Wayland réel : réussi.
+- Inspection des captures Chat/Sources/dock, installation atomique avec vérification des bytes, commande installée --check et git diff --check : réussis.
+- Les contrôles X11 et restauration effective sur copie temporaire proviennent de passes antérieures, pas de la dernière retouche.
+Windows/macOS restent non exécutés. Le backend SDL peut annoncer opengl pour présenter les textures ; cela n'implique pas que le renderer Skia a été remplacé par celui de v1.0.
+
+Vérifications actuelles et résultat de cette demande
+Lecture du dernier log par horodatage, inspection git status/log, contrôle ciblé README/CLI/painter pour confirmer ordre des onglets, démarrage Chat, bandeaux et marge. git diff --check réussi. Aucun build/test supplémentaire nécessaire ni exécuté. Seul le présent log est ajouté ; anciens logs conservés.
+
+Prochaine étape prévue
+L'utilisateur fait son commit/push puis reprend plus tard. Reprendre au palier M0 à partir de ce log, examiner le nouveau HEAD et suivre sa prochaine demande. Garder l'habillage validé comme base ; ne pas lancer M1, Git, terminal ou une refonte de contenu sans nouvelle demande.

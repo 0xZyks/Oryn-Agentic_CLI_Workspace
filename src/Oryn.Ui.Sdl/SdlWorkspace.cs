@@ -170,7 +170,8 @@ public sealed unsafe class SdlWorkspace : IDisposable
                 if (ev.button.button is 1 or 3) _painter.PointerDown(ev.button.x, ev.button.y, ev.button.button == 3);
                 break;
             case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP: if (ev.button.button == 1) Controller.PointerUp(); break;
-            case SDL_EventType.SDL_EVENT_MOUSE_MOTION: Controller.PointerMove(ev.motion.x, ev.motion.y); break;
+            case SDL_EventType.SDL_EVENT_WINDOW_MOUSE_LEAVE: _painter.Hover(-1, -1); break;
+            case SDL_EventType.SDL_EVENT_MOUSE_MOTION: _painter.Hover(ev.motion.x, ev.motion.y); Controller.PointerMove(ev.motion.x, ev.motion.y); break;
             case SDL_EventType.SDL_EVENT_MOUSE_WHEEL:
                 int direction = ev.wheel.direction == SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
                 Controller.Wheel((int)(ev.wheel.mouse_x / GraphicalWorkspaceController.CellWidth), (int)(ev.wheel.mouse_y / GraphicalWorkspaceController.CellHeight),

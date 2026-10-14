@@ -27,15 +27,17 @@ try
             --keybindings <file> Use a custom grouped keybindings file
             --               Treat remaining argument as a directory
 
-            Tab / Shift+Tab  Move within the active panel
+            Tab              Move within the active panel
+            Shift+Tab / F9   Select the application menu bar
             Ctrl+Tab         Switch panels (Oryn Super+Tab)
             Ctrl+Enter / F6  Select central tabs (or confirm when already there)
             Enter in tabs    Confirm the selected tab and focus its content
             Ctrl+K           Edit grouped keybindings (Super defaults to Ctrl)
             Up / Down        Select or scroll
-            Enter / Right    Open file or expand folder
+            Enter            Open file or toggle folder
+            Right            Expand folder or select its first child
             Left             Collapse folder
-            F1 / F2 / F3 / F4 Files / Chat / Code / Visualizer
+            F1 / F2 / F3 / F4 Sources / Chat / Source preview / Visualiser
             Ctrl+D           Toggle visualizer tab / dock
             Ctrl+Shift+Left  Dock visualizer left
             Ctrl+Shift+Right Dock visualizer right
@@ -70,7 +72,7 @@ try
             entryCount = directory.Entries.Count,
             truncated = directory.Truncated,
             warning = directory.Warning,
-            frontend = new { window = "SDL3", drawing = "SkiaSharp", style = "terminal-inspired" },
+            frontend = new { window = "SDL3", drawing = "SkiaSharp", style = "architecture-workshop" },
             renderCadence = new { manualFramesPerSecond = cadence.ManualFramesPerSecond, auto = cadence.ManualFramesPerSecond is null },
             keybindings = new { path = keybindingsPath, keyboard.Settings.Super }
         }));
@@ -78,6 +80,8 @@ try
     }
     WorkspaceState state = new(options.ProjectRoot);
     state.LoadRoot(directory);
+    state.Dispatch(WorkspaceCommand.ChatTab);
+    state.Graph.ChangeZoom(-1);
     using GraphicalWorkspaceController controller = new(state, files, keyboard, keybindingsPath);
     using SdlWorkspace window = new(controller, settings.UseColor, settings.UseUnicode, cadence.ManualFramesPerSecond);
     window.Run();

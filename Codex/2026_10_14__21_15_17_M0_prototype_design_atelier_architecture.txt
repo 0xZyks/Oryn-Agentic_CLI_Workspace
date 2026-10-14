@@ -1,0 +1,42 @@
+Palier : M0
+Date locale : 2026-10-14T21:15:17.404618+02:00 — Europe/Paris
+
+Demande
+Après push utilisateur de l’état SDL/Skia actuel, réaliser une première passe graphique plus moderne et sobre, conservant l’esprit TUI et l’usage clavier. Positionnement confirmé : assistance à l’ingénierie/architecture, complément des éditeurs. Préserver une possibilité de rollback.
+
+Observations actuelles / résultat
+Dépôt initialement propre au commit 203b03f97193cec3a4bd9f8f98f06c0ff49aee33 (Switch to SDL + SkiaSharp + Interactive Visualiser). Archive git des sources, copie complète de l’installation et manifest SHA-256 vérifiés avant modification : .local/design-baseline-20261014-205948/.
+CLI démarre dans Architecture / Overview ; onglets Architecture, Discussion, Sources (aperçu toujours en lecture seule). Palette charbon, contours fins arrondis, titres sans-serif, contenu technique monospace et accent lavande. Explorateur avec chevrons vectoriels et sélection discrète. Carte pointillée, relations courbes attachées aux cartes, titres compacts. Inspecteur sur carte suffisamment large, identité complète sur deux lignes, statut fictif et accès aux dialogues détails/discussion du UUID sélectionné. Inspecteur masqué quand étroit, accès clavier existant préservé. Menu de catégorie ancré sous la navbar ; autres dialogues centrés. Compositeur de discussion arrondi, noms/icônes User/Oryn et spinner vectoriel conservés.
+Centrage de carte seulement lors des changements de viewport/zoom : pas de recentrage au relâchement du drag. Caméra tient compte du décalage de centrage. Hover dessiné sans changer le focus et réinitialisé à la sortie de souris. Pipeline raster/cache/presentation SDL inchangé, aucune régression volontaire vers le rendu seulement sur événement.
+Installation Linux ~/.local/share/oryn mise à jour atomiquement pour les six DLL/PDB CLI/App/SDL, bytes comparés au publish. Sauvegarde supplémentaire de remplacement : /tmp/oryn-workshop-backup-20261014-211408-18fa3725. Commande installée --check affiche architecture-workshop.
+
+Fichiers concernés
+README.md ; src/Oryn.Cli/Program.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs ; src/Oryn.Ui.Sdl/SdlWorkspace.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs ; docs/adr/0012-architecture-workshop-design.md ; docs/design/workshop-prototype.md ; scripts/restore-design-baseline.py ; présent log.
+Aperçus locaux ignorés par git : .local/design-preview/workshop.png et discussion.png.
+
+Décisions
+Pas de layout IDE ni de nouvel éditeur. Aucun ajout de fonctions M1–M7, Rust/C, terminal embarqué, persistance ou analyse. Le graphe, les statuts et les discussions restent les fixtures/démos M0. Navigation et état restent indépendants du renderer. Startup graphique CLI modifié sans changer le défaut de WorkspaceState réutilisé par les tests. SDL + SkiaSharp demeure la stack actuelle ; le backend de présentation SDL peut être nommé opengl sans constituer le renderer OpenGL v1.0.
+
+Vérifications réellement exécutées
+- Build solution Debug --no-restore, 0 warnings / 0 erreurs après les modifications finales.
+- Tests Oryn.App.Tests : 120/120, aucune erreur ; modifications ultérieures exclusivement visuelles/test du renderer.
+- Smoke SDL dummy : 36 phases ; clavier, Unicode/multiligne/presse-papiers, conversation, fichier souris, cartes/membres, chats UUID, keybindings, resize, docking, drag/collision/annulation/liens, présentation idle et navbar.
+- Vérifications offscreen nouvelles : inspecteur ouvre détails et chat du bon UUID, rendu compact conserve focus graphe, hit d’une carte centrée et comparaison pixel exacte avant/après relâchement sans déplacement de scène. Spinner Unicode/ASCII animé sans changement d’historique.
+- Même smoke SDL sous Wayland réel sur version finale : PASS (présentation SDL opengl).
+- Clavier natif X11, événements envoyés à sa propre fenêtre : 40 Ctrl+Tab consécutifs, Ctrl+Enter, navigation et confirmation onglets, explorateur Right/Left, Shift+Tab/navbar/arrows/Enter : PASS.
+- Publish Release linux-x64 autonome --no-restore : PASS. Smoke avec DLL App/SDL du publish dans un runner temporaire : PASS.
+- Captures overview, chat, menu, détails, compact et dock examinées. Noms overview désormais lisibles sans la troncature initiale des titres.
+- Rollback script preview validé sur installation réelle avant/après remplacement. --apply exécuté sur /tmp/oryn-workshop-rollback-check seulement : six fichiers restaurés et hashes contrôlés ; installation réelle non rollbackée.
+- Installation finale --check : PASS. git diff --check : PASS.
+
+Validations historiques
+La correction précédente de présentation SDL a été confirmée physiquement par l’utilisateur. Ce log ne prétend pas une nouvelle validation physique utilisateur du design.
+
+Limites
+Premier prototype à ajuster après retour utilisateur. Rendu Linux vérifié ; Windows/macOS non exécutés. Les emojis du texte libre peuvent dépendre des glyphes disponibles ; les symboles Oryn/User/spinner sont vectoriels. Vue étroite/zoom détaillé conserve le défilement existant et peut montrer des cartes partiellement coupées. Pas d’inférence ni de stockage session durable. Backups installation et previews locaux ignorés par git ; commit poussé de baseline fournit la référence durable des sources.
+
+Commit
+Aucun nouveau commit ni push créé. Référence pré-prototype : 203b03f97193cec3a4bd9f8f98f06c0ff49aee33. Changements présents dans le working tree.
+
+Prochaine étape prévue
+Retour utilisateur sur hiérarchie visuelle et ergonomie, puis ajustement de cette première passe. Rollback disponible en fermant Oryn et ajoutant --apply à la commande décrite dans docs/design/workshop-prototype.md. Sources anciennes inspectables dans un worktree séparé du commit baseline, sans reset destructif.

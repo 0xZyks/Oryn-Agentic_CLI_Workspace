@@ -1,0 +1,44 @@
+Palier : M0
+Date : 2026-10-14T21:29:33.171529+02:00 — Europe/Paris
+
+Demande
+La référence PNG est trop proche d'un IDE mais sa direction artistique convient partiellement. Rendre Oryn plus TUI ; priorité au rendu global de l'application, pas au contenu individuel des onglets. Coloration du code prévue plus tard. Git et terminal restent exclus.
+
+Résultat actuel
+Cadre plus dense : deux lignes de barre d'application, deux de statut, panneaux directement sous la navbar, marge latérale et gouttières d'une colonne. Bordures extérieures fines presque carrées (rayon 2 px), en-têtes compacts et onglets plats. Marqueur violet localisé dans l'en-tête du panneau focalisé, soulignement de l'onglet actif, contour supplémentaire quand le sélecteur d'onglets a le focus clavier. Focus du panneau sous-jacent atténué quand un dialogue est ouvert. Typographie monospace partagée pour interface, titres et contenu. Palette noir bleuté avec accents lavande. Barre de titre simplifiée ; suppression du slogan ARCHITECTURE WORKSHOP. Dialogues alignés sur ce style, sans ombre portée de fenêtre. Splitters affichent leur ligne au hover/resize.
+Modifications de présentation uniquement ; comportements des trois vues et pipeline d'entrée/rendu SDL conservés. Aucun ajout de coloration syntaxique, analyse des symboles, nouvelles vues ou fonctions de contenu.
+
+Fichiers modifiés dans cette passe
+src/Oryn.App/WorkspaceLayout.cs
+src/Oryn.Ui.Sdl/WorkspacePainter.cs
+README.md
+docs/design/workshop-prototype.md
+docs/adr/0012-architecture-workshop-design.md (ajout relatant la clarification, conserve le contexte de la première passe)
+Présent log.
+Les autres changements non commités de la passe précédente restent présents.
+
+Sauvegardes et installation
+Copie des fichiers touchés avant cette passe : .local/design-shell-before-20261014-212606/.
+Baseline initiale complète .local/design-baseline-20261014-205948/ conservée, commit de référence 203b03f97193cec3a4bd9f8f98f06c0ff49aee33.
+Publish autonome Linux /tmp/oryn-tui-shell-release ; six DLL/PDB CLI/App/SDL remplacés atomiquement dans ~/.local/share/oryn, contenu comparé au publish par le script. Sauvegarde des six fichiers précédents : /tmp/oryn-tui-shell-backup-20261014-212854-2d62bbd0.
+Aperçus : .local/design-preview/tui-shell.png, tui-shell-discussion.png, tui-shell-menu.png. Les captures de la première passe restent conservées séparément.
+
+Vérifications exécutées dans cette passe
+- dotnet build Oryn.slnx --no-restore -m:1 -nodeReuse:false -p:UseSharedCompilation=false : réussi, 0 warnings/0 erreurs.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore -m:1 : 120/120.
+- Smoke SDL dummy complet et checks offscreen : réussite ; aucun ajustement de test nécessaire. Couvre clavier, saisie UTF-8, clipboard, souris, resize/docking, graphiques/UUID, drag/collision/liens/release, animation chat et navbar.
+- Captures normales et compactes inspectées : panneaux sous la navbar, zones de clic cohérentes, onglets/footer visibles.
+- Publish Release linux-x64 autonome --no-restore : réussi.
+- DLL App/SDL exactes du publish copiées dans runner temporaire, smoke complet sous Wayland réel : réussite, présentation SDL opengl. Ceci demeure le renderer Skia raster, pas le renderer direct OpenGL v1.0.
+- Commande installée oryn --check : réussie.
+- Script de rollback en preview sur installation finale : hashes et compatibilité validés, aucune restauration exécutée.
+- git diff --check : réussi.
+
+Validations historiques
+Les tests X11 et la restauration effective sur copie temporaire ont été exécutés lors de la passe précédente ; ils n'ont pas été relancés ici. Pas de validation physique utilisateur de cet ajustement au moment du log.
+
+Limites et suite
+L'intérieur des vues reste le prototype M0, notamment carte/détails/démo chat. Une partie de la géométrie interne garde ses arrondis d'origine ; priorité donnée au cadre. Le monospace peut tronquer certains noms longs en overview, le détail reste accessible. Windows/macOS non exécutés. Prochaine étape : retour utilisateur sur le cadre global avant raffinement du contenu des onglets.
+
+Commit
+Aucun nouveau commit ni push. Modifications dans le working tree.
