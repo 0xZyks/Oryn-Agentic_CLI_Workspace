@@ -1,0 +1,29 @@
+Palier : M1 — planification uniquement
+Fuseau horaire : Europe/Paris ; horodatage local donné par le nom du fichier.
+
+Demande et contexte
+L'utilisateur demande le plan M1 après push M0 et renommage Codex/ en .codex/. HEAD observé : 0b6d9d8, Transform /Codex into /.codex. AGENTS.md utilise le nouveau chemin. Tests réels Windows/macOS et high-DPI prévus demain. Un point Visualiser reste volontairement reporté faute de conception définie.
+
+État actuel à préserver
+SDL3 + SkiaSharp en C#, App indépendant du renderer, adaptateur Ui.Sdl et composition Cli, Oryn.slnx. UI monospace, thèmes/accent personnalisables, marges et séparateurs alignés. Explorateur et previews, recherche textuelle bornée, profils sauvegardés. ChatPreviewState reste session-only : timer de 1600 ms et Hello World!. Graphe et chats par UUID restent démos M0.
+M-Native C#/Rust/C est décidé pour le prototype/v0.1, mais reste un jalon distinct non implémenté. L'utilisateur a choisi d'attaquer M1 maintenant ; préserver les futures frontières sans introduire spontanément de modules natifs.
+
+Plan proposé
+1. PoC backend local et modèle selon la machine, candidats du README Ollama/llama.cpp. Mesurer chargement, premier token/débit lorsque disponibles, streaming et annulation. Un modèle principal/core-only au départ ; courte ADR pour le choix.
+2. Contrat provider indépendant : requête, chunks, capacités et cancellation. État conversationnel avec IDs, rôles, dates, génération/terminée/annulée/échouée. Remplacer la démo pour le chat global réel, garder les fixtures d'éléments explicites.
+3. Brancher le chat global existant : réponse streamée, Stop, configuration backend/modèle, statut et erreurs visibles. Draft suivant et navigation conservés. Travail hors thread de rendu, transfert borné et protection contre anciens chunks après annulation.
+4. Persistance par projet : conversation/messages avec IDs, dates, statuts, métadonnées modèle et fragments interrompus. SQLite candidat à confirmer par ADR, schéma minimal avec migration/transactions. Sauver le prompt avant génération, conserver les fragments et signaler les erreurs d'écriture. Ne pas lancer le graphe M2.
+5. Contexte projet minimal explicite : joindre un fichier/aperçu choisi, source/chemin et taille bornée ; historique envoyé borné. Pas de lecture implicite exhaustive ni analyse sémantique/RAG M3/M6. Destination locale ; une destination distante nécessite un consentement distinct.
+6. Validation : provider/modèle absent, timeout/rupture, stream malformé, annulation puis nouvel envoi sans anciens chunks, stockage indisponible, restauration après fermeture/crash. Navigation et historique persisté accessibles sans modèle. Tests déterministes stream/cancel/storage, smoke réel avec moteur local, vérifications UI adaptées.
+
+Première tranche proposée
+PoC puis vrai chat global local streamé, annulable, avec erreurs visibles. Ensuite persistance/reprise, contexte choisi et durcissement. M1 n'est complet qu'après redémarrage sans perte de conversation et utilisation sans backend.
+
+Vérifications réellement exécutées
+Lecture ciblée README_ORYN.md (architecture/providers/M1), ChatPreviewState.cs, controller, paramètres et Oryn.slnx, inspection git log. Aucun build, modèle, téléchargement, service ou code applicatif modifié. Les 132 tests App et validations Linux SDL antérieurs sont historiques, non relancés ici. Windows/macOS non validés.
+
+Fichiers et commit
+Seul ce log ajouté. Aucun commit ni push créé ; HEAD de référence 0b6d9d8. L'écriture directe dans .codex/ a échoué avec Read-only file system ; demander l'autorisation sandbox pour respecter la consigne de journalisation. Aucun contournement via d'autres outils.
+
+Suite
+Présenter le plan puis commencer la tranche expressément demandée. Backend/modèle et choix de stockage restent à vérifier. Garder l'UI M0 et le Visualiser reporté ; aucune performance ou capacité M1 acquise annoncée.

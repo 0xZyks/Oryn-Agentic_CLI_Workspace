@@ -1,0 +1,112 @@
+Palier : M1
+Date locale : 2026-10-15T04:04:12.598607+02:00 — Europe/Paris
+
+Objet : passation et feuille de travail pour implémenter M1 correctement.
+Statut : planification ; aucune fonctionnalité M1 n'est implémentée par cette demande.
+
+1. DEMANDE, DÉCISIONS UTILISATEUR ET CONTEXTE DE REPRISE
+
+L'utilisateur demande un log explicitement nommé M1 contenant les travaux, points de conception et vérifications nécessaires au module. Il a choisi de commencer M1 après avoir poussé la base M0. Les essais physiques Windows/macOS et high-DPI de M0 sont reportés à la prochaine session de test, sans bloquer cette planification M1.
+Un comportement du Visualiser reste à concevoir : conserver son fonctionnement actuel, sans inventer de solution pendant M1. Préserver l'habillage et les espacements M0 acceptés.
+Les logs sont désormais dans .codex/ à la racine du dépôt ; AGENTS.md a été adapté. Conserver les anciens logs.
+HEAD observé : 0b6d9d8, « Transform /Codex into /.codex ». Aucun commit ni push créé pour ce log.
+
+2. ÉTAT ACTUEL OBSERVÉ À CONSERVER
+
+Solution Oryn.slnx : trois projets actifs src/Oryn.App, Oryn.Cli et Oryn.Ui.Sdl, plus les projets de tests. Frontend C# SDL3 + SkiaSharp ; état, focus, commandes et interactions applicatives indépendants des bibliothèques graphiques.
+CLI ouvrant le dossier courant ou une racine explicite ; explorateur, aperçu Sources en lecture seule, recherche locale bornée par nom/contenu, onglets Chat/Sources/Visualiser, docking et navigation clavier/souris. Profils personnels de couleurs/raccourcis déjà persistants. Bandeaux alignés, onglets centraux espacés sans soulignement. Ne pas refaire l'UI pour intégrer le chat.
+ChatPreviewState et son contrôleur restent la démo M0 : IsThinking, attente de 1600 ms dans _thinking/Tick, puis Hello World!, sans backend ni historique durable. Graphe et conversations par UUID restent des fixtures explicitement signalées comme telles.
+Les futures couches Oryn.Interop (C#), Oryn.Runtime (Rust) et Oryn.Native (C) sont documentées pour M-Native, mais ne sont pas présentes dans la solution. M-Native reste un jalon distinct. M1 peut utiliser un moteur local éprouvé via une interface C# sans imposer son implémentation préalable.
+
+3. OBJECTIF ET CRITÈRES DE FIN DE M1
+
+Depuis un projet ouvert, envoyer un message, éventuellement accompagné d'un fichier choisi ; recevoir une vraie réponse locale en streaming ; arrêter la génération ; continuer à naviguer ; fermer et rouvrir Oryn pour retrouver la conversation.
+Le chat global du projet est la première portée réelle. Le modèle est configurable et le mode avec un seul modèle principal (core-only) fonctionne. Aucun compte ou service distant obligatoire.
+Backend absent ou arrêté : fichiers, connaissances déjà disponibles et historique enregistré restent consultables. Les erreurs sont visibles et récupérables.
+M1 ne doit pas être déclaré complet sur la seule base d'un prompt réussi : streaming, annulation, erreurs, redémarrage et absence de perte de messages font partie de l'acceptation.
+
+4. MODÈLES DU README — À PRÉSERVER COMME CANDIDATS [PROPOSED]
+
+Qwen3 0.6B — Router : classification/routage courts et petites sorties structurées.
+Qwen3 4B — Light : résumés, enrichissement léger des fiches et du graphe.
+Qwen3 8B — Core : conversation principale, architecture, code et synthèses difficiles.
+
+Cette liste figure en section 6.3 de README_ORYN.md. Elle reste candidate à mesurer, pas une dépendance obligatoire ni une promesse de performances. Ne pas supprimer ces trois rôles du plan.
+Distinguer rôle logique, modèle physique, outils/politique et priorité. Plusieurs rôles peuvent utiliser le même modèle. Ne pas présumer que les trois modèles tiennent simultanément en RAM/VRAM.
+Démarrer avec un seul modèle principal adapté à la machine. Core-only désigne un mode de fonctionnement, pas l'obligation absolue de charger le 8B sur toute machine. Les autres configurations restent possibles sans redessiner le contrat.
+Avant de figer un artefact : vérifier licence, provenance, quantification/format, template/tokenizer, budget de contexte, mémoire et latences mesurées. Vérifier le traitement éventuel du raisonnement séparé de la réponse et borner les sorties. Évaluer JSON/outils uniquement pour les capacités réellement annoncées ; M1 n'exige pas le pipeline de propositions M5.
+
+5. PREMIÈRE TRANCHE : BACKEND LOCAL ET PREUVE DE CONCEPT
+
+Inspecter la machine et les installations existantes avant de choisir : CPU, RAM, GPU/backend observable, plateforme et modèles déjà disponibles. Ne pas supposer les mêmes ressources sur Linux, Windows et Mac.
+Comparer de façon ciblée les candidats du README, Ollama ou llama.cpp, puis retenir un premier adaptateur. Vérifier une génération réelle, flux progressif, annulation/déconnexion, erreurs et comportement au chargement. Ne pas développer un moteur d'inférence maison.
+Consigner le backend, mode de connexion, artefact modèle, limites et résultats dans une courte ADR. Éviter les téléchargements/services lancés implicitement au démarrage d'Oryn ; disponibilité et configuration doivent être compréhensibles.
+Mesures utiles : temps de chargement, premier token, durée totale et débit lorsque le backend fournit une mesure fiable. RAM/VRAM uniquement si observables. Rapporter machine et quantification ; ne pas transformer une intuition en benchmark.
+Premier livrable utilisable : prompt du chat global → réponse locale streamée → Stop → diagnostic clair si backend inaccessible. Ce livrable reste une étape M1 incomplète tant que la persistance/reprise ne sont pas validées.
+
+6. CONTRATS ET RESPONSABILITÉS
+
+IInferenceProvider ou contrat équivalent, indépendant d'Ollama/llama.cpp : requête asynchrone, flux de chunks, CancellationToken, capacités déclarées et erreurs traduites. Les types propres au provider ne remontent ni dans le domaine ni dans les panneaux SDL.
+Prévoir la configuration du backend, du modèle et des limites, ainsi qu'un diagnostic de disponibilité. Ne pas confondre service joignable et modèle effectivement prêt. Une erreur de configuration laisse le workspace utilisable.
+Services conversationnels dans la couche applicative : IDs stables projet/conversation/message/génération, rôles, dates, texte, références source et états de génération. Distinguer attente, réponse en cours, terminée, annulée, interrompue et échouée selon le besoin réel.
+Définir la politique de seconde demande pendant une génération ; commencer simplement avec une génération interactive à la fois et une concurrence bornée. Le brouillon du prochain message reste éditable et indépendant de la réponse en cours.
+Garder peu de projets .NET ; séparer une assembly uniquement si le couplage ou les tests le justifient. Préserver les frontières futures avec agents et interop sans créer de framework spéculatif.
+
+7. STREAMING, ANNULATION ET UI
+
+Remplacer le chemin démo uniquement pour le chat global réel. Conserver un provider simulé explicite pour les tests, sans qu'une panne réelle produise silencieusement Hello World!.
+Génération, connexion et stockage hors du thread de rendu. Transférer les chunks/événements par un mécanisme borné, puis appliquer l'état sur la boucle applicative ; grouper les mises à jour si nécessaire. Aucun appel LLM sur hover, scroll ou navigation du graphe.
+Identifier chaque génération. Après annulation ou nouvel envoi, aucun ancien chunk ne doit modifier la nouvelle réponse. Tester ce cas avec un faux provider qui continue à produire tardivement.
+Bouton/action Stop et raccourci accessibles, état backend/modèle et erreurs lisibles. Stop conserve et étiquette le texte partiel ; vérifier aussi si le backend cesse effectivement le calcul, sans confondre arrêt d'affichage et arrêt d'inférence.
+Préserver brouillon, focus, sélection de texte, presse-papiers et navigation pendant le flux. Ne pas forcer le scroll en bas lorsque l'utilisateur lit plus haut ; permettre de suivre/rejoindre la réponse courante.
+Fermeture avec génération active : demander l'annulation, borner l'attente, sauvegarder l'état récupérable et libérer les ressources sans bloquer indéfiniment la fenêtre.
+
+8. PERSISTANCE DU CHAT GLOBAL PAR PROJET
+
+Confirmer le stockage par une ADR ; SQLite reste le candidat du README. Limiter M1 aux besoins réels du chat/configuration, sans construire tout le schéma du graphe M2.
+Définir l'emplacement local des données, l'identité stable du projet et les règles d'ouverture d'une seconde instance. Ne pas mélanger des conversations de projets distincts ni faire dépendre les messages de leur seul texte/nom de dossier.
+Schéma minimal inspectable et versionné : projet/conversation/message, ordre, rôles, horodatages, statut et métadonnées utiles du modèle ; références au contexte choisi. Prévoir migration initiale, clés étrangères/transactions et préservation de l'historique.
+Enregistrer le message utilisateur avant de lancer la génération ; si l'écriture échoue, le signaler et conserver le brouillon. Éviter de donner l'impression qu'un message est durable lorsqu'il ne l'est pas.
+Conserver la réponse finale, annulée ou interrompue. Définir une fréquence bornée de checkpoints du texte partiel, sans transaction par caractère. Rendre explicite la fenêtre éventuelle de perte entre checkpoints après crash.
+Au redémarrage, recharger les messages et marquer les anciennes générations en cours comme interrompues. Ne pas annoncer une réponse complète ni relancer automatiquement un prompt déjà envoyé. Les erreurs de stockage/verrouillage restent visibles.
+Préserver l'extension future vers les chats d'éléments référencés par UUID sans implémenter M4 ni rattacher leurs fixtures à de vraies entités en silence.
+
+9. CONTEXTE PROJET MINIMAL ET CONFIDENTIALITÉ
+
+Joindre explicitement un fichier ou l'aperçu sélectionné au message, avec chemin/source, fraîcheur et indication de troncature. Rester dans la racine autorisée et respecter les protections sur les liens et limites déjà présentes.
+Borner contenu joint, historique et taille de sortie selon les capacités du modèle. Rendre compréhensible le contexte effectivement envoyé ; ne pas supposer que le modèle connaît le dépôt complet.
+Les fichiers/commentaires sont des données non fiables, pas des instructions qui élargissent les permissions de l'application. Pas d'exécution shell ou de modification de fichiers déclenchée par le modèle dans cette tranche.
+Exécution locale vérifiée : une URL localhost seule ne prouve pas qu'un backend ne relaie rien à distance. Respecter local-only ; toute destination distante exige configuration utilisateur, affichage de la destination et consentement explicite au contenu transmis. Pas de secrets dans dépôt, logs ou captures.
+Cette tranche n'implémente pas la récupération automatique M6, les embeddings, l'analyse sémantique M3 ou un stockage IA séparé du modèle de connaissance partagé.
+
+10. VALIDATIONS D'ACCEPTATION À IMPLÉMENTER
+
+Tests déterministes du provider simulé : chunks fragmentés, flux vide/malformé, fin normale, timeout, erreur après texte partiel et annulation.
+Tests de concurrence : double envoi, Stop puis nouvel envoi, anciens chunks tardifs, fermeture pendant génération et attente bornée. État UI et brouillon préservés.
+Tests de persistance : projets séparés, IDs stables, ordre et contenu conservés, migration initiale, réponse partielle restaurée/interrompue, stockage non accessible/verrouillé et absence de disparition silencieuse des messages.
+Tests de contexte : fichiers autorisés, taille bornée, troncature/source explicites et absence de transmission distante en mode local-only.
+Smoke avec le vrai backend/modèle retenus : prompt → premier token/flux → Stop → nouvel envoi → fermeture/réouverture → historique → backend arrêté → navigation/historique encore disponibles.
+Smoke SDL adapté : texte/clipboard, scroll et focus pendant le streaming, resize/petite fenêtre, touches répétées et fermeture. Préserver les acquis M0 ; les essais physiques M0 sur les autres OS restent un travail séparé à consigner.
+Mesurer avant d'optimiser. Ne pas annoncer de compatibilité/latence/mémoire sur des plateformes ou configurations non testées.
+
+11. ORDRE DE TRAVAIL CONSEILLÉ
+
+A. Inspection machine, petit PoC et ADR backend/modèle.
+B. Contrats et état du chat, provider simulé puis adaptateur local réel.
+C. Vraie génération globale en streaming avec Stop/erreurs dans l'UI existante.
+D. Stockage minimal et reprise, y compris états partiels/interrompus.
+E. Contexte de fichier choisi, limites et traçabilité.
+F. Cas d'échec, tests de non-perte/réactivité, smoke réel et documentation des commandes effectivement utilisables.
+Chaque tranche doit rester lançable sans backend et produire un résultat vérifiable. Ajuster l'ordre si les tests montrent une dépendance concrète ; ne pas figer toutes les abstractions avant le premier flux réel.
+
+12. HORS DE CETTE DEMANDE ET LIMITES
+
+Ce fichier ne lance aucune implémentation, installation ou téléchargement de modèle. Multi-agent complet, propositions/Idea Box, graphe réel, analyse exhaustive, terminal/sandbox, scheduler natif et renderer OpenGL ne sont pas nécessaires pour terminer M1.
+Les décisions non tranchées sont le backend initial, l'artefact/quantification du modèle principal, le stockage et son emplacement, les limites de contexte et la politique de checkpoints/concurrence. Les mesurer/documenter au jalon concerné.
+
+13. VÉRIFICATIONS ACTUELLES, HISTORIQUE ET PROCHAINE ÉTAPE
+
+Exécuté pour cette demande : lecture du dernier log M1 par l'horodatage de son nom, recoupement avec README_ORYN.md sections 6.2–6.4 et inspection git log/status. Reprise des observations de code du plan précédent, sans annoncer de nouvelle validation runtime. Relecture du nouveau log avant création finale.
+Pas de build, test, backend, modèle ou changement applicatif exécuté pour cette passation. Les 132 tests App M0, smokes SDL Linux et publications des passes antérieures restent historiques. Windows/macOS/high-DPI restent non validés.
+Fichier concerné : seul ce nouveau log M1 ; l'ancien plan et les logs M0 sont conservés. Le dossier .codex/ est protégé en écriture par le sandbox : demander l'autorisation d'écriture prévue, sans contourner la protection.
+Prochaine étape : commencer la première tranche M1 à la demande de l'utilisateur, à partir de ce log. Réexaminer les fichiers et l'état Git avant de modifier, conserver les changements utilisateur et documenter les résultats réellement obtenus.
