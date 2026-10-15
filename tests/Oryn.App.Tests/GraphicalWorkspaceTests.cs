@@ -100,6 +100,17 @@ public sealed class GraphicalWorkspaceTests
         ui.Wheel(files.X, files.Y, 0, -1); int top = ui.ExplorerTop;
         Assert.True(top > 0); ui.Resize(1280, 836); Assert.Equal(top, ui.ExplorerTop);
     }
+    [Fact]
+    public void WheelInChromeGapsDoesNotScrollUnderlyingExplorer()
+    {
+        using GraphicalWorkspaceController ui = Create();
+        ui.State.LoadRoot(new("/tmp", Enumerable.Range(0, 80).Select(i => new FileEntry("/tmp/" + i, i.ToString(), false, false)).ToArray(), false, null));
+        ui.Resize(1280, 836); PanelBounds files = ui.Layout.Explorer;
+        float x = (files.X + 5) * 9, top = files.Y * 22 + ui.Spacing.PanelTopOffset;
+        ui.WheelPixels(x, top - 2, 0, -1); Assert.Equal(0, ui.ExplorerTop);
+        ui.WheelPixels(x, (files.Y + files.Height) * 22 - 2, 0, -1); Assert.Equal(0, ui.ExplorerTop);
+        ui.WheelPixels(x, top + 100, 0, -1); Assert.True(ui.ExplorerTop > 0);
+    }
     private static GraphicalWorkspaceController Create() => new(new("/tmp"), new LocalWorkspaceFiles("/tmp", new()), new(new()), "/tmp/unused-oryn-test-profile");
     private static async Task WaitPreview(GraphicalWorkspaceController ui, string path)
     {

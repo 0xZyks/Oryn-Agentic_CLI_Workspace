@@ -1,0 +1,34 @@
+Palier principal : M0 (documentation transversale ; ajout du jalon M-Native et références M3/M7)
+Date locale : 2026-10-15T01:58:52.991809+02:00 — Europe/Paris
+
+Demande
+Intégrer le contexte utilisateur C# / Rust / C dans le README existant, aux endroits pertinents. Documentation uniquement : aucune implémentation native, dépendance, modification UI ou création de module vide.
+
+Résultat
+README_ORYN.md : sections 5a et 5b avant agents/analyse/runtime, couches et dépendances, ownership graphique C#, tables C ABI versionnées, NativeLibrary et delegate* unmanaged[Cdecl], règles mémoire/lifetime/threading et diagnostic. Section 9 fusionnée pour éviter duplication et clarifier le maintien de Roslyn comme candidat M3. Section 11 étendue avec Rust indexing, C process, Execution Manager, sessions distinctes, sandbox OS futur et instrumentation graphique/native. Section 13 remplacée par l'arbre cible détaillé et règles/build/modularisation. M-Native ajouté avant M0 avec phases A–E, critères et exclusions, sans renuméroter M0–M7. Instructions de migration/bootstrapping périmées corrigées ; présentation cible Git/Terminal distinguée de l'état actuel. Tests et décisions complétés.
+README.md : identité précisée et synthèse de l'architecture cible avec liens vers le détail, sans altérer les commandes ni les capacités actuelles.
+
+Décisions et cohérence
+Les cinq couches sont logiques : conserver Oryn.Ui.Sdl en C# et l'état indépendant dans Oryn.App. Oryn.slnx reste le format existant ; l'arbre proposé conserve aussi CLI et smoke actuels. Aucun déplacement de fichier imposé.
+La nouvelle instruction utilisateur établit l'interop utile en prototype/v0.1, remplaçant l'ancienne hypothèse de Rust/C uniquement plus tard. AGENTS.md et les ADR historiques ne sont pas modifiés ; la future implémentation doit suivre cette décision utilisateur et le README actualisé, tout en respectant leurs exigences de contrôle, simplicité et provenance.
+Les fonctions de sandbox, scheduler avancé, sémantique complète et inférence native restent futures. Le PTY ne fournit pas d'isolation ; une ABI in-process ne protège pas d'un crash natif. Aucun conflit architectural restant identifié au sein des README.
+Contrats ABI encore à concevoir : capacité de table avant écriture, conventions et exports Windows, buffers/encoding, résultats structurés, erreurs, annulation et shutdown. Exemple C explicitement illustratif.
+
+Observations actuelles
+Solution inspectée : trois projets src App/Cli/Ui.Sdl, trois projets de tests ; pas de native/ ou Oryn.Interop actuel. Frontend SDL3 + SkiaSharp conservé. Git/Terminal sont des vues prévues, pas implémentées.
+
+Vérifications réellement exécutées
+Inventaire rg, lecture README et solution/projets ; inspection des ADR 0005/0006/0012 ; revue du diff complet. Script documentaire temporaire : liens locaux/ancres, fences, hiérarchie des titres, absence de doublons d'ancres, placement 5a/5b et M-Native, suppression de la consigne de migration ; comparaison exacte des sections M1–M7 avec HEAD. Tous réussis. git diff --check réussi.
+Aucun build, test applicatif/native ou lancement graphique : modification documentaire uniquement. Aucun outil externe ni recherche web nécessaires pour intégrer le contexte fourni.
+
+Validations historiques
+Les résultats de build/smoke déjà rapportés dans README.md restent historiques, non relancés dans cette session. Aucune capacité native ou portabilité supplémentaire validée.
+
+Fichiers concernés
+README.md ; README_ORYN.md ; présent log. Aucun fichier applicatif modifié, aucun placeholder, anciens logs conservés.
+
+Commit
+Aucun commit ni push créé. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Limites et prochaine étape
+Architecture native documentée mais non implémentée. Suivre la prochaine demande de développement, soit stabilisation M0 soit tranche explicite M-Native ; concevoir les contrats effectifs et tester sur la plateforme de développement avant de revendiquer leur disponibilité.

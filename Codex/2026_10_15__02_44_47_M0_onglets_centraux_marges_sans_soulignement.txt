@@ -1,0 +1,27 @@
+Palier : M0
+Date locale : 2026-10-15T02:44:47.407412+02:00 — Europe/Paris
+
+Demande
+L'utilisateur apprécie l'aération mais trouve les onglets centraux trop collés au haut du panneau ; retirer leur petite barre d'indication, déjà redondante avec le fond sélectionné/survolé.
+
+Résultat et décisions
+Marge de 9 px au-dessus et au-dessous des surfaces d'onglets (4 en mode dense). Surfaces sélection/survol plus compactes et légèrement arrondies ; labels recentrés. Soulignement de l'onglet actif supprimé. Fond de sélection, survol et contour de focus clavier conservés. La barre de focus du panneau garde son rôle distinct.
+Bandeau central agrandi de la seule marge nécessaire ; titres Chat/Sources légèrement descendus pour préserver le dégagement sous le bandeau. Géométrie des contenus/viewport/graphe et autres panneaux conservée. Hits déplacés/réduits avec les surfaces : cliquer dans le padding supérieur ne choisit pas un autre onglet.
+
+Fichiers concernés
+src/Oryn.Ui.Sdl/WorkspacePainter.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs ; README.md ; docs/m0-verification.md ; présent log. Modifications et logs précédents préservés. Pas de dépendance/module/paramètre utilisateur changé.
+
+Vérifications réellement exécutées
+Build final Debug : dotnet build Oryn.slnx --no-restore -m:1 -nr:false, zéro warning/erreur. Full SDL dummy/software 41 étapes et checks offscreen réussis : padding non sélectionnant, clic sur surface, ordre clavier, composer, graphe/drag, settings et petite fenêtre.
+Capture finale des onglets/Chat examinée dans .local/inset-tabs-preview/21-file-icons.png : marge visible, sélection sans trait inférieur, contenu non chevauché.
+Publish Release autonome linux-x64 réussi, .local/inset-tabs-publish/. Vérification Markdown et git diff --check réussis.
+Installation locale mise à jour après autorisation sandbox ; mêmes dépendances, staging/backup et six DLL/PDB CLI/App/SDL vérifiés SHA-256. Backup : /tmp/oryn-inset-tabs-backup-20261015-024427-b574ca8f. oryn --check installé réussi. Relancer pour charger la version.
+
+Validations historiques et limites
+132 tests App et smoke Wayland réel sont ceux de la passe précédente, pas relancés ici : changement de rendu uniquement. Pas de validation Windows/macOS/high-DPI ni de ressenti physique utilisateur. Les captures sont raster. Aucun chat/graphe durable, inférence ou M-Native ajouté.
+
+Commit
+Aucun commit ni push créé. HEAD : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Prochaine étape
+Retour utilisateur après relance sur le bandeau central, puis retouches UI selon sa prochaine demande.

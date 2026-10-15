@@ -1,6 +1,6 @@
 namespace Oryn.App;
 
-public enum KeyboardScope { Explorer, Tabs, TextEditor, History, Content, Graph, Menu, Details, ElementChat, Bindings, Navbar }
+public enum KeyboardScope { Explorer, Tabs, TextEditor, History, Content, Graph, Menu, Details, ElementChat, Bindings, Navbar, Appearance, SearchEditor, SearchResults }
 
 public sealed record KeyboardContext(WorkspacePanel Panel, PanelFocusArea Area, bool Resizing = false,
     bool ContentAcceptsTab = false, bool ContentAcceptsText = false, bool GraphActive = false, KeyboardScope? Scope = null);
@@ -122,7 +122,7 @@ public sealed class KeyboardRouter
             : context.Panel == WorkspacePanel.Explorer ? KeyboardScope.Explorer
             : context.GraphActive ? KeyboardScope.Graph
             : context.ContentAcceptsText ? KeyboardScope.TextEditor : KeyboardScope.Content);
-        bool text = scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings;
+        bool text = scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Appearance or KeyboardScope.SearchEditor;
         bool textLeader = _leader is { Modifiers: InputModifiers.None } prefix && (prefix.Name == "SPACE" || prefix.Name.Length == 1);
         if (text && textLeader) CancelLeader();
         if (_leader == key && !(text && textLeader))
@@ -141,11 +141,11 @@ public sealed class KeyboardRouter
             return new(repeat && !repeatable ? null : action, true, repeatable);
         }
         // Modal contexts own all keys. No event can fall through to the workspace behind them.
-        return new(null, leader || scope is KeyboardScope.Menu or KeyboardScope.Details or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Navbar);
+        return new(null, leader || scope is KeyboardScope.Menu or KeyboardScope.Details or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Appearance or KeyboardScope.Navbar);
     }
 
     private static bool IsRepeatable(KeyboardAction action) => action is
-        KeyboardAction.MoveUp or KeyboardAction.MoveDown or KeyboardAction.ContentUp or KeyboardAction.ContentDown
+        KeyboardAction.SearchResultUp or KeyboardAction.SearchResultDown or KeyboardAction.MoveUp or KeyboardAction.MoveDown or KeyboardAction.ContentUp or KeyboardAction.ContentDown
         or KeyboardAction.ContentLeft or KeyboardAction.ContentRight or KeyboardAction.NextTab or KeyboardAction.PreviousTab
         or KeyboardAction.ResizeSmaller or KeyboardAction.ResizeLarger or KeyboardAction.GraphZoomIn or KeyboardAction.GraphZoomOut
         or KeyboardAction.TextBackspace or KeyboardAction.TextDelete or KeyboardAction.TextLeft or KeyboardAction.TextRight
@@ -156,10 +156,13 @@ public sealed class KeyboardRouter
     private static bool Applies(KeyboardAction action, KeyboardScope scope, bool resize)
     {
         bool normal = scope is KeyboardScope.Explorer or KeyboardScope.Tabs or KeyboardScope.TextEditor
-            or KeyboardScope.History or KeyboardScope.Content or KeyboardScope.Graph or KeyboardScope.Navbar;
+            or KeyboardScope.History or KeyboardScope.Content or KeyboardScope.Graph or KeyboardScope.Navbar or KeyboardScope.SearchEditor or KeyboardScope.SearchResults;
         return action switch
         {
             KeyboardAction.Quit => true,
+            KeyboardAction.EditAppearance or KeyboardAction.SearchFiles => normal,
+            KeyboardAction.SearchClear or KeyboardAction.SearchToggleFocus => scope is KeyboardScope.SearchEditor or KeyboardScope.SearchResults,
+            KeyboardAction.SearchResultUp or KeyboardAction.SearchResultDown or KeyboardAction.SearchOpenResult => scope == KeyboardScope.SearchResults,
             KeyboardAction.ToggleNavbarFocus => normal,
             KeyboardAction.NextNavbar or KeyboardAction.PreviousNavbar or KeyboardAction.ConfirmNavbar or KeyboardAction.LeaveNavbar => scope == KeyboardScope.Navbar,
             KeyboardAction.CancelResize => normal && resize,
@@ -173,11 +176,11 @@ public sealed class KeyboardRouter
             KeyboardAction.GraphZoomIn or KeyboardAction.GraphZoomOut or KeyboardAction.GraphResetZoom or KeyboardAction.GraphEnterComponent
                 or KeyboardAction.GraphExitComponent or KeyboardAction.GraphOptions => scope == KeyboardScope.Graph,
             KeyboardAction.ToggleHistory => scope is KeyboardScope.TextEditor or KeyboardScope.History,
-            KeyboardAction.TextSubmit or KeyboardAction.TextNewline => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat,
-            >= KeyboardAction.TextBackspace and <= KeyboardAction.TextPaste => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings,
+            KeyboardAction.TextSubmit or KeyboardAction.TextNewline => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Appearance or KeyboardScope.SearchEditor,
+            >= KeyboardAction.TextBackspace and <= KeyboardAction.TextPaste => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Appearance or KeyboardScope.SearchEditor,
             KeyboardAction.DialogClose => !normal,
             KeyboardAction.DialogNext or KeyboardAction.DialogPrevious or KeyboardAction.DialogConfirm => scope == KeyboardScope.Menu,
-            KeyboardAction.BindingNext or KeyboardAction.BindingPrevious or KeyboardAction.BindingApply or KeyboardAction.BindingSave => scope == KeyboardScope.Bindings,
+            KeyboardAction.BindingNext or KeyboardAction.BindingPrevious or KeyboardAction.BindingApply or KeyboardAction.BindingSave => scope is KeyboardScope.Bindings or KeyboardScope.Appearance,
             _ => false
         };
     }

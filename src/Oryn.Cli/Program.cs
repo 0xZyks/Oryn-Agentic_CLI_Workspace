@@ -33,6 +33,8 @@ try
             Ctrl+Enter / F6  Select central tabs (or confirm when already there)
             Enter in tabs    Confirm the selected tab and focus its content
             Ctrl+K           Edit grouped keybindings (Super defaults to Ctrl)
+            Ctrl+F           Search files by name or text in the explorer
+            Settings menu    Appearance / colors: preview, apply or save
             Up / Down        Select or scroll
             Enter            Open file or toggle folder
             Right            Expand folder or select its first child

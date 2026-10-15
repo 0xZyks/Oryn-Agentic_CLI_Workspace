@@ -21,10 +21,11 @@ static unsafe class Smoke
         {
             KeyboardChecks.Run(root);
             ChatRenderingChecks.Run(root, captures);
+            AppearanceSearchChecks.Run(root, captures);
             File.WriteAllText(Path.Combine(root, "example.cs"), "class Example\n{\n    // read-only preview\n}\n");
             LocalWorkspaceFiles files = new(root, new()); WorkspaceState state = new(root);
             state.LoadRoot(files.ListAsync(root, default).GetAwaiter().GetResult());
-            using GraphicalWorkspaceController ui = new(state, files, new(new()), Path.Combine(root, "keys.json"));
+            using GraphicalWorkspaceController ui = new(state, files, new(new()), Path.Combine(root, "keys.json"), Path.Combine(root, "appearance.json"));
             using SdlWorkspace window = new(ui, fps: 60);
             Stopwatch time = Stopwatch.StartNew(); int phase = 0; long idleRaster = 0, idlePresented = 0; System.Numerics.Vector2 dragGoal = default, dragOrigin = default; GraphBox beforeDrag = default; Guid firstMember = default;
             window.Run(host =>
@@ -50,7 +51,7 @@ static unsafe class Smoke
                         Check(state.Chat.Messages.Count == 2 && state.Chat.Draft == "next draft", "reply preserves draft");
                         host.Capture(Path.Combine(captures, "02-chat.png"));
                         Key(SDL_Keycode.SDLK_F1);
-                        PanelBounds explorer = ui.Layout.Explorer; Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, (explorer.X + 2) * 9, (explorer.Y + 3) * 22 + 5); Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP, (explorer.X + 2) * 9, (explorer.Y + 3) * 22 + 5); break;
+                        PanelBounds explorer = ui.Layout.Explorer; Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, (explorer.X + 2) * 9, (explorer.Y + ui.Spacing.ExplorerHeaderRows) * 22 + ui.Spacing.TreeOffset + 5); Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP, (explorer.X + 2) * 9, (explorer.Y + ui.Spacing.ExplorerHeaderRows) * 22 + ui.Spacing.TreeOffset + 5); break;
                     case 5:
                         if (ui.Loading) return;
                         Check(state.Preview?.Content.Contains("class Example") == true, "async file preview");
@@ -95,7 +96,7 @@ static unsafe class Smoke
                         Check(state.LayoutOptions.VisualizerPlacement == VisualizerPlacement.Right, "docking");
                         host.Capture(Path.Combine(captures, "10-dock.png"));
                         PanelBounds split = ui.Layout.ExplorerSplitter;
-                        Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, split.X * 9 + 3, split.Y * 22 + 3); break;
+                        Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, split.X * 9 + 3, split.Y * 22 + ui.Spacing.PanelTopOffset + 3); break;
                     case 19:
                         Check(state.ResizingSplitter is not null, "SDL splitter mouse down");
                         SDL_Event motion = new(); motion.motion.type = SDL_EventType.SDL_EVENT_MOUSE_MOTION; motion.motion.x = (ui.Layout.ExplorerSplitter.X + 3) * 9; Push(motion);
@@ -142,7 +143,7 @@ static unsafe class Smoke
                     case 31:
                         beforeDrag = state.Graph.Placement.Bounds(state.Graph.SelectedId);
                         PanelBounds pane = state.Focus == WorkspacePanel.Visualizer ? ui.Layout.Visualizer : ui.Layout.Center;
-                        dragOrigin = new((pane.X + 1 - state.Graph.ScrollX) * 9, (pane.Y + 4 - state.Graph.ScrollY) * 22);
+                        dragOrigin = new((pane.X + 1 - state.Graph.ScrollX) * 9, (pane.Y + (state.Focus == WorkspacePanel.Visualizer ? ui.Spacing.ContentTopRows - 1 : ui.Spacing.ContentTopRows) + 4 - state.Graph.ScrollY) * 22);
                         dragGoal = new(beforeDrag.X + 65, state.Graph.Nodes.Max(n => state.Graph.Placement.Bounds(n.Id).Bottom) + 80);
                         Mouse(SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN, beforeDrag.X + dragOrigin.X + 16, beforeDrag.Y + dragOrigin.Y + 16);
                         SDL_Event drag = new(); drag.motion.type = SDL_EventType.SDL_EVENT_MOUSE_MOTION;
@@ -170,11 +171,29 @@ static unsafe class Smoke
                     case 35:
                         Check(ui.Overlay == WorkspaceOverlay.Menu && ui.MenuTitle == "Settings", "Enter opens selected category without invoking it on repeat");
                         host.Capture(Path.Combine(captures, "15-settings-menu.png"));
-                        Key(SDL_Keycode.SDLK_ESCAPE); Key(SDL_Keycode.SDLK_ESCAPE); Key(SDL_Keycode.SDLK_Q, SDL_Keymod.SDL_KMOD_LALT); break;
+                        Key(SDL_Keycode.SDLK_DOWN); Key(SDL_Keycode.SDLK_RETURN); break;
+                    case 36:
+                        Check(ui.Overlay == WorkspaceOverlay.Appearance, "Settings opens Appearance");
+                        Key(SDL_Keycode.SDLK_A, SDL_Keymod.SDL_KMOD_CTRL); Text("#70CDB2"); break;
+                    case 37:
+                        Check(ui.AppearanceDraft?.AccentColor == "#70CDB2" && state.Chat.Draft == "Coucou", "appearance text cannot change chat");
+                        host.Capture(Path.Combine(captures, "28-settings-native.png")); Key(SDL_Keycode.SDLK_S, SDL_Keymod.SDL_KMOD_ALT); break;
+                    case 38:
+                        Check(ui.Appearance.AccentColor == "#70CDB2" && File.Exists(Path.Combine(root, "appearance.json")), "native appearance save");
+                        Key(SDL_Keycode.SDLK_F, SDL_Keymod.SDL_KMOD_CTRL); Text("class Example"); break;
+                    case 39:
+                        if (ui.Searching) return;
+                        Check(ui.SearchFocused && ui.SearchResult?.Matches.Count == 1, "SDL search text input / content match");
+                        host.Capture(Path.Combine(captures, "29-search-native.png")); Key(SDL_Keycode.SDLK_RETURN); Key(SDL_Keycode.SDLK_RETURN); break;
+                    case 40:
+                        if (ui.Loading) return;
+                        Check(state.Preview?.Path.EndsWith("example.cs") == true && state.ActiveTab == WorkspaceTab.Code && ui.CodeTop == 0, "search opens source location");
+                        Check(state.Chat.Draft == "Coucou", "search preserves chat draft");
+                        Key(SDL_Keycode.SDLK_Q, SDL_Keymod.SDL_KMOD_LALT); break;
                 }
                 phase++;
             });
-            Check(phase == 36, "all SDL scenarios completed");
+            Check(phase == 41, "all SDL scenarios completed");
             Check((uint)SDL_WasInit(0) == 0, "SDL shutdown releases video subsystem");
             Console.WriteLine($"PASS: SDL {window.RendererName}, focus, UTF-8/multiline/clipboard input, reply, mouse file preview, graph/members, UUID chats, keybindings, resize, docking, mouse/cancel and shutdown. Captures: {captures}");
             return 0;

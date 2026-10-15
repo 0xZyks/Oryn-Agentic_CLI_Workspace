@@ -1,0 +1,23 @@
+Palier : M0
+Date locale : 2026-10-15T02:55:23.355879+02:00 — Europe/Paris
+
+Demande et orientation utilisateur
+L'utilisateur testera Windows/macOS demain. Un point du Visualiser est identifié mais sa conception n'est pas définie : laisser le comportement actuel en place. Demande de bilan des éléments restant sur M0, sans demande d'implémentation.
+
+État observé
+Critères M0 relus dans README_ORYN.md : CLI/configuration, SDL3+SkiaSharp, fichiers, tabs, démo graphe/docking, état indépendant, clavier/resize/cleanup sur OS principal. Ces capacités sont présentes, avec couleurs/recherche/icônes en plus. Linux est la plateforme validée ; Windows/macOS et vrai matériel high-DPI restent non validés. Documentation et smoke couvrent déjà les parcours normaux et le mode compact. Code startup/finally/Dispose et traitements d'erreur inspectés ; aucun scénario explicite d'échec graphique forcé trouvé dans les tests inspectés.
+
+Résultat / priorités restantes
+M0 fonctionnel largement couvert sur Linux ; reste principalement validation/stabilisation : essais réels Windows/macOS et packaging, scaling Retina/150–200% et alignement input/rendu, quelques scénarios négatifs ciblés de démarrage/configuration sans affichage et sortie propre après échec. Consigner ensuite les résultats et obtenir la clôture explicite du jalon, sans annoncer une compatibilité non vérifiée. La définition primaire de M0 vise l'OS principal ; couverture exhaustive multiplateforme appartient aussi à M7.
+Point Visualiser reporté conformément au souhait utilisateur, pas de nouvelle mécanique inventée ni de blocage imposé pour la démo M0.
+M-Native reste un jalon séparé, entièrement prévu/non implémenté ; M1 apporte le vrai backend local, streaming/annulation/chat durable. Git, Terminal et graphe réel ne sont pas des travaux requis pour finir le shell M0.
+
+Fichiers et vérifications actuelles
+Lecture ciblée README.md, README_ORYN.md, docs/m0-verification.md, SdlWorkspace.cs, StartupOptions.cs et smoke/tests concernés ; git status inspecté. Aucun nouveau build, test, publish ou lancement exécuté, aucune modification applicative. Seul ce log ajouté ; changements existants et anciens logs préservés.
+
+Validations historiques
+132 tests App et smoke Wayland réussi à la passe d'espacement. Full SDL dummy 41 étapes et build/publish/installation vérifiés lors du dernier alignement des bandeaux. Ce sont des résultats antérieurs, non relancés pour ce bilan.
+
+Commit et suite
+Aucun commit ni push. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+Attendre les essais utilisateur et sa prochaine demande ; conserver le Visualiser actuel. Ne pas implémenter spontanément la roadmap à partir de ce bilan.

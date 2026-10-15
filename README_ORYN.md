@@ -13,7 +13,7 @@ This README is both the project vision and an actionable implementation brief. *
 - **[PROPOSED]** Candidate choice requiring benchmarking or a short proof of concept.
 - **[DECIDED]** Product/architectural intent established during design.
 
-**First Codex session:** inspect the repository; if empty, create the solution skeleton and an executable minimal SDL + SkiaSharp workspace, then proceed milestone by milestone. Present assumptions and short ADRs for decisions that cannot be inferred. Avoid broad rewrites, speculative frameworks, unbounded dependency additions, and features not listed as v0.1 deliverables. Never store credentials in the repository.
+**Development sessions:** inspect the existing solution and documentation, and preserve the working SDL3 + SkiaSharp prototype. Advance through the relevant milestone, including the planned M-Native interoperability foundation, without recreating the application. Present assumptions and short ADRs for decisions that cannot be inferred. Avoid broad rewrites, speculative frameworks, unbounded dependency additions, and features not listed as v0.1 deliverables. Never store credentials in the repository. Documentation requests do not authorize implementation of planned modules.
 
 **Definition of success:** launching `oryn` opens a native graphical window and a project, browses files, chats with a local model, inspects a navigable project/concept graph, edits/validates proposals, opens contextual element discussions and knowledge cards, and restores that state on restart. Some graph edges, documentation, and agent proposals may be incomplete or manually supplied in v0.1; this must be made explicit rather than fabricated.
 
@@ -21,7 +21,7 @@ This README is both the project vision and an actionable implementation brief. *
 
 ## 1. Why Oryn exists
 
-Oryn is a **local-first, native graphical, AI-assisted engineering workspace**. Its original motivation is personal: restore the pleasure of programming, experimenting, designing systems and understanding technical concepts **without losing the practical benefits of modern AI assistance**. It is not intended to be merely another chatbot, autonomous coding agent, or code editor.
+Oryn is a **local-first, keyboard-first, terminal-inspired graphical engineering environment**, assisted by AI. Its interface preserves the interaction philosophy and information density of a TUI while using native graphics for rendering, layout, animation and visualization. Its original motivation is personal: restore the pleasure of programming, experimenting, designing systems and understanding technical concepts **without losing the practical benefits of modern AI assistance**. It is not intended to be merely another chatbot, autonomous coding agent, or code editor.
 
 The central experience connects four activities:
 
@@ -59,6 +59,9 @@ The long-term ambition is to **develop Oryn using Oryn**: start with proven libr
 8. **Persistence:** project graph, element identities, decisions, chats, status, citations/references, knowledge cards and settings survive restarts.
 9. **At least one viable language integration:** begin with a narrow, tested implementation, ideally **C# / Roslyn** for richer semantics, with graceful degradation for unsupported languages. Do not claim complete cross-language CFG support.
 10. **Usable local inference:** start with an established engine and realistic small quantized models; support a core-only mode for machines unable to run multiple models comfortably.
+11. **Multi-language interoperability:** validate useful Rust workspace indexing and C process execution through versioned C ABI tables and managed services; see M-Native. This is required prototype scope, not an implemented capability.
+
+The existing SDL3 + SkiaSharp frontend is the graphical foundation. The target presentation includes dedicated Chat, Code, Git and Visualizer views and a floating Terminal overlay; Git and Terminal are planned, not part of the current M0 executable.
 
 ### 2.2 Explicitly out of scope for v0.1
 
@@ -94,7 +97,9 @@ These are **future ambitions, not abandoned ideas**.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Important:** the visualizer defaults to the **right**, not the chat. It may also occupy a central tab or be shown side-by-side with other views. The central area supports multiple tabs. Project FileExplorer is typically left. Layout should adapt to window dimensions and display scaling and preserve keyboard accessibility.
+**Current M0 layout:** FileExplorer is left; the central tabs are Chat / Sources / Visualiser, with Chat active at startup. Sources is a read-only code preview. Settings offers accent/background color selection with a saved personal appearance profile. The explorer offers bounded asynchronous filename/text search and vector extension icons; text matches are not semantic analysis. The visualizer may also dock right or left. The diagram illustrates optional right docking, not the startup layout. Layout adapts to window dimensions and must preserve keyboard accessibility.
+
+**Target presentation [DECIDED]:** Chat, Code, Git and Visualizer are primary views; Code and Git are dedicated views rather than permanently docked panels. A floating, toggleable Terminal overlay preserves its underlying session when hidden. The Visualizer can also be a docked contextual view. Compact graphical containers, thin separators, restrained effects and configurable keyboard navigation with mouse support preserve the terminal-inspired philosophy. Oryn is not intended to become a conventional IDE. The presentation manager owns visibility, focus and layout, not necessarily service lifetimes. Git and Terminal remain planned.
 
 ### 3.2 Interaction
 
@@ -217,6 +222,130 @@ Recommended card sections:
 **RAG example:** explain retrieval-augmented generation, chunking, embeddings, lexical/vector/hybrid retrieval, reranking, context assembly, freshness, citations and hallucination limitations. Do **not** suggest a vector database is mandatory: lexical or structural code search can be more appropriate.
 
 v0.1 may combine curated/static templates, project annotations and AI-assisted generation. Documentation claims should have citations or clear uncertainty labels; AI-generated prose is not itself an authoritative source. Cards must remain useful offline when previously cached.
+
+---
+
+## 5a. Multi-language architecture [DECIDED]
+
+Oryn adopts a modular C# / Rust / C architecture to validate meaningful interoperability during the prototype while preserving the existing application and avoiding unnecessary complexity. These five logical layers define ownership, not mandatory individual assemblies.
+
+| Layer | Language | Responsibilities |
+|---|---|---|
+| Oryn.App | C# | Application lifecycle, UI, workspace, agents, Git, events and orchestration |
+| Oryn.Interop | C# | Native loading, ABI validation, unmanaged function pointers, marshalling and native resource ownership |
+| Oryn.Runtime | Rust | Workspace indexing, selected semantic analysis, background workloads and future specialized scheduling |
+| Oryn.Native | C | Process execution, future PTY/ConPTY, operating-system integrations and future sandbox backends |
+| OS / Native Dependencies | Platform-specific | Filesystem, process APIs, native graphics libraries and system isolation mechanisms |
+
+### Dependency model
+
+```text
+Oryn.App (C#)
+    |
+    | Managed services
+    v
+Oryn.Interop (C#)
+    |
+    | Versioned C ABI / delegate* unmanaged[Cdecl]
+    |
+    +----> Oryn.Runtime (Rust)
+    |          +-- Workspace indexing
+    |          +-- Semantic analysis
+    |          +-- Background processing
+    |          +-- Future task scheduling
+    |
+    +----> Oryn.Native (C)
+               +-- Process execution
+               +-- PTY / ConPTY
+               +-- Platform APIs
+               +-- Future sandbox adapters
+```
+
+Native modules are independent by default. Introduce direct Rust-to-C dependencies only for a concrete shared capability. Prefer coarse-grained calls, batched results and bounded event streams over repeated trivial FFI calls.
+
+### Architectural boundaries
+
+- Oryn.App owns application state, presentation and orchestration.
+- Oryn.Interop is the managed gateway to Oryn-owned native modules.
+- Oryn.Runtime implements selected compute-oriented and analysis workloads.
+- Oryn.Native provides targeted operating-system integrations.
+- Native modules expose C-compatible interfaces; panels must not depend on native implementation details.
+- Native modules must not manipulate application UI state or block the UI rendering thread.
+- The event bus distributes meaningful state changes; it does not replace every direct service call.
+
+### Graphics ownership [DECIDED]
+
+SDL3 and SkiaSharp remain in the C# application under the logical responsibility of Oryn.App. Moving SDL3 to Rust is not planned. The existing physical `Oryn.Ui.Sdl` adapter remains responsible for graphics lifecycle and rendering, while `Oryn.App` state stays framework-independent. This logical ownership does not require merging projects or moving files. See section 8 for graphics boundaries and section 3 for presentation policy.
+
+### Prototype objectives [V0.1]
+
+Validate loading Rust and C libraries, resolving versioned API tables, invoking typed unmanaged function pointers, a useful Rust workspace indexer and a useful C process executor. Return structured results to managed services; verify native ownership, cleanup and missing/incompatible-library handling while preserving SDL3 + SkiaSharp behavior.
+
+These capabilities are planned through M-Native. The current solution has no Oryn.Interop or Oryn-owned Rust/C modules. Do not introduce a custom native renderer, inference engine or advanced scheduler merely to demonstrate interoperability.
+
+---
+
+## 5b. Native interoperability and ABI contracts [DECIDED]
+
+Oryn-owned Rust and C modules use explicit native function-pointer bindings. The preferred C# mechanism is `delegate* unmanaged[Cdecl]<...>`, with exports dynamically resolved through `NativeLibrary.Load(...)` and `NativeLibrary.GetExport(...)`. Avoid large collections of declarative DllImport wrappers for these APIs. Third-party libraries may retain their existing binding mechanisms.
+
+### Versioned function tables
+
+Each module owns an independently versioned API table exposed through a stable entry point. Illustrative contract:
+
+```c
+#include <stdint.h>
+
+typedef struct oryn_runtime oryn_runtime_t;
+
+typedef struct {
+    uint32_t abi_version;
+    uint32_t struct_size;
+
+    oryn_runtime_t* (*create)(void);
+    void (*destroy)(oryn_runtime_t*);
+    int32_t (*scan_workspace)(
+        oryn_runtime_t*,
+        const char* workspace_path
+    );
+} oryn_runtime_api_v1;
+
+int32_t oryn_runtime_get_api(
+    uint32_t requested_version,
+    oryn_runtime_api_v1* out_api
+);
+```
+
+This is not a production header. The actual contract must define calling convention (including Windows compatibility), export visibility, string encoding, buffer ownership and error reporting. It must also define the caller's output-table capacity and compatible extension rules before writing to `out_api`; a returned `struct_size` alone cannot prevent an overwrite. Structured indexing results, progress and cancellation require further contract design. Rust implementations expose C-compatible functions through `extern "C"`.
+
+### Managed binding layer
+
+Oryn.Interop owns module discovery, dynamic loading, export resolution, ABI checks, table initialization, native handles, string/buffer marshalling, error translation, managed service wrappers and safe shutdown. Raw pointers must not escape into application panels.
+
+### ABI safety rules
+
+1. Public structures use fixed-size C-compatible fields with exactly matching managed/native layouts.
+2. Calling conventions must be explicitly compatible.
+3. Document pointer ownership; release allocations through their owning module.
+4. Native handles remain opaque outside their module.
+5. Function pointers and handles must not outlive the loaded library; finish operations and destroy resources before unloading.
+6. Rust panics must not unwind across FFI.
+7. Errors use explicit status codes or documented result structures.
+8. Long operations support cancellation and bounded shutdown where applicable.
+9. Managed callbacks require explicit threading and lifetime contracts.
+10. Pin or copy managed memory when required by the contract.
+
+### API evolution
+
+Validate requested and returned ABI versions, structure size, required function pointers and supported capabilities before exposing a managed service. Optional functions may use compatible table extensions or new API versions, with explicit capacity negotiation. A shared native loader is desirable; a universal table containing every operation is not.
+
+### Threading and callbacks
+
+Native workloads must not block SDL events or rendering. Prefer asynchronous managed orchestration and bounded polling initially. Introduce bidirectional callbacks only when needed, with documented threading and lifetime contracts.
+
+### Native failure handling
+
+Missing or incompatible libraries produce meaningful diagnostics and disable the affected capability while retaining file navigation and cached knowledge. Unless explicitly isolated, native modules run in the application process: a C or Rust memory-safety failure can terminate it. ABI separation does not provide process isolation. Move selected workloads behind IPC if stronger fault containment becomes necessary.
 
 ---
 
@@ -350,15 +479,11 @@ Preserve the application and interaction boundaries during that transition. Eval
 
 ## 9. Language split and process boundaries
 
-**[PROPOSED architectural direction]**
+The C# / Rust / C ownership and ABI decisions are defined in sections 5a–5b. C# retains application state and orchestration; Rust begins with workspace indexing; C begins with targeted process execution. Proven third-party engines and analyzers remain candidates for inference and language integration; their bindings need not follow Oryn-owned API conventions.
 
-- **C# / .NET:** application logic, workspace state, graph domain model, conversations, agents, task coordination, persistence, external LSP processes and tool integration.
-- **Rust:** later native scheduling/memory/compute components, optional v1.0 rendering components and low-level performance-critical infrastructure.
-- **C / C++:** C ABI interop and reuse of mature native libraries such as llama.cpp/Clang; optional targeted custom low-level experiments.
+Rust semantic pipelines are a future direction, not a replacement mandate for the narrow C#/Roslyn-first analysis candidate in M3. Adapter selection must follow measured capabilities and provenance requirements. Neither full semantic analysis nor a native scheduler is required for M-Native.
 
-Avoid pushing trivial operations across a C#/native FFI boundary. Prefer coarse-grained commands, batched results and bounded event streams. Where isolation matters, a separate process and IPC may be preferable to in-process FFI despite overhead.
-
-**Important:** begin with a **simple C#-centric v0.1 if that is fastest**, with clear provider and renderer interfaces. Rust/C modules should be introduced when they solve an observed requirement or form a deliberate later learning milestone. Cross-platform build and packaging must be tested, not assumed.
+Use coarse-grained FFI for in-process integrations. Use separate processes and IPC where justified by fault containment or platform/tool constraints. Test cross-platform builds and packaging rather than assuming compatibility.
 
 ---
 
@@ -418,9 +543,33 @@ Implement a straightforward task abstraction supporting:
 
 .NET `Task`, `CancellationToken`, channels and normal process APIs are appropriate starting points. **Do not implement a native work-stealing scheduler just to have one.**
 
-### 11.2 Future low-level runtime [LATER]
+### 11.2 Native runtime responsibilities [DECIDED]
 
-The author wants to explore specialized threading/task scheduling, CPU/GPU work overlap, buffer lifetime, VRAM allocation/residency, KV-cache management, batching, model loading/eviction and perhaps an inference engine or kernels of their own.
+Introduce native capabilities progressively through M-Native; advanced optimization remains future work.
+
+#### Oryn.Runtime — Rust
+
+Initial responsibilities are workspace traversal, file indexing, metadata collection, structured indexing results, incremental-analysis foundations and progress/cancellation where useful. Future responsibilities include semantic pipelines, cross-language symbol indexing, dependency/relationship extraction, concurrent background workloads, specialized scheduling and selected inference-support components.
+
+Results must distinguish deterministic observations from inferred/generated information. The runtime does not own UI state, agent conversations, Git presentation or project decision history.
+
+#### Oryn.Native — C
+
+Initial responsibilities are native process creation, stdin/stdout/stderr management, termination, exit-status retrieval, cleanup and portable error reporting. Future work includes Unix PTY, Windows ConPTY, terminal resizing, process-tree management, platform sandbox adapters and resource controls.
+
+Terminal emulation and process isolation are separate concerns. A PTY does not provide sandboxing.
+
+#### Managed Execution Manager
+
+Oryn.App owns user and agent execution requests, authorization/confirmation, session ownership, command history, output routing and lifecycle events. Native execution passes through Oryn.Interop. User and agent sessions remain logically independent: a unified Terminal view may display multiple sessions without sharing their interactive input streams. Hiding the overlay preserves the underlying session.
+
+#### Sandbox boundary [LATER]
+
+Enforce sandboxing through OS mechanisms. Linux, macOS and Windows backends may offer different guarantees; each must report its supported capabilities. Never advertise isolation the active backend cannot enforce. Initial process execution is not a production sandbox.
+
+#### Scheduling and future optimization
+
+.NET tasks remain suitable for application orchestration. A custom Rust scheduler is not required for the prototype; introduce specialized scheduling only when profiling shows a concrete benefit. Future experiments include CPU/GPU overlap, buffer lifetime, VRAM residency, KV caches, batching, model eviction and inference internals, without making them v0.1 requirements.
 
 Key trade-offs:
 
@@ -442,9 +591,11 @@ Record at least:
 - RAM/VRAM usage **where supported by the backend**;
 - parser/indexing duration and invalidation counts;
 - retrieval latency, cache hit rate and repeated work;
-- UI input-to-render latency, frame duration and rendering workload.
+- UI input-to-render latency, frame time, rendering allocations and workload;
+- UI responsiveness under background workloads and graph interaction latency;
+- native workload duration and FFI overhead where measurable.
 
-Do not claim universal GPU memory observability or portable GPU buffer control through a generic provider. The future native runtime requires platform/backend-specific investigation.
+Do not claim universal GPU memory observability or portable GPU buffer control through a generic provider. Native memory observability and future optimization require platform/backend-specific investigation.
 
 ---
 
@@ -465,40 +616,165 @@ Do not claim universal GPU memory observability or portable GPU buffer control t
 
 ## 13. Suggested repository structure [PROPOSED]
 
+This architectural target is not a claim that every path exists. The current `Oryn.slnx` contains App, Cli, Ui.Sdl and three test projects. Preserve these existing projects and the SDL3 + SkiaSharp implementation; the target uses the existing solution format rather than requiring conversion to `.sln`. Names below describe future organization, not modules to create now.
+
 ```text
 oryn/
 ├── README.md
+├── README_ORYN.md
+├── Oryn.slnx
 ├── docs/
-│   ├── adr/                    # Architecture decision records
-│   ├── architecture/           # Runtime, graph, UI and agent contracts
+│   ├── adr/
+│   ├── architecture/
+│   │   ├── overview.md
+│   │   ├── interoperability.md
+│   │   ├── runtime.md
+│   │   └── execution.md
 │   └── roadmap.md
 ├── src/
-│   ├── Oryn.Cli/               # CLI entrypoint, configuration
-│   ├── Oryn.App/               # Application state and use cases
-│   ├── Oryn.Ui.Abstractions/   # Candidate framework-independent UI contracts
-│   ├── Oryn.Ui.Sdl/            # Candidate SDL + SkiaSharp frontend
-│   ├── Oryn.Graph/             # Entities, relations, identity, lifecycle
-│   ├── Oryn.Knowledge/         # Cards, retrieval, provenance
-│   ├── Oryn.Agents/            # Agent roles, orchestration, tools
-│   ├── Oryn.Inference/         # Provider abstractions + local adapter
-│   ├── Oryn.Analysis/          # Language-neutral analyzer interfaces
-│   ├── Oryn.Analysis.CSharp/   # First language integration (candidate)
-│   └── Oryn.Storage/           # SQLite, migrations, repositories
-├── native/                     # Future Rust/C crates and interop
+│   ├── Oryn.Cli/                 # Existing launch/composition project
+│   ├── Oryn.Ui.Sdl/              # Existing C# graphics adapter, preserved
+│   ├── Oryn.App/
+│   │   ├── Application/
+│   │   │   ├── Bootstrap/
+│   │   │   ├── Configuration/
+│   │   │   └── Lifecycle/
+│   │   ├── UI/                   # Managed presentation/interaction ownership
+│   │   │   ├── Rendering/
+│   │   │   ├── Layout/
+│   │   │   ├── Docking/
+│   │   │   ├── Input/
+│   │   │   ├── Components/
+│   │   │   └── Panels/
+│   │   │       ├── Workspace/
+│   │   │       ├── Chat/
+│   │   │       ├── Code/
+│   │   │       ├── Visualizer/
+│   │   │       ├── Terminal/
+│   │   │       └── Git/
+│   │   ├── Workspace/
+│   │   ├── Agents/
+│   │   ├── Git/
+│   │   ├── Execution/
+│   │   ├── Events/
+│   │   └── Services/
+│   └── Oryn.Interop/
+│       ├── Loading/
+│       │   ├── NativeModuleLoader.cs
+│       │   └── NativeModuleLifetime.cs
+│       ├── Contracts/
+│       ├── Runtime/
+│       │   ├── RuntimeApi.cs
+│       │   └── RuntimeBindings.cs
+│       ├── Native/
+│       │   ├── ProcessApi.cs
+│       │   └── ProcessBindings.cs
+│       ├── Handles/
+│       └── Marshalling/
+├── native/
+│   ├── include/
+│   │   ├── oryn_abi.h
+│   │   ├── oryn_runtime.h
+│   │   └── oryn_process.h
+│   ├── runtime/
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── ffi.rs
+│   │       ├── indexer/
+│   │       ├── analysis/
+│   │       └── scheduler/
+│   └── process/
+│       ├── CMakeLists.txt
+│       ├── include/
+│       └── src/
+│           ├── process.c
+│           ├── platform.h
+│           ├── linux/
+│           ├── macos/
+│           └── windows/
 ├── tests/
+│   ├── Oryn.App.Tests/
+│   ├── Oryn.Smoke/               # Existing CLI/domain smoke
+│   ├── Oryn.Ui.Smoke/            # Existing SDL smoke
+│   ├── Oryn.Interop.Tests/
+│   ├── native-runtime/
+│   ├── native-process/
+│   └── integration/
 ├── samples/
-└── .github/workflows/
+│   └── workspaces/
+├── build/
+│   ├── scripts/
+│   └── packaging/
+└── .github/
+    └── workflows/
 ```
 
-This is a **modular boundary proposal**, not a demand for 11 assemblies on day one. Begin with a small solution and split projects when real coupling or testing needs justify it.
+### 13.1 Repository rules
+
+- Inspect the current solution before moving files; reorganize incrementally without broad rewrites to match the tree.
+- Preserve SDL3 + SkiaSharp and keep application state and presentation in C#.
+- Do not create empty placeholder subsystems or additional assemblies solely to reflect concepts.
+- Keep native ABI contracts centralized and avoid circular dependencies.
+- Keep native implementation details out of application panels.
+- Do not commit generated artifacts or platform binaries unless explicitly required.
+
+### 13.2 Build system
+
+The future build must coordinate .NET, Cargo and CMake compilation, native discovery, platform packaging, ABI tests and cross-language integration tests. Packaging must account for Windows/Linux/macOS, supported CPU architectures, native dependencies and runtime identifiers. A single documented developer command should eventually build the managed app and required native modules. Current working .NET build/run commands remain in README.md; no native build command is claimed yet.
+
+### 13.3 Future modularization
+
+Graph, Knowledge, Agents, Inference and Storage may become separate .NET projects when coupling or tests justify them. Prioritize ownership, testability and stable contracts over project count. The proposed folders do not require an immediate project or graphics reorganization.
 
 ---
 
 ## 14. Practical roadmap for Codex
 
-### M0 — Repository bootstrap and running shell
+### M-Native — Multi-language interoperability foundation [V0.1]
 
-**Build:** CLI entrypoint, configuration, SDL window/events, SkiaSharp drawing, open project directory, left file tree, central tabs and a visualizer placeholder available as a tab with optional docking. Define application state outside the graphics libraries; migrate the existing M0 behavior before advancing to M1.
+**Objective:** working C# / Rust / C interoperability without destabilizing the SDL3 + SkiaSharp prototype. This milestone may run alongside early application development; M0–M7 retain their numbers and objectives. Nothing in this section is implemented by the documentation update.
+
+#### Phase A — Repository preparation
+
+Inspect the solution; introduce Oryn.Interop, Rust/C module directories, public ABI headers and initial native build configuration while preserving application behavior.
+
+#### Phase B — Native loading
+
+Implement dynamic loading, versioned API-table resolution, typed `delegate* unmanaged[Cdecl]` bindings, compatibility checks, deterministic cleanup and missing/incompatible-module diagnostics.
+
+#### Phase C — Rust integration
+
+Implement a minimal workspace indexer accepting a workspace path and returning structured file metadata through Rust's C ABI and Oryn.Interop. Do not build a complete semantic analyzer or custom scheduler.
+
+#### Phase D — C integration
+
+Implement a minimal backend that launches a process, captures output, reports exit status and releases resources safely. Do not build a complete terminal emulator or production sandbox.
+
+#### Phase E — Application integration
+
+Connect indexing to a managed workspace service and process execution to a managed execution service. Surface results through existing components, keep native work off the UI thread and verify error handling and shutdown.
+
+#### Acceptance criteria
+
+1. Oryn launches with its existing SDL3 + SkiaSharp interface.
+2. C# loads the Rust and C modules successfully.
+3. ABI compatibility is validated.
+4. Rust indexes a real workspace.
+5. C executes a real process.
+6. Managed services consume structured results.
+7. Native resources are released correctly.
+8. Native errors produce meaningful diagnostics.
+9. Automated integration tests pass on the supported development platform.
+10. Incomplete platform support is documented.
+
+#### Non-goals
+
+Custom native rendering, inference kernels, advanced scheduling, full semantic graph analysis, production sandboxing and complete terminal emulation.
+
+### M0 — Existing graphical workspace and stabilization
+
+**Preserve and stabilize:** existing CLI/configuration, SDL3 window/events, SkiaSharp drawing, project directory browsing, left file tree, central Chat/Sources/Visualiser tabs and demo visualizer with optional docking. Keep state outside graphics libraries; complete remaining interaction, scaling and platform validation before claiming M0 complete. The graphical prototype already exists; do not bootstrap a replacement TUI.
 
 **Done when:** launches on the primary development OS; keyboard navigation works; resizing doesn't crash; a project folder can be browsed; window startup/shutdown release native resources cleanly.
 
@@ -559,7 +835,13 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 - Storage migrations and restart recovery; no chat loss.
 - Retrieval returns traceable sources and marks stale data.
 - Model cancellation and backend failure do not block UI.
-- Input/event routing remains testable independently of the temporary renderer.
+- Input/event routing remains testable independently of SDL/Skia rendering.
+- Native ABI version, structure layout/size and capability validation.
+- Native handle cleanup, operation shutdown and missing/incompatible-library behavior.
+- Rust indexing and C process-execution integration through managed services.
+- Cross-platform loading and packaging where supported; document untested platforms.
+
+Native interoperability checks are planned acceptance coverage, not tests already present or executed.
 
 **Manual scenarios:**
 
@@ -578,7 +860,11 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ### Decisions to preserve
 
-- Oryn is **local-first**, with a **native graphical frontend**: **SDL + SkiaSharp in v0.1**, then **SDL + OpenGL for v1.0**.
+- Oryn is **local-first, keyboard-first and terminal-inspired**, with **SDL3 + SkiaSharp in v0.1**, then **SDL + OpenGL for v1.0**. A custom TUI renderer is not required.
+- C# application ownership, Rust runtime workloads and C OS integrations form the decided multi-language architecture; M-Native validates useful interoperability during the prototype.
+- Oryn-owned modules expose independent versioned C ABI tables through explicit managed function-pointer bindings.
+- Graphics remain in C#; native ABI separation is not process isolation.
+- Dedicated Chat/Code/Git/Visualizer views and a persistent-session Terminal overlay are the target presentation; Git and Terminal are planned.
 - A rich visualizer is a core feature, not an optional later dashboard.
 - The visualizer represents **implemented code and conceptual architecture**.
 - Main lifecycle is **À valider / Validé / En cours / Implémenté**, with a separate Idea Box.
@@ -597,7 +883,7 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 - Model lineup: Qwen3 0.6B / 4B / 8B candidates vs a single quantized core model; benchmark real tasks and memory.
 - C# Roslyn-first integration versus a narrower multi-language syntax-only first pass.
 - SQLite schema, full-text indexing and when embeddings add enough value.
-- .NET/native boundaries, if and when needed.
+- Native API details, cancellation, table-capacity negotiation, build/discovery and packaging; the language ownership and function-pointer direction are decided.
 
 ### Open questions (do not block first coding session)
 
@@ -621,7 +907,7 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 - Stronger identity reconciliation across renames, moves, refactors, splits and merges.
 - Incremental hybrid RAG, reranking and specialized knowledge agents.
 - Sophisticated scheduler, task DAGs, batching, CPU/GPU overlap and memory-aware model residency.
-- Rust/C native modules and experiments in GPU buffers, KV caches, inference runtime internals.
+- Advanced Rust/C experiments in GPU buffers, KV caches and inference runtime internals; initial indexing/process modules belong to M-Native in v0.1.
 - Remote model execution on a personal homelab, optional external API providers, local fallback.
 - Performance visualization of Oryn's own tasks, inference and architecture **inside Oryn**.
 - Extension ecosystem for languages, tools, visualization and inference providers.
@@ -638,8 +924,8 @@ This is a **modular boundary proposal**, not a demand for 11 assemblies on day o
 
 ## 18. Immediate instruction for the next development session
 
-**Do not brainstorm more product features before obtaining a running prototype.**
+**Preserve the running graphical prototype and advance through the requested milestone.**
 
-Continue **M0**. Inspect the existing prototype, machine and toolchains, then migrate the interface to **SDL + SkiaSharp** according to [ADR 0005](docs/adr/0005-sdl-rendering-direction.md). Preserve independent application state, left FileExplorer, central Chat/Code/Visualizer tabs, optional visualizer docking, focus management and clean window/resource shutdown. Include build/run instructions and at least one smoke test. Keep the code ready for M1 without implementing the full roadmap in one shot.
+Inspect the existing prototype, machine, toolchains and latest handoff before the next implementation task. Continue the requested **M0** stabilization or **M-Native** slice, preserving the working SDL3 + SkiaSharp frontend documented in [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md). Keep independent application state, left FileExplorer, central tabs, optional docking, focus and clean shutdown. Maintain usable build/run instructions and meaningful smoke coverage. Documentation-only requests do not authorize native implementation, UI rewrites, dependencies or placeholder modules. Keep the path to M1 without attempting the entire roadmap.
 
 > **Oryn is not meant to write software instead of its author. It is meant to make exploring, understanding and building software enjoyable again.**

@@ -14,15 +14,19 @@ internal static class ChatRenderingChecks
             ui.Execute(KeyboardAction.FocusChat, 0); ui.Text("abcdef");
             painter.Draw(canvas, 1280, 836, animationTime: 0);
             PanelBounds pane = ui.Layout.Center;
-            // The final eight header pixels must select the same tab as its label.
-            painter.PointerDown((pane.X + 9) * 9, pane.Y * 22 + 26);
+            // The top padding is panel chrome, not a tab hit region.
+            painter.PointerDown((pane.X + 9) * 9, pane.Y * 22 + ui.Spacing.PanelTopOffset + 3);
+            if (ui.State.ActiveTab != WorkspaceTab.Chat || ui.State.FocusArea != PanelFocusArea.Content)
+                throw new InvalidOperationException("Central-tab top padding must not select another tab.");
+            // The lower part of the inset tab still selects the same tab as its label.
+            painter.PointerDown((pane.X + 9) * 9, pane.Y * 22 + ui.Spacing.PanelTopOffset + 26);
             if (ui.State.ActiveTab != WorkspaceTab.Code || ui.State.FocusArea != PanelFocusArea.Tabs)
                 throw new InvalidOperationException("Extended tab header must select Sources and own keyboard tab focus.");
             ui.Key(InputKey.Parse("Right"), 0);
             if (ui.State.ActiveTab != WorkspaceTab.Visualizer)
                 throw new InvalidOperationException("Keyboard order must match Chat / Sources / Visualiser.");
             ui.Execute(KeyboardAction.FocusChat, 0); painter.Draw(canvas, 1280, 836, animationTime: 0);
-            painter.PointerDown((pane.X + 6) * 9 + 1, (pane.Y + pane.Height - 2) * 22 - 10 + 5);
+            painter.PointerDown((pane.X + 6) * 9 + 1, (pane.Y + pane.Height - 2) * 22 - 10 - ui.Spacing.Gap + 5);
             if (ui.Editor.Cursor != 2) throw new InvalidOperationException("Raised composer must preserve click-to-caret alignment.");
             painter.PointerDown((pane.X + pane.Width - 2) * 9, (pane.Y + pane.Height) * 22 - 5);
             if (ui.Editor.Cursor != 2) throw new InvalidOperationException("Bottom panel margin must not receive composer clicks.");
@@ -48,10 +52,10 @@ internal static class ChatRenderingChecks
             if (ui.Overlay != WorkspaceOverlay.Details || ui.OverlayTarget?.Id != ui.State.Graph.SelectedId)
                 throw new InvalidOperationException("Inspector details must follow the selected UUID.");
             ui.CloseOverlay(); painter.Draw(canvas, 1280, 836, animationTime: 0);
-            painter.PointerDown(400, 610); // Bottom-row card in the centered overview.
+            painter.PointerDown(400, 632); // Bottom-row card in the centered overview.
             if (ui.State.Graph.Placement.DraggedId != ui.State.Graph.Nodes.Last().Id)
                 throw new InvalidOperationException("Centered card hit regions must follow the rendered position.");
-            ui.PointerMove(400f, 630f); ui.Tick(1000);
+            ui.PointerMove(400f, 652f); ui.Tick(1000);
             painter.Draw(canvas, 1280, 836, animationTime: 0);
             using SKBitmap beforeRelease = bitmap.Copy();
             ui.PointerUp(); painter.Draw(canvas, 1280, 836, animationTime: 0);

@@ -1,0 +1,21 @@
+Palier : M0
+Date locale : 2026-10-15T02:53:06.198226+02:00 — Europe/Paris
+
+Demande
+Expliquer si l'application SDL testée avec X11/Wayland fonctionne aussi sur macOS et Windows.
+
+Observations actuelles
+Inspection des csproj App/SDL/CLI, README, ADR0006 et assets NuGet restaurés. Aucun driver X11/Wayland imposé par le code de lancement ; les variables sont forcées dans les commandes de test. ppy.SDL3-CS 2026.1002.1 contient des binaires SDL3 win-x64/win-arm64 et osx-x64/osx-arm64 ; les paquets SkiaSharp 3.119.1 incluent NativeAssets.Win32 et NativeAssets.macOS. Ces assets rendent les cibles plausibles sans prouver leur fonctionnement.
+Publication installée actuelle : linux-x64, non réutilisable telle quelle sur Windows/macOS. Script Windows et exemple publish macOS existent, sans preuve d'exécution graphique sur ces OS.
+
+Résultat / décisions
+Réponse : architecture et dépendances multiplateformes, exécution validée Linux seulement ; SDL sélectionne son backend disponible par défaut, overrides X11/Wayland pour les tests Linux et dummy pour headless. Chaque OS/architecture demande sa publication native, puis des tests réels fenêtre/input/clipboard/DPI/cleanup. Aucune implémentation ni lancement de roadmap autorisé par la question.
+
+Vérifications et sources
+Lectures locales uniquement, plus documentation officielle SDL sur sélection des backends (https://wiki.libsdl.org/SDL3/SDL_HINT_VIDEO_DRIVER) et catalogue RID .NET (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog). Aucun build/publish/test supplémentaire exécuté. Les validations Linux précédentes restent historiques ; Windows/macOS demeurent non exécutés.
+
+Fichiers / commit
+Seul ce log ajouté, anciens logs et changements existants préservés. Aucun commit/push ; HEAD de référence c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Suite
+Valider le packaging et l'exécution sur chaque OS cible lorsqu'une tâche dédiée le demandera ; ne pas annoncer la compatibilité acquise avant ces essais.

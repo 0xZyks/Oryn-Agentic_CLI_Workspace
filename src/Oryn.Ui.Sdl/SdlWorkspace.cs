@@ -150,7 +150,7 @@ public sealed unsafe class SdlWorkspace : IDisposable
             case SDL_EventType.SDL_EVENT_QUIT:
             case SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED: Controller.State.Dispatch(WorkspaceCommand.Quit); break;
             case SDL_EventType.SDL_EVENT_WINDOW_FOCUS_LOST:
-                _hasKeyboardFocus = false; Controller.FocusLost(); _keyboard.Reset(); break;
+                _hasKeyboardFocus = false; _painter.PointerUp(); Controller.FocusLost(); _keyboard.Reset(); break;
             case SDL_EventType.SDL_EVENT_WINDOW_FOCUS_GAINED:
                 _hasKeyboardFocus = true; _keyboard.Reset(); Controller.Dirty = true; break;
             case SDL_EventType.SDL_EVENT_WINDOW_EXPOSED:
@@ -169,12 +169,12 @@ public sealed unsafe class SdlWorkspace : IDisposable
             case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN:
                 if (ev.button.button is 1 or 3) _painter.PointerDown(ev.button.x, ev.button.y, ev.button.button == 3);
                 break;
-            case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP: if (ev.button.button == 1) Controller.PointerUp(); break;
-            case SDL_EventType.SDL_EVENT_WINDOW_MOUSE_LEAVE: _painter.Hover(-1, -1); break;
+            case SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP: if (ev.button.button == 1) { _painter.PointerUp(); Controller.PointerUp(); } break;
+            case SDL_EventType.SDL_EVENT_WINDOW_MOUSE_LEAVE: _painter.PointerUp(); _painter.Hover(-1, -1); break;
             case SDL_EventType.SDL_EVENT_MOUSE_MOTION: _painter.Hover(ev.motion.x, ev.motion.y); Controller.PointerMove(ev.motion.x, ev.motion.y); break;
             case SDL_EventType.SDL_EVENT_MOUSE_WHEEL:
                 int direction = ev.wheel.direction == SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
-                Controller.Wheel((int)(ev.wheel.mouse_x / GraphicalWorkspaceController.CellWidth), (int)(ev.wheel.mouse_y / GraphicalWorkspaceController.CellHeight),
+                Controller.WheelPixels(ev.wheel.mouse_x, ev.wheel.mouse_y,
                     (int)Math.Sign(ev.wheel.x) * direction, (int)Math.Sign(ev.wheel.y) * direction); break;
         }
         // Activate/deactivate text input at the focus transition, not one event batch later.
@@ -183,13 +183,13 @@ public sealed unsafe class SdlWorkspace : IDisposable
     private void Clipboard(ClipboardRequest request)
     {
         if (request == ClipboardRequest.None) return;
-        TextEditState editor = Controller.Overlay == WorkspaceOverlay.Keybindings ? Controller.BindingEditor : Controller.Editor;
+        TextEditState editor = Controller.ActiveEditor;
         if (request == ClipboardRequest.Paste) Controller.Text(SDL_GetClipboardText() ?? "");
         else if (editor.HasSelection)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(editor.Selection + "\0");
             fixed (byte* text = bytes) Require(SDL_SetClipboardText(text), "set clipboard");
-            if (request == ClipboardRequest.Cut) { editor.Insert(""); if (Controller.Overlay != WorkspaceOverlay.Keybindings) Controller.CurrentChat.Draft = editor.Text; }
+            if (request == ClipboardRequest.Cut) { editor.Insert(""); Controller.EditorChanged(); }
         }
         Controller.Dirty = true;
     }

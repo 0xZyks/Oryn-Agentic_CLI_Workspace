@@ -5,7 +5,7 @@ namespace Oryn.App;
 
 public sealed record WorkspaceMenuItem(string Label, KeyboardAction? Action);
 
-public enum WorkspaceOverlay { None, Menu, Options, Details, ElementChat, Keybindings }
+public enum WorkspaceOverlay { None, Menu, Options, Details, ElementChat, Keybindings, Appearance }
 public enum ClipboardRequest { None, Copy, Cut, Paste }
 public readonly record struct KeyboardInputResult(bool Handled, ClipboardRequest Clipboard = ClipboardRequest.None, bool AllowCommittedText = false)
 {
@@ -13,9 +13,10 @@ public readonly record struct KeyboardInputResult(bool Handled, ClipboardRequest
 }
 
 /// <summary>Toolkit-independent interaction adapter for the graphical M0 workspace.</summary>
-public sealed class GraphicalWorkspaceController : IDisposable
+public sealed partial class GraphicalWorkspaceController : IDisposable
 {
     public const int CellWidth = 9, CellHeight = 22;
+    public WorkspaceSpacing Spacing => new(Rows < 18);
     public WorkspaceState State { get; }
     public KeyboardRouter Keyboard { get; private set; }
     public WorkspaceLayout Layout => WorkspaceLayout.Calculate(Columns, Rows, State.Focus, State.LayoutOptions);
@@ -40,7 +41,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
     {
         0 => [WorkspaceMenu[5]],
         2 => WorkspaceMenu[1..5],
-        5 => [WorkspaceMenu[0]],
+        5 => [WorkspaceMenu[0], new("Appearance / colors", KeyboardAction.EditAppearance)],
         null => WorkspaceMenu,
         _ => [new("No actions available yet", null)]
     };
@@ -54,7 +55,8 @@ public sealed class GraphicalWorkspaceController : IDisposable
     public string Composition { get; set; } = "";
     public bool Dirty { get; set; } = true;
     public bool Loading { get; private set; }
-    public bool AcceptsText => Overlay == WorkspaceOverlay.Keybindings || Overlay == WorkspaceOverlay.ElementChat
+    public bool AcceptsText => Overlay is WorkspaceOverlay.Keybindings or WorkspaceOverlay.ElementChat or WorkspaceOverlay.Appearance
+        || Overlay == WorkspaceOverlay.None && !NavbarFocused && SearchFocused && State.Focus == WorkspacePanel.Explorer
         || Overlay == WorkspaceOverlay.None && !NavbarFocused && State.Focus == WorkspacePanel.Center && State.ActiveTab == WorkspaceTab.Chat
             && State.FocusArea == PanelFocusArea.Content && !HistoryFocused;
     public ChatPreviewState CurrentChat => Overlay == WorkspaceOverlay.ElementChat && OverlayTarget is { } target
@@ -67,8 +69,8 @@ public sealed class GraphicalWorkspaceController : IDisposable
     private Task? _loadingTask;
     private long _lastMotion;
     private System.Numerics.Vector2 _graphOrigin;
-    public GraphicalWorkspaceController(WorkspaceState state, IWorkspaceFiles files, KeyboardRouter keyboard, string profilePath)
-    { State = state; _files = files; Keyboard = keyboard; _profilePath = profilePath; Editor.Set(state.Chat.Draft); }
+    public GraphicalWorkspaceController(WorkspaceState state, IWorkspaceFiles files, KeyboardRouter keyboard, string profilePath, string? appearancePath = null)
+    { State = state; _files = files; Keyboard = keyboard; _profilePath = profilePath; Editor.Set(state.Chat.Draft); LoadAppearance(appearancePath); }
     public void Resize(int width, int height)
     {
         int columns = Math.Max(1, width / CellWidth), rows = Math.Max(1, height / CellHeight);
@@ -89,8 +91,9 @@ public sealed class GraphicalWorkspaceController : IDisposable
     public void Text(string text)
     {
         if (!AcceptsText) return;
-        if (Overlay == WorkspaceOverlay.Keybindings) BindingEditor.Insert(text);
-        else { Editor.Insert(text); CurrentChat.Draft = Editor.Text; ChatScroll = 0; }
+        ActiveEditor.Insert(Overlay == WorkspaceOverlay.Appearance || SearchFocused ? text.Replace("\r", "").Replace("\n", "") : text);
+        EditorChanged();
+        if (ActiveEditor == Editor) ChatScroll = 0;
         Composition = ""; Dirty = true;
     }
     public KeyboardScope InputScope => Overlay switch
@@ -99,7 +102,8 @@ public sealed class GraphicalWorkspaceController : IDisposable
         WorkspaceOverlay.Details => KeyboardScope.Details,
         WorkspaceOverlay.ElementChat => KeyboardScope.ElementChat,
         WorkspaceOverlay.Keybindings => KeyboardScope.Bindings,
-        _ => NavbarFocused ? KeyboardScope.Navbar : State.Focus == WorkspacePanel.Explorer ? KeyboardScope.Explorer
+        WorkspaceOverlay.Appearance => KeyboardScope.Appearance,
+        _ => NavbarFocused ? KeyboardScope.Navbar : State.Focus == WorkspacePanel.Explorer ? SearchFocused ? KeyboardScope.SearchEditor : SearchActive ? KeyboardScope.SearchResults : KeyboardScope.Explorer
             : State.FocusArea == PanelFocusArea.Tabs ? KeyboardScope.Tabs
             : GraphActive ? KeyboardScope.Graph
             : AcceptsText ? KeyboardScope.TextEditor
@@ -142,7 +146,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
             or KeyboardAction.ToggleDock or KeyboardAction.DockLeft or KeyboardAction.DockRight
             or KeyboardAction.MoveUp or KeyboardAction.MoveDown or KeyboardAction.Collapse)
         {
-            CancelPendingRead(); HistoryFocused = false; Composition = "";
+            SearchFocused = false; CancelPendingRead(); HistoryFocused = false; Composition = "";
         }
         switch (action)
         {
@@ -157,14 +161,21 @@ public sealed class GraphicalWorkspaceController : IDisposable
             case KeyboardAction.DialogNext: OverlaySelection = (OverlaySelection + 1) % (Overlay == WorkspaceOverlay.Options ? 3 : MenuItems.Count); break;
             case KeyboardAction.DialogPrevious: OverlaySelection = (OverlaySelection + (Overlay == WorkspaceOverlay.Options ? 2 : MenuItems.Count - 1)) % (Overlay == WorkspaceOverlay.Options ? 3 : MenuItems.Count); break;
             case KeyboardAction.DialogConfirm: ChooseOverlay(OverlaySelection, now); break;
-            case KeyboardAction.BindingNext: SelectBinding(BindingIndex + 1); break;
-            case KeyboardAction.BindingPrevious: SelectBinding(BindingIndex - 1); break;
-            case KeyboardAction.BindingApply: ApplyBindings(false); break;
-            case KeyboardAction.BindingSave: ApplyBindings(true); break;
+            case KeyboardAction.BindingNext: if (Overlay == WorkspaceOverlay.Appearance) SelectAppearanceTarget(1 - AppearanceTarget); else SelectBinding(BindingIndex + 1); break;
+            case KeyboardAction.BindingPrevious: if (Overlay == WorkspaceOverlay.Appearance) SelectAppearanceTarget(1 - AppearanceTarget); else SelectBinding(BindingIndex - 1); break;
+            case KeyboardAction.BindingApply: if (Overlay == WorkspaceOverlay.Appearance) ApplyAppearance(false); else ApplyBindings(false); break;
+            case KeyboardAction.BindingSave: if (Overlay == WorkspaceOverlay.Appearance) ApplyAppearance(true); else ApplyBindings(true); break;
             case >= KeyboardAction.TextSubmit and <= KeyboardAction.TextSelectAll: Edit(action, now); break;
             case KeyboardAction.Quit: State.Dispatch(WorkspaceCommand.Quit); break;
             case KeyboardAction.OpenMenu: OpenOverlay(WorkspaceOverlay.Menu); break;
             case KeyboardAction.EditKeybindings: OpenBindings(); break;
+            case KeyboardAction.EditAppearance: OpenAppearance(); break;
+            case KeyboardAction.SearchFiles: FocusSearch(); break;
+            case KeyboardAction.SearchClear: ClearSearch(); break;
+            case KeyboardAction.SearchToggleFocus: SearchFocused = !SearchFocused; break;
+            case KeyboardAction.SearchResultUp: MoveSearchResult(-1); break;
+            case KeyboardAction.SearchResultDown: MoveSearchResult(1); break;
+            case KeyboardAction.SearchOpenResult: OpenSearchResult(); break;
             case KeyboardAction.NextPanel: State.Dispatch(WorkspaceCommand.NextPanel); HistoryFocused = false; break;
             case KeyboardAction.PreviousPanel: State.Dispatch(WorkspaceCommand.PreviousPanel); HistoryFocused = false; break;
             case KeyboardAction.FocusFiles: State.SetFocus(WorkspacePanel.Explorer); break;
@@ -203,12 +214,14 @@ public sealed class GraphicalWorkspaceController : IDisposable
     }
     private void Edit(KeyboardAction action, long now)
     {
-        TextEditState editor = Overlay == WorkspaceOverlay.Keybindings ? BindingEditor : Editor;
+        TextEditState editor = ActiveEditor;
         switch (action)
         {
             case KeyboardAction.TextSubmit:
+                if (Overlay == WorkspaceOverlay.Appearance) { ApplyAppearance(false); break; }
+                if (SearchFocused) { SearchFocused = false; KeepSearchVisible(); break; }
                 if (CurrentChat.Send()) { editor.Set(""); _thinking[CurrentChat] = now; ChatScroll = 0; } break;
-            case KeyboardAction.TextNewline: editor.Insert("\n"); break;
+            case KeyboardAction.TextNewline: if (Overlay != WorkspaceOverlay.Appearance && !SearchFocused) editor.Insert("\n"); break;
             case KeyboardAction.TextBackspace: editor.Backspace(); break;
             case KeyboardAction.TextDelete: editor.Delete(); break;
             case KeyboardAction.TextSelectAll: editor.SelectAll(); break;
@@ -217,7 +230,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
                 bool select = name.StartsWith("Select");
                 editor.Move((select ? name[6..] : name).ToUpperInvariant(), select); break;
         }
-        if (Overlay != WorkspaceOverlay.Keybindings) CurrentChat.Draft = editor.Text;
+        if (action != KeyboardAction.TextSubmit) EditorChanged();
     }
     private void ExpandSelection()
     {
@@ -236,13 +249,24 @@ public sealed class GraphicalWorkspaceController : IDisposable
         else if (State.ActiveTab == WorkspaceTab.Code) { CodeTop = Math.Max(0, CodeTop + dy); CodeLeft = Math.Max(0, CodeLeft + dx * 3); }
         else ChatScroll = Math.Max(0, ChatScroll - dy);
     }
+    public void WheelPixels(float x, float y, int dx, int dy)
+    {
+        if (Overlay != WorkspaceOverlay.None) { Wheel((int)(x / CellWidth), (int)(y / CellHeight), dx, dy); return; }
+        WorkspacePanel? panel = Layout.HitTest((int)(x / CellWidth), (int)(y / CellHeight));
+        if (panel is null) return;
+        PanelBounds bounds = panel switch { WorkspacePanel.Explorer => Layout.Explorer, WorkspacePanel.Center => Layout.Center, _ => Layout.Visualizer };
+        if (y < bounds.Y * CellHeight + Spacing.PanelTopOffset || y >= (bounds.Y + bounds.Height) * CellHeight - Spacing.Gap) return;
+        Wheel((int)(x / CellWidth), (int)(y / CellHeight), dx, dy);
+    }
     public void Wheel(int x, int y, int dx, int dy)
     {
         Dirty = true;
         if (Overlay == WorkspaceOverlay.ElementChat) { ChatScroll = Math.Max(0, ChatScroll + dy * 3); return; }
         if (Overlay != WorkspaceOverlay.None) return;
         WorkspacePanel? panel = Layout.HitTest(x, y);
-        if (panel == WorkspacePanel.Explorer) ExplorerTop = Math.Clamp(ExplorerTop - dy * 3, 0, Math.Max(0, State.Rows.Count - Math.Max(1, Layout.Explorer.Height - 3)));
+        if (panel == WorkspacePanel.Explorer && SearchActive)
+        { SearchTop = Math.Clamp(SearchTop - dy * 2, 0, Math.Max(0, (SearchResult?.Matches.Count ?? 0) - Spacing.SearchRows(Layout.Explorer.Height))); }
+        else if (panel == WorkspacePanel.Explorer) ExplorerTop = Math.Clamp(ExplorerTop - dy * 3, 0, Math.Max(0, State.Rows.Count - Spacing.TreeRows(Layout.Explorer.Height)));
         else if (panel is not null)
         {
             bool graphHovered = panel == WorkspacePanel.Visualizer || panel == WorkspacePanel.Center && State.ActiveTab == WorkspaceTab.Visualizer;
@@ -262,11 +286,11 @@ public sealed class GraphicalWorkspaceController : IDisposable
     public void PointerUp() { State.EndResize(); State.Graph.Placement.End(); Dirty = true; }
     public void FocusLost() { State.Graph.Placement.End(); State.EndResize(true); Keyboard.CancelLeader(); Composition = ""; Dirty = true; }
     public void FocusPanel(WorkspacePanel panel)
-    { NavbarFocused = false; State.Graph.Placement.End(); CancelPendingRead(); Keyboard.CancelLeader(); Composition = ""; State.SetFocus(panel); HistoryFocused = false; Dirty = true; }
+    { SearchFocused = false; NavbarFocused = false; State.Graph.Placement.End(); CancelPendingRead(); Keyboard.CancelLeader(); Composition = ""; State.SetFocus(panel); HistoryFocused = false; Dirty = true; }
     public void SelectExplorer(int index) { FocusPanel(WorkspacePanel.Explorer); State.Select(index); KeepExplorerVisible(); OpenSelection(); }
     public void SelectTab(WorkspaceTab tab)
     {
-        NavbarFocused = false;
+        SearchFocused = false; NavbarFocused = false;
         CancelPendingRead(); Keyboard.CancelLeader(); Composition = ""; HistoryFocused = false;
         State.Dispatch(tab switch { WorkspaceTab.Chat => WorkspaceCommand.ChatTab, WorkspaceTab.Code => WorkspaceCommand.CodeTab, _ => WorkspaceCommand.VisualizerTab });
         State.SetFocus(WorkspacePanel.Center, PanelFocusArea.Tabs); Dirty = true;
@@ -275,7 +299,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
     { if (Overlay == WorkspaceOverlay.None) FocusPanel(WorkspacePanel.Center); HistoryFocused = history; Dirty = true; }
     public void PlaceVisualizer(VisualizerPlacement placement)
     {
-        NavbarFocused = false;
+        SearchFocused = false; NavbarFocused = false;
         CancelPendingRead(); Keyboard.CancelLeader(); HistoryFocused = false; Composition = "";
         State.SetVisualizerPlacement(placement); Dirty = true;
     }
@@ -294,7 +318,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
         try
         {
             SelectionResult? result = await State.LoadSelectionAsync(_files, token);
-            _completed.Enqueue(() => { if (!token.IsCancellationRequested) { if (result is not null) State.Apply(result); CodeTop = CodeLeft = 0; HistoryFocused = false; Loading = false; } });
+            _completed.Enqueue(() => { if (!token.IsCancellationRequested) { if (result is not null) State.Apply(result); CodeTop = CodeLeft = 0; CodeMatchLine = null; HistoryFocused = false; Loading = false; } });
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -302,7 +326,8 @@ public sealed class GraphicalWorkspaceController : IDisposable
     }
     private void KeepExplorerVisible()
     {
-        int visible = Math.Max(1, Layout.Explorer.Height - 3);
+        KeepSearchVisible();
+        int visible = Spacing.TreeRows(Layout.Explorer.Height);
         if (State.SelectedIndex < ExplorerTop) ExplorerTop = State.SelectedIndex;
         if (State.SelectedIndex >= ExplorerTop + visible) ExplorerTop = State.SelectedIndex - visible + 1;
         ExplorerTop = Math.Clamp(ExplorerTop, 0, Math.Max(0, State.Rows.Count - visible));
@@ -315,7 +340,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
     public void OpenOverlay(WorkspaceOverlay overlay)
     {
         State.Graph.Placement.End(); CancelPendingRead(); Keyboard.CancelLeader();
-        NavbarFocused = false; OpenNavbarIndex = null;
+        SearchFocused = false; NavbarFocused = false; OpenNavbarIndex = null;
         Overlay = overlay; OverlaySelection = 0; Composition = "";
         if (overlay is WorkspaceOverlay.Options or WorkspaceOverlay.Details or WorkspaceOverlay.ElementChat) OverlayTarget = State.Graph.Target;
         if (overlay == WorkspaceOverlay.ElementChat) { Editor.Set(CurrentChat.Draft); ChatScroll = 0; }
@@ -324,6 +349,7 @@ public sealed class GraphicalWorkspaceController : IDisposable
     public void CloseOverlay()
     {
         if (Overlay == WorkspaceOverlay.ElementChat) Editor.Set(State.Chat.Draft);
+        if (Overlay == WorkspaceOverlay.Appearance) AppearanceDraft = null;
         NavbarFocused = OpenNavbarIndex is not null; OpenNavbarIndex = null;
         Overlay = WorkspaceOverlay.None; OverlayTarget = null; Composition = ""; Dirty = true;
     }
@@ -375,6 +401,8 @@ public sealed class GraphicalWorkspaceController : IDisposable
     }
     public void Dispose()
     {
+        _search?.Cancel(); _search?.Dispose();
+        if (_searchTask is { } searchTask) _ = searchTask.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
         _load?.Cancel();
         // Observe completion without blocking native shutdown or accepting stale results.
         if (_loadingTask is { } task) _ = task.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);

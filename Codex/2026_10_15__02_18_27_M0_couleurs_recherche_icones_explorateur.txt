@@ -1,0 +1,40 @@
+Palier principal : M0 ; recherche textuelle précoce liée à M6, sans prétendre terminer M6.
+Date locale : 2026-10-15T02:18:27.361994+02:00 — Europe/Paris
+
+Demande
+Raffiner progressivement l'UI : couleurs d'accent/thème personnalisables dans Settings avec color picker ; mini recherche dans l'explorateur par nom ou texte de fonction ; icônes de fichiers par extension sans carrés de glyphes manquants.
+
+Résultat et décisions
+Settings → Appearance / colors : picker HSV (saturation/valeur + hue, clic/drag), HEX #RRGGBB, cibles Accent et Theme/background. Aperçu réversible, Apply session, Save atomique, Reset brouillon, Cancel/Esc ; Tab cible, Alt+A/Alt+S. Champs HEX disponibles dans fenêtre minimale 360×264. Palette dérivée et ajustements de contraste pour thèmes clairs/sombres. Couleur choisie conservée même si accent affiché ajusté pour lisibilité. Profil personnel ~/.config/oryn/appearance.json sous Linux ; absence → défaut, profil invalide → défaut avec diagnostic sans empêcher la navigation. Palette workspace mono avec --no-color, gradients/swatch du picker restent colorés. Aucun fichier de projet modifié par l'application.
+Recherche inline dans l'explorateur, Ctrl+F depuis les vues, saisie puis Enter/Tab résultats, Up/Down/Enter ouvrir, Tab rééditer, Esc/x effacer et revenir au tree. Recherche littérale case-insensitive par nom/contenu, pas un analyseur de symboles : déclarations/appels/commentaires peuvent correspondre. Répertoires repliés inclus, racine autorisée et liens descendants non suivis. Debounce 200 ms, cancellation, scans sérialisés et résultats périmés ignorés. Un résultat par fichier, chemin/ligne et type de match. Reread à l'ouverture : ligne recalculée et surlignée, texte disparu signalé.
+Bornes : 5000 fichiers, 1000 répertoires, 200 résultats, 256 caractères query, budget lecture 8 Mi caractères UTF-16 et limite de preview configurée par fichier. Résultats partiels/inaccessibles signalés. Policy hidden maintenue ; .git/.local/bin/obj/node_modules/artifacts/vendor exclus. Extensions binaires connues recherchées uniquement par nom ; NUL détectés pour autres contenus. Résultats session-only, nouveaux scans lors de changement de requête. Pas d'index durable/LLM/native ajouté.
+Icônes : page pliée et marques vectorielles/couleurs par familles d'extensions (C#, Rust, C/C++, JS/TS/Python, config, texte, image, shell), fallback document générique. Le carré observé dans le code actuel était un rectangle vectoriel générique ; remplacement sans dépendance de police d'icônes.
+Focus, drafts, settings et recherches restent dans Oryn.App. SDL/Skia gardent adapter graphique et hit regions, pas les états applicatifs. Aucun changement de dépendances ni module natif.
+
+Fichiers concernés
+Nouveaux : src/Oryn.App/AppearanceSettings.cs ; WorkspaceSearch.cs ; GraphicalWorkspaceController.SettingsSearch.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.SettingsSearch.cs ; tests/Oryn.App.Tests/AppearanceSearchTests.cs ; tests/Oryn.Ui.Smoke/AppearanceSearchChecks.cs.
+Modifiés : GraphicalWorkspaceController.cs ; KeyBindingSettings.cs ; KeyboardRouter.cs ; WorkspaceFiles.cs ; src/Oryn.Cli/Program.cs ; src/Oryn.Ui.Sdl/SdlWorkspace.cs ; WorkspacePainter.cs ; tests/Oryn.Ui.Smoke/Program.cs ; README.md ; README_ORYN.md ; docs/m0-verification.md ; présent log.
+Modifications documentaires du prompt précédent préservées. Anciens logs conservés.
+
+Vérifications réellement exécutées
+Build final Debug solution : dotnet build Oryn.slnx --no-restore -m:1 -nr:false, 0 warning/0 erreur. Premier build parallèle a échoué sans diagnostic utile ; build mono-worker réussi.
+131 tests App réussis (11 cas supplémentaires) : preview/cancel/save/restart, malformed color/profile, write failure, search noms/contenu source, hidden/generated/links/binary exclusions, truncation/cancellation, stale results et sérialisation, ligne revalidée après édition externe, conversions couleurs.
+Smoke CLI/domain réussi sur exécutables Debug puis Release autonome.
+41-stage SDL dummy/software final réussi ; checks offscreen picker drag, focus search→chat, thèmes clairs/graph et compacte360×264 réussis. Le premier test de contenu a révélé exclusions excessives de la whitelist : remplacée par filtre binaire. Une assertion de pixel test visait une surface dérivée, corrigée vers le vrai fond. Captures ont révélé chevauchement racine/search : corrigé en ajoutant une ligne et en alignant hit regions/scroll/viewport.
+Publish Release autonome linux-x64 réussi, sans restore. Smoke Wayland réel réussi avec les DLL App/SDL exactes de ce publish dans runner temporaire .local/appearance-release-smoke/ ; backend SDL opengl de présentation, dessin toujours Skia raster. Tests incluent actual SDL text input, save profil et search→preview, fermeture/cleanup ; drag picker également contrôlé offscreen.
+Captures inspectées : recherche, picker, light theme, light graph, réglages minimum et search minimum. Artefacts .local/appearance-search-preview/ et .local/appearance-search-wayland/ (ignorés Git).
+Vérification liens locaux/ancres/fences/hiérarchie Markdown et préservation M1–M7 ; git diff --check réussi.
+
+Installation actuelle
+Mise à jour des six CLI/App/SDL DLL/PDB sous ~/.local/share/oryn après autorisation sandbox. Aucun runtime/dependency diff hors de ces six fichiers, aucun nouveau fichier requis. Remplacements par renommages atomiques par fichier, backup et vérification SHA-256 ; rollback prévu en cas d'échec.
+Backup : /tmp/oryn-appearance-search-backup-20261015-021713-fdbd9f25.
+Commande installée oryn --check et --help réussies ; aide Ctrl+F/Settings couleurs présente. Relancer Oryn pour charger les nouvelles assemblies. Ni thème personnel ni keybindings utilisateur modifiés par ces vérifications : tests utilisent des profils temporaires explicites.
+
+Validations historiques et limites
+Résultats anciens des logs restent historiques ; les vérifications listées ci-dessus sont propres à cette tranche. X11, Windows/macOS et matériel high-DPI non relancés. Captures raster ne prouvent pas la latence du compositeur ni le ressenti souris physique. Filtres/bornes de recherche assumés, pas de parsing sémantique. Chats/graphe restent démos M0 et session-only ; seul profil appearance ajoute une persistance ici.
+
+Commit
+Aucun commit ni push créé. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Prochaine étape
+Retour utilisateur sur la version installée après relance : ergonomie du picker, couleurs et recherche/icônes. Continuer les retouches UI demandées ; M-Native demeure documenté mais non implémenté.

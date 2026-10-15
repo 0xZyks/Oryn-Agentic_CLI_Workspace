@@ -1,0 +1,25 @@
+Palier : M0
+Date locale : 2026-10-15T01:54:05.183699+02:00 — Europe/Paris
+
+Demande
+Recharger le contexte des logs en suivant AGENTS.md.
+
+Résultat et décisions
+Lecture de AGENTS.md et README_ORYN.md. Inventaire des noms dans Codex/ ; dernier log identifié par l'horodatage du nom : 2026_10_14__21_50_12_M0_passation_avant_push_design_tui.txt. Lecture complémentaire ciblée du log M0 de 21:40:25 sur les derniers réglages d'interface. Aucun log d'un autre palier lu.
+Contexte repris : SDL3 + SkiaSharp, esprit TUI, priorité à l'habillage global ; Chat / Sources / Visualiser, démarrage sur Chat, visualiseur dockable, focus explicite, bandeaux augmentés de 8 px et marge chat de 10 px. Chat et graphe restent des démos M0. Ne pas lancer M1 ou une refonte sans nouvelle demande.
+
+Observations actuelles et vérifications exécutées
+Working tree propre avant ajout du présent log. HEAD : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a, « Upgrading UI and Visualizer », succédant à 203b03f. Le commit annoncé à la passation est désormais constaté ; aucun push vérifié.
+Inspection ciblée de WorkspaceLayout.cs, Program.cs, SdlWorkspace.cs et WorkspacePainter.cs : disposition compacte, ordre des onglets, démarrage Chat, HeaderExtra=8, bottomGap=10 et présentation de la texture à chaque frame bornée concordent avec la passation. git diff --check réussi.
+
+Validations historiques
+La passation rapporte 120 tests applicatifs, build Debug, smoke SDL dummy et Wayland, publish Linux et captures validés. Ces contrôles n'ont pas été relancés dans cette session de lecture. Windows/macOS restent non validés selon la passation.
+
+Fichiers concernés
+Seul le présent log est créé ; aucun fichier applicatif modifié. Anciens logs conservés.
+
+Commit associé
+Aucun commit créé pour cette demande. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Limites et prochaine étape prévue
+Pas de lancement graphique, build, test, contrôle d'installation ni vérification distante. Poursuivre M0 selon la prochaine demande utilisateur, en conservant la base actuelle.

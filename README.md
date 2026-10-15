@@ -1,8 +1,8 @@
 # Oryn — M0 engineering workspace
 
-Oryn is a local-first engineering workspace with a **native SDL3 + SkiaSharp interface**. Its TUI-inspired frame uses monospace typography, compact bars, closely spaced panels, thin nearly square outlines, dark blue-black surfaces and a restrained lavender focus accent. Oryn assists engineering and architecture alongside existing code editors. **SDL + OpenGL remains the v1.0 rendering target.** Product vision: [README_ORYN.md](README_ORYN.md); implementation choice: [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md).
+Oryn is a local-first, keyboard-first, terminal-inspired graphical engineering environment with a **native SDL3 + SkiaSharp interface**. Its TUI-inspired frame uses monospace typography, compact bars, closely spaced panels, thin nearly square outlines, dark blue-black surfaces and a restrained lavender focus accent. Oryn assists engineering and architecture alongside existing code editors. **SDL + OpenGL remains the v1.0 rendering target.** Product vision: [README_ORYN.md](README_ORYN.md); implementation choice: [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md).
 
-M0 provides a lazy file explorer, read-only file previews, optional visualizer docking and resizable panels. Chat opens at startup. The central tabs are Chat, Sources (read-only previews) and Visualiser, in that order; a contextual inspector appears when the map has enough width. The focused panel is brighter and marked by a thin violet bar across its top. Panel headers are 30 pixels high, and the chat composer leaves a 10-pixel bottom margin when space permits. The same application state handles keyboard and mouse interaction independently of SDL and SkiaSharp.
+M0 provides a lazy file explorer, read-only file previews, optional visualizer docking and resizable panels. Chat opens at startup. The central tabs are Chat, Sources (read-only previews) and Visualiser, in that order; a contextual inspector appears when the map has enough width. The focused panel is brighter and marked by a thin violet bar across its top. Chrome uses the existing 9-pixel panel gutter as its spacing unit: navbar/panel separation, panel/status separation and search/list margins. Below 18 logical rows, vertical gaps reduce to 4 pixels to retain access. Panel headers share one aligned separator height (39 pixels normally, 34 in dense mode); the central tabs have inset margins and use the selected background rather than an underline, and the chat composer leaves a 10-pixel bottom margin when space permits. The same application state handles keyboard and mouse interaction independently of SDL and SkiaSharp.
 
 The global chat and chats attached to graph members are **demos**: every prompt receives `Hello World!` after a short animated wait. Drafts and histories survive view/dialog switches during the session, but not process exit. The graph is an explicitly fictitious seven-card fixture with stable UUIDs, typed members, labeled relationships and simulated statuses. There is no inference, real source analysis, persistent graph or human status-validation workflow yet. No project files are edited or sent over the network.
 
@@ -105,6 +105,10 @@ Oryn's configurable **Super** defaults to **Ctrl**. The native window receives k
 | Enter / Escape in tab header | Return to selected content |
 | Tab in Chat | Switch composer / history focus |
 | F1 / F2 / F3 / F4 | Files / Chat / Code / Visualizer |
+| Ctrl+F / click search field | Search file names and text in the explorer |
+| Enter / Tab in search field | Move to search results |
+| Up / Down then Enter in results | Select and open a file; text matches highlight the source line |
+| Tab in results / Escape | Edit query / clear search and return to tree |
 | Up / Down in Files | Select entry |
 | Enter in Files | Toggle folder or open read-only file preview |
 | Right in Files | Expand folder; if expanded, select its first child; files stay selected |
@@ -130,13 +134,21 @@ Text fields own ordinary characters, caret navigation and Ctrl+A/C/X/V. AltGr-ge
 
 ## Keybindings and configuration
 
-Super+K opens the grouped action list. Click an action or use Tab/Shift+Tab to select a field; edit its comma-separated shortcuts. **Apply** changes the current session; **Save** also writes the profile atomically; **Reset** restores all defaults; **Cancel/Escape** closes without applying. Alt+A applies and Alt+S saves. The Navbar group configures menu-bar selection. File exposes Quit, View exposes dock/width actions, and Settings opens keybindings; other categories explicitly show that no actions are available yet. F10 retains the generic workspace menu. Text and Dialog groups configure editing, clipboard, modal navigation and keybinding-editor commands through the same router. Invalid bindings and conflicts leave the active router unchanged. Missing groups keep defaults; exact former Enter/Right explorer defaults migrate in memory to Enter plus the separate Right expansion action.
+Super+K opens the grouped action list. Click an action or use Tab/Shift+Tab to select a field; edit its comma-separated shortcuts. **Apply** changes the current session; **Save** also writes the profile atomically; **Reset** restores all defaults; **Cancel/Escape** closes without applying. Alt+A applies and Alt+S saves. The Navbar group configures menu-bar selection. File exposes Quit, View exposes dock/width actions, and Settings opens keybindings and appearance; other categories explicitly show that no actions are available yet. F10 retains the generic workspace menu. Text and Dialog groups configure editing, clipboard, modal navigation and keybinding-editor commands through the same router. Invalid bindings and conflicts leave the active router unchanged. Missing groups keep defaults; exact former Enter/Right explorer defaults migrate in memory to Enter plus the separate Right expansion action.
 
 The default profile uses the platform application-data directory (`~/.config/oryn/keybindings.json` on Linux). A missing file loads defaults without creating it. `--keybindings /path/to/keys.json` selects an explicit profile; see [oryn.keybindings.example.json](oryn.keybindings.example.json). Profiles are never loaded automatically from the opened project.
 
 Settings are explicit: `oryn --config /path/to/settings.json`; see [oryn.settings.example.json](oryn.settings.example.json). `--no-color` or `NO_COLOR` selects monochrome styling; `--ascii` replaces optional decorative Unicode glyphs. Chat labels use **Oryn** with a drawn star and **User** with a drawn point; the four-position Thinking animation is drawn with Skia shapes, independently of font glyph coverage in both modes. Filenames and source text retain Unicode. Text editing follows grapheme boundaries; complex-script shaping, bidirectional text and complete font fallback are not yet implemented. Glyph availability depends on installed fonts.
 
 Hidden files are excluded by default. Each directory displays at most 1,000 entries and previews read at most 65,536 characters; truncation/errors are reported. Descendant symlinks are visible but not followed. Access stays within the project root. Composer input is bounded to 65,536 UTF-16 code units. Workspace state and conversations remain session-only.
+
+## Appearance and explorer search
+
+Open **Settings → Appearance / colors** to choose the accent and theme background. The saturation/value area and hue strip support click and drag; the HEX field accepts any `#RRGGBB` color. Tab switches Accent/Theme, with direct HEX editing available in small windows. **Apply** keeps the colors for this session; **Save** persists them atomically in the personal application-data `oryn/appearance.json` profile (`~/.config/oryn/appearance.json` on Linux). Alt+A applies, Alt+S saves, Reset restores defaults in the preview, and Cancel/Escape discards the preview. Invalid input or save failures remain visible without replacing the committed settings. Panels, text and separators derive from the background, with contrast adjustments for light/dark colors. An accent may be adjusted for readability; its chosen HEX stays intact. `--no-color`/`NO_COLOR` retains a monochrome workspace palette; picker gradients and swatches still show the selected colors.
+
+The explorer search field (also **Ctrl+F**) finds filenames and literal, case-insensitive text across the opened project, including collapsed directories. Results show relative paths and distinguish name matches from text matches with a line number. This can locate files mentioning a function, including declarations, calls or comments; it is not semantic symbol analysis. Opening a text result rereads the file, revalidates the match and highlights its current line, or reports that the text has disappeared. Clear the query to return to the existing tree. Search and previews run asynchronously; changes debounce for 200 ms, cancel superseded work and ignore stale results.
+
+Search is deliberately bounded: 5,000 files, 1,000 directories, 200 results, 256 query characters and an 8 Mi UTF-16-character reading budget. Each file uses the configured preview-character limit; truncation, inaccessible files and reached limits produce a partial-results indication. Hidden-file policy still applies. Descendant links are not followed; `.git`, `.local`, `bin`, `obj`, `node_modules`, `artifacts` and `vendor` directories are excluded. Known binary extensions are searched by filename only; other content is checked for NUL bytes by the preview service. Results are session-only and refresh when the query changes. Extension icons use Skia vector strokes and colors, with a generic document fallback; no icon font is required.
 
 ## Rendering cadence
 
@@ -153,7 +165,7 @@ dotnet run --project tests/Oryn.Smoke --no-build --no-restore -- \
 dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- /tmp/oryn-ui-captures
 ```
 
-The UI smoke opens a temporary native window, injects SDL keyboard/text/mouse events, exercises previews, chats, graph navigation, keybinding save, compact resize, docking, drag cancellation and quit, and writes rendered PNGs to the explicit capture directory. It closes automatically. Without an output path, captures are temporary and removed after the test. For headless Linux verification:
+The UI smoke opens a temporary native window, injects SDL keyboard/text/mouse events, exercises previews, chats, graph navigation, keybinding save, compact resize, docking, drag cancellation and quit, and also checks appearance preview/save, picker dragging, light themes, explorer search and focus transfer. It writes rendered PNGs to the explicit capture directory. It closes automatically. Without an output path, captures are temporary and removed after the test. For headless Linux verification:
 
 ```sh
 SDL_VIDEODRIVER=dummy dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- /tmp/oryn-ui-captures
@@ -165,11 +177,17 @@ For Linux/X11, the additional platform test sends events to its own X11 window b
 SDL_VIDEODRIVER=x11 dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --x11-keyboard
 ```
 
-Current validation: build with zero warnings/errors, 120 App tests, CLI/domain smoke and both software/dummy and native Linux SDL smoke passed on Debian 13 x64. Captures were visually inspected. Windows/macOS, high-density hardware and native installer execution for the migrated frontend remain unverified. See [M0 verification](docs/m0-verification.md). Set `ORYN_DEBUG=1` for exception traces.
+Current validation: build with zero warnings/errors, 132 App tests, CLI/domain smoke and both software/dummy and native Linux SDL smoke passed on Debian 13 x64. Captures were visually inspected. Windows/macOS, high-density hardware and native installer execution for the migrated frontend remain unverified. See [M0 verification](docs/m0-verification.md). Set `ORYN_DEBUG=1` for exception traces.
 
 The old Python PTY scripts and `Oryn.Tui.Prototype` sources describe the historical terminal prototype. They are excluded from the current solution/CLI and are not tests of the SDL frontend.
 
 ## Architecture
+
+The decided target architecture keeps application state, presentation and orchestration in C#, introduces `Oryn.Interop` as the managed gateway, uses Rust `Oryn.Runtime` for selected indexing/analysis workloads and C `Oryn.Native` for targeted OS/process integration. Oryn-owned modules will expose independently versioned C ABI tables loaded through `NativeLibrary.Load`/`GetExport` and typed `delegate* unmanaged[Cdecl]` bindings. Third-party graphics bindings retain their existing mechanisms. Native operations must remain off the UI thread; handles and function pointers must not outlive their libraries. In-process ABI boundaries provide no process isolation.
+
+**Planned, not implemented:** [M-Native](README_ORYN.md#m-native--multi-language-interoperability-foundation-v01) validates real Rust workspace indexing and C process execution, cleanup and failure handling. Git is a dedicated target view; Terminal is a toggleable overlay whose underlying session survives hiding. User and agent execution sessions remain independent. No native modules, Git view or Terminal overlay are present yet. See [the detailed architecture and ABI contracts](README_ORYN.md#5a-multi-language-architecture-decided) and [proposed repository organization](README_ORYN.md#13-suggested-repository-structure-proposed). Existing build/run commands above are unchanged.
+
+Current implementation:
 
 - `Oryn.App`: workspace state, layout, commands, keyboard routing, graphical interaction controller, text editor and bounded async file services; no SDL, SkiaSharp or Terminal.Gui reference.
 - `Oryn.Ui.Sdl`: SDL native lifecycle, event mapping, Skia painting and hit regions.

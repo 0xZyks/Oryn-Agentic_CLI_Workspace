@@ -1,5 +1,31 @@
 # M0 verification
 
+## Aligned panel header separators — 2026-10-15
+
+Explorer, center and docked Visualiser headers now share the central strip's height: 39 pixels normally, 34 in dense mode. Their separators align horizontally. Titles are recentered; the explorer root label and docked map heading retain clearance below the taller header. Search, file-row geometry and central-tab insets stay in place.
+
+Executed: Debug build with zero warnings/errors, full 41-stage dummy/software SDL smoke, offscreen/compact checks and self-contained linux-x64 Release publication passed. `.local/aligned-headers-preview/21-file-icons.png` was inspected for separator/title alignment. Installation backup and SHA-256 comparison, installed `--check`, Markdown checks and `git diff --check` passed. No App test suite or native Wayland rerun for this small rendering-only change; those results below remain historical.
+
+## Inset central tabs without underline — 2026-10-15
+
+Central tabs now have a 9-pixel top/bottom inset (4 in dense mode), a smaller selected/hovered surface and no selected-tab underline. Keyboard tab focus retains its outline. The central strip grows only to fit those margins; Chat/Code title offsets preserve clearance below it. Tab hit regions follow the inset surface; clicking the top padding focuses the panel without switching tabs.
+
+Executed: final Debug build without warnings/errors, full 41-stage dummy/software SDL smoke and updated offscreen top-padding/click checks passed. The tab/chat capture was inspected in `.local/inset-tabs-preview/`. Self-contained linux-x64 Release publication passed; installed assemblies were backed up, atomically replaced per file and SHA-256 verified; installed `--check` and `git diff --check` passed. The previous 132 App tests and native Wayland smoke belong to the preceding spacing slice and were not rerun for this renderer-only refinement.
+
+## Shared chrome spacing — 2026-10-15
+
+The 9-pixel explorer/center gutter now sets the normal vertical gap for navbar/panels, panels/status, search/list and search-summary/results. Navbar items gain a 30-pixel row; panel titles and central tabs retain matching padded headers. Content starts below the header with breathing room; the chat composer keeps its bottom margin relative to the inset panel. Windows under 18 logical rows use 4-pixel vertical gaps and denser content offsets. Framework-independent spacing values drive both painting and explorer viewport counts. Pointer/hovers, shifted search fields and tabs, splitter extents, graph origins and wheel exclusion over blank chrome are aligned with the displayed regions.
+
+Executed: final Debug build, zero warnings/errors; **132 App tests passed**, including wheel exclusion over blank top/bottom chrome. Updated offscreen checks verify tab/composer/search pointer alignment and that the navbar/panel gap neither paints a panel nor receives its clicks. The full **41-stage SDL smoke passed** on dummy/software and native Wayland/OpenGL, with exact published Release App/SDL assemblies in the latter. CLI/domain smoke against the self-contained linux-x64 Release passed. Normal/search/docked and minimum-size captures were inspected in `.local/spacing-preview/`. Installation was backed up, updated and SHA-256 verified; installed `--check`, Markdown checks and `git diff --check` passed. Windows/macOS/high-density hardware and physical feel remain untested. The sections below are historical.
+
+## Appearance, explorer search and extension icons — 2026-10-15
+
+Settings now offers accent/background picking, HEX entry, preview/cancel and atomic personal-profile save. Derived surfaces and contrast adjustments support light and dark backgrounds. Search runs outside the renderer with debounce, cancellation, serialized scans and stale-result protection. It matches filenames or literal text, reports bounded/partial results and revalidates the source line when opened. Extension icons use vector strokes rather than font glyphs. No semantic analyzer, inference or native module was introduced.
+
+Executed on Linux x64: final Debug solution build with zero warnings/errors; **131 App tests passed**, including appearance restart/cancel/invalid/save failure, recursive search, generated/hidden/link/binary exclusions, truncation/cancellation, concurrent stale searches and line revalidation after external edits. CLI/domain smoke passed against the self-contained Release executable. The expanded **41-stage SDL smoke passed** with dummy/software and native Wayland/OpenGL; the latter used the exact published Release App/SDL assemblies. Both include keyboard/text/clipboard, preview, graph, docking/resize/quit, personal appearance save and explorer search. Offscreen checks cover picker dragging, focus transfer, light graph and keyboard settings at 360×264. Captures in `.local/appearance-search-preview/` were visually inspected. Self-contained linux-x64 Release publication succeeded. Markdown links/headings and `git diff --check` passed.
+
+The appearance profile is the only added durable state; search results and chat remain session-only. Search is literal text, not symbol indexing, and its limits/exclusions are documented in README.md. Windows/macOS and high-density hardware remain untested for this slice. Raster captures do not measure compositor latency or physical pointer feel.
+
 ## Chat labels and font-independent animation — 2026-10-14
 
 Chat headers now read **Oryn** with a drawn four-point star and **User** with a drawn point on its left. The same renderer serves global and component chats. Braille spinner glyphs missing from the selected font have been replaced with a four-position Skia animation: the highlighted star advances around four points every 200 ms. These decorations no longer depend on font coverage, including in ASCII mode. Message glyph coverage/shaping limitations remain unchanged.

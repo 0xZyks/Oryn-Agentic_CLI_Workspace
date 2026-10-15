@@ -10,9 +10,11 @@ public interface IWorkspaceFiles
 {
     Task<DirectoryResult> ListAsync(string path, CancellationToken cancellationToken);
     Task<FilePreview> ReadAsync(string path, CancellationToken cancellationToken);
+    Task<WorkspaceSearchResult> SearchAsync(string query, CancellationToken cancellationToken) =>
+        Task.FromResult(new WorkspaceSearchResult([], 0, false, "Search is not supported by this file service."));
 }
 
-public sealed class LocalWorkspaceFiles(string root, WorkspaceSettings settings) : IWorkspaceFiles
+public sealed partial class LocalWorkspaceFiles(string root, WorkspaceSettings settings) : IWorkspaceFiles
 {
     private readonly string _root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
 

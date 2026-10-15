@@ -5,10 +5,11 @@ using SkiaSharp;
 namespace Oryn.Ui.Sdl;
 
 /// <summary>Skia drawing and hit regions; application state lives in Oryn.App.</summary>
-public sealed class WorkspacePainter : IDisposable
+public sealed partial class WorkspacePainter : IDisposable
 {
     private const int CW = GraphicalWorkspaceController.CellWidth, CH = GraphicalWorkspaceController.CellHeight;
     private const int HeaderExtra = 8;
+    private WorkspaceSpacing Spacing => _ui.Spacing;
     private readonly SKTypeface _typeface;
     private readonly SKFont _font;
     private readonly SKFont _uiFont;
@@ -25,15 +26,15 @@ public sealed class WorkspacePainter : IDisposable
     private readonly GraphicalWorkspaceController _ui;
     private readonly bool _color;
     private readonly bool _unicode;
-    private SKColor Background => SKColor.Parse(_color ? "#090F16" : "#101010");
-    private SKColor Active => SKColor.Parse(_color ? "#142130" : "#252525");
-    private SKColor Inactive => SKColor.Parse(_color ? "#0A111A" : "#121212");
-    private SKColor TextColor => SKColor.Parse("#D2DAE6");
-    private SKColor Muted => SKColor.Parse("#899BB1");
-    private SKColor Accent => SKColor.Parse(_color ? "#B49AF2" : "#ffffff");
-    private SKColor Selection => SKColor.Parse(_color ? "#242239" : "#454545");
-    private SKColor Border => SKColor.Parse(_color ? "#26394D" : "#454545");
-    private SKColor Raised => SKColor.Parse(_color ? "#131E2B" : "#272727");
+    private SKColor Background => _color ? ThemeBase : SKColor.Parse("#101010");
+    private SKColor Active => !_color ? SKColor.Parse("#252525") : DefaultTheme ? SKColor.Parse("#142130") : Blend(ThemeBase, ThemeInk, .10f);
+    private SKColor Inactive => !_color ? SKColor.Parse("#121212") : DefaultTheme ? SKColor.Parse("#0A111A") : Blend(ThemeBase, ThemeInk, .025f);
+    private SKColor TextColor => _color ? Readable(ThemeInk, Active) : SKColor.Parse("#D2DAE6");
+    private SKColor Muted => _color ? Readable(DefaultTheme ? SKColor.Parse("#899BB1") : Blend(ThemeBase, ThemeInk, .55f), Active) : SKColor.Parse("#899BB1");
+    private SKColor Accent => _color ? Readable(Color(_ui.DisplayAppearance.AccentColor), Active, 3) : SKColors.White;
+    private SKColor Selection => _color ? Blend(Active, Accent, .16f) : SKColor.Parse("#454545");
+    private SKColor Border => _color ? DefaultTheme ? SKColor.Parse("#26394D") : Blend(ThemeBase, ThemeInk, .25f) : SKColor.Parse("#454545");
+    private SKColor Raised => _color ? DefaultTheme ? SKColor.Parse("#131E2B") : Blend(ThemeBase, ThemeInk, .08f) : SKColor.Parse("#272727");
     public WorkspacePainter(GraphicalWorkspaceController ui, bool color = true, bool unicode = true)
     {
         _ui = ui; _color = color; _unicode = unicode;
@@ -52,31 +53,35 @@ public sealed class WorkspacePainter : IDisposable
         canvas.Clear(Background); canvas.Save(); canvas.Scale(scaleX, scaleY);
         _ui.Resize(width, height);
         int columns = _ui.Columns, rows = _ui.Rows;
-        Fill(new(0, 0, columns, 2), Inactive);
+        Rect(0, 0, columns * CW, Spacing.NavbarTop + Spacing.NavbarHeight, Inactive);
+        _canvas.Save(); _canvas.Translate(0, 4);
         Star(21, 12, 5, Accent);
         UiText("ORYN", 4, 0, TextColor, 8, title: true);
         UiText("/ " + Path.GetFileName(_ui.State.ProjectRoot), 11, 0, Muted, Math.Max(1, columns - 23));
         Circle((columns - 8) * CW, 11, 2, StatusColor(PreviewDesignStatus.Validated));
         UiText("LOCAL", Math.Max(2, columns - 7), 0, Muted, 6, small: true);
+        _canvas.Restore();
         var menus = GraphicalWorkspaceController.NavbarLabels;
         int selectedEnd = 2 + menus.Take(_ui.NavbarIndex + 1).Sum(menu => menu.Length + 3);
         int mx = 2 - (_ui.NavbarFocused || _ui.OpenNavbarIndex is not null ? Math.Max(0, selectedEnd - columns + 1) : 0);
-        _canvas.Save(); _canvas.ClipRect(Pixels(new(0, 1, columns, 1)));
+        _canvas.Save(); _canvas.ClipRect(SKRect.Create(0, Spacing.NavbarTop, columns * CW, Spacing.NavbarHeight));
         for (int i = 0; i < menus.Count; i++)
         {
             string menu = menus[i]; int index = i;
             bool selected = (_ui.NavbarFocused && _ui.NavbarIndex == i) || _ui.OpenNavbarIndex == i;
-            if (selected || Hovered(new(mx, 1, menu.Length + 1, 1))) Fill(new(mx - 1, 1, menu.Length + 2, 1), selected ? Selection : Raised);
-            if (selected) Rect(mx * CW, 2 * CH - 2, menu.Length * CW, 2, Accent);
-            UiText(menu, mx, 1, selected ? Accent : Muted);
-            Hit(new(Math.Max(0, mx), 1, Math.Max(0, Math.Min(columns, mx + menu.Length + 1) - Math.Max(0, mx)), 1), (_, _) => _ui.OpenNavbarMenu(index));
+            SKRect menuPixels = SKRect.Create((mx - 1) * CW, Spacing.NavbarTop, (menu.Length + 2) * CW, Spacing.NavbarHeight);
+            if (selected || menuPixels.Contains(_pointer.X, _pointer.Y)) RoundedPixels(menuPixels, selected ? Selection : Raised, 2);
+            if (selected) Rect(mx * CW, Spacing.NavbarTop + Spacing.NavbarHeight - 2, menu.Length * CW, 2, Accent);
+            _canvas.Save(); _canvas.Translate(0, Spacing.NavbarTextOffset);
+            UiText(menu, mx, 1, selected ? Accent : Muted); _canvas.Restore();
+            _hits.Add((menuPixels, (_, _) => _ui.OpenNavbarMenu(index)));
             mx += menu.Length + 3;
         }
         _canvas.Restore();
         WorkspaceLayout layout = _ui.Layout;
         Panel(layout.Explorer, WorkspacePanel.Explorer, "Sources", DrawExplorer);
         Panel(layout.Center, WorkspacePanel.Center, "", DrawCenter);
-        Panel(layout.Visualizer, WorkspacePanel.Visualizer, "Visualiser", b => DrawGraph(b, HeaderExtra));
+        Panel(layout.Visualizer, WorkspacePanel.Visualizer, "Visualiser", b => DrawGraph(new(b.X, b.Y + Spacing.ContentTopRows - 1, b.Width, Math.Max(0, b.Height - Spacing.ContentTopRows + 1)), Spacing.Gap / 2));
         Splitter(layout.ExplorerSplitter); Splitter(layout.VisualizerSplitter);
         if (rows >= 3)
         {
@@ -88,6 +93,9 @@ public sealed class WorkspacePainter : IDisposable
                 : _ui.GraphActive ? _ui.State.Graph.SelectedMemberId is null ? "Graph cards" : "Graph members"
                 : _ui.State.ActiveTab == WorkspaceTab.Chat ? _ui.HistoryFocused ? "Chat history" : "Chat input" : "Code";
             string hint = _ui.Keyboard.LeaderPending ? "Super leader pending / Esc cancel"
+                : _ui.Overlay == WorkspaceOverlay.Appearance ? "Appearance / Tab accent-theme / Alt+A apply / Alt+S save / Esc cancel"
+                : _ui.SearchFocused ? "Search / file name or text / Enter results / Esc clear"
+                : _ui.SearchActive && _ui.State.Focus == WorkspacePanel.Explorer ? "Search results / Up-Down select / Enter open / Tab edit / Esc clear"
                 : _ui.Overlay == WorkspaceOverlay.Keybindings ? "Keybindings / Tab fields / Alt+A apply / Alt+S save / Esc cancel"
                 : _ui.Overlay == WorkspaceOverlay.ElementChat ? "Component chat / Enter send / Shift+Enter newline / Esc close"
                 : _ui.Overlay != WorkspaceOverlay.None ? "Dialog / arrows select / Enter confirm / Esc close"
@@ -104,42 +112,51 @@ public sealed class WorkspacePainter : IDisposable
     {
         if (b.Width <= 0 || b.Height <= 0) return;
         bool focused = !_ui.NavbarFocused && _ui.Overlay == WorkspaceOverlay.None && _ui.State.Focus == panel;
-        Round(b, focused ? Active : Inactive, 2);
-        Rect(b.X * CW, b.Y * CH, b.Width * CW, CH + HeaderExtra, focused ? Raised : Inactive);
-        Outline(b, Border, 2);
-        LineSegment(b.X * CW, (b.Y + 1) * CH + HeaderExtra, (b.X + b.Width) * CW, (b.Y + 1) * CH + HeaderExtra, Border);
-        Hit(b, (_, _) => _ui.FocusPanel(panel));
-        _canvas.Save(); _canvas.ClipRect(Pixels(b));
+        SKRect panelPixels = Pixels(b);
+        panelPixels.Top += Spacing.PanelTopOffset; panelPixels.Bottom -= Spacing.Gap;
+        if (panelPixels.Height <= 0) return;
+        RoundedPixels(panelPixels, focused ? Active : Inactive, 2);
+        int headerHeight = CH + HeaderExtra + Spacing.Gap;
+        Rect(panelPixels.Left, panelPixels.Top, panelPixels.Width, headerHeight, focused ? Raised : Inactive);
+        _paint.Color = Border; _paint.Style = SKPaintStyle.Stroke; _paint.StrokeWidth = 1;
+        _canvas.DrawRoundRect(panelPixels, 2, 2, _paint); _paint.Style = SKPaintStyle.Fill;
+        LineSegment(panelPixels.Left, panelPixels.Top + headerHeight, panelPixels.Right, panelPixels.Top + headerHeight, Border);
+        _hits.Add((panelPixels, (_, _) => _ui.FocusPanel(panel)));
+        _canvas.Save(); _canvas.ClipRect(panelPixels);
         if (title.Length > 0)
         {
-            _canvas.Save(); _canvas.Translate(0, HeaderExtra / 2f);
+            _canvas.Save(); _canvas.Translate(0, HeaderExtra / 2f + Spacing.PanelTopOffset + Spacing.Gap / 2f);
             UiText(title, b.X + 1, b.Y, focused ? TextColor : Muted, b.Width - 2, title: true);
             _canvas.Restore();
         }
         draw(b);
-        if (!focused) Fill(b, new SKColor(0, 0, 0, 36));
+        if (!focused) RoundedPixels(panelPixels, new SKColor(0, 0, 0, 36), 2);
         _canvas.Restore();
-        if (focused) Rect(b.X * CW, b.Y * CH, b.Width * CW, 2, Accent);
+        if (focused) Rect(panelPixels.Left, panelPixels.Top, panelPixels.Width, 2, Accent);
     }
     private void Splitter(PanelBounds b)
     {
         if (b.Width == 0) return;
         if (Hovered(b) || _ui.State.ResizingSplitter is not null)
-            Rect((b.X + b.Width / 2f) * CW, b.Y * CH, 1, b.Height * CH, Accent.WithAlpha(150));
-        Hit(b, (x, y) => _ui.State.BeginResize(x, y, _ui.Columns, _ui.Rows));
+            Rect((b.X + b.Width / 2f) * CW, b.Y * CH + Spacing.PanelTopOffset, 1, Math.Max(0, b.Height * CH - Spacing.PanelTopOffset - Spacing.Gap), Accent.WithAlpha(150));
+        SKRect splitter = Pixels(b); splitter.Top += Spacing.PanelTopOffset; splitter.Bottom -= Spacing.Gap;
+        _hits.Add((splitter, (x, y) => _ui.State.BeginResize((int)(x / CW), (int)(y / CH), _ui.Columns, _ui.Rows)));
     }
     private void DrawExplorer(PanelBounds b)
     {
-        _canvas.Save(); _canvas.Translate(0, HeaderExtra);
-        Text(Path.GetFileName(_ui.State.ProjectRoot) + "/", b.X + 1, b.Y + 1, Muted, b.Width - 2);
+        _canvas.Save(); _canvas.Translate(0, Spacing.Gap / 2f);
+        Text(Path.GetFileName(_ui.State.ProjectRoot) + "/", b.X + 1, b.Y + Spacing.ContentTopRows, Muted, b.Width - 2);
         _canvas.Restore();
-        int count = Math.Max(0, b.Height - 3);
+        DrawSearchField(b);
+        if (_ui.SearchActive) { DrawSearchResults(b); return; }
+        int count = Spacing.TreeRows(b.Height);
+        _canvas.Save(); _canvas.Translate(0, Spacing.TreeOffset);
         for (int i = 0; i < count && i + _ui.ExplorerTop < _ui.State.Rows.Count; i++)
         {
             int index = i + _ui.ExplorerTop;
-            ExplorerRow row = _ui.State.Rows[index]; int y = b.Y + 3 + i;
+            ExplorerRow row = _ui.State.Rows[index]; int y = b.Y + Spacing.ExplorerHeaderRows + i;
             bool selected = index == _ui.State.SelectedIndex;
-            if (selected || Hovered(new(b.X, y, b.Width, 1))) Round(new(b.X + 1, y, b.Width - 2, 1), selected ? Selection : Raised, 4);
+            if (selected || Hovered(new(b.X, y, b.Width, 1), Spacing.TreeOffset)) Round(new(b.X + 1, y, b.Width - 2, 1), selected ? Selection : Raised, 4);
             if (selected) Rect(b.X * CW + 2, y * CH + 3, 2, CH - 6, Accent);
             int indent = Math.Min(row.Depth * 2, Math.Max(0, b.Width - 8));
             float iconX = (b.X + 2 + indent) * CW, iconY = y * CH + 11;
@@ -149,17 +166,12 @@ public sealed class WorkspacePainter : IDisposable
                 LineSegment(iconX - 3, iconY - 3, iconX + (expanded ? 0 : 3), iconY, Muted);
                 LineSegment(iconX + (expanded ? 0 : 3), iconY, iconX + (expanded ? 3 : -3), iconY + (expanded ? -3 : 3), Muted);
             }
-            else
-            {
-                LineSegment(iconX - 3, iconY - 5, iconX + 3, iconY - 5, Muted);
-                LineSegment(iconX + 3, iconY - 5, iconX + 3, iconY + 5, Muted);
-                LineSegment(iconX + 3, iconY + 5, iconX - 3, iconY + 5, Muted);
-                LineSegment(iconX - 3, iconY + 5, iconX - 3, iconY - 5, Muted);
-            }
+            else FileIcon(iconX, iconY, row.Entry.Name);
             Text(row.Entry.Name + (row.Entry.IsDirectory ? "/" : ""), b.X + 4 + indent, y,
                 selected ? Accent : TextColor, b.Width - 5 - indent);
-            Hit(new(b.X, y, b.Width, 1), (_, _) => _ui.SelectExplorer(index));
+            Hit(new(b.X, y, b.Width, 1), (_, _) => _ui.SelectExplorer(index), offsetY: Spacing.TreeOffset);
         }
+        _canvas.Restore();
     }
     private void DrawCenter(PanelBounds b)
     {
@@ -169,24 +181,23 @@ public sealed class WorkspacePainter : IDisposable
             string name = tab switch { WorkspaceTab.Visualizer => "Visualiser", WorkspaceTab.Chat => "Chat", _ => "Sources" };
             bool selected = _ui.State.ActiveTab == tab;
             PanelBounds tabBounds = new(x, b.Y, name.Length + 2, 1);
-            SKRect tabPixels = Pixels(tabBounds); tabPixels.Bottom += HeaderExtra;
-            if (selected || tabPixels.Contains(_pointer.X, _pointer.Y)) RoundedPixels(tabPixels, selected ? Selection : Raised, 0);
-            _canvas.Save(); _canvas.Translate(0, HeaderExtra / 2f);
+            SKRect tabPixels = Pixels(tabBounds); tabPixels.Offset(0, Spacing.PanelTopOffset + Spacing.Gap); tabPixels.Bottom += HeaderExtra - Spacing.Gap;
+            if (selected || tabPixels.Contains(_pointer.X, _pointer.Y)) RoundedPixels(tabPixels, selected ? Selection : Raised, 2);
+            _canvas.Save(); _canvas.Translate(0, HeaderExtra / 2f + Spacing.PanelTopOffset + Spacing.Gap / 2f);
             UiText(name, x + 1, b.Y, selected ? Accent : Muted);
             _canvas.Restore();
-            if (selected) Rect((x + 1) * CW, (b.Y + 1) * CH + HeaderExtra - 1, name.Length * CW, 1, Accent);
             if (selected && !_ui.NavbarFocused && _ui.Overlay == WorkspaceOverlay.None && _ui.State.FocusArea == PanelFocusArea.Tabs && _ui.State.Focus == WorkspacePanel.Center)
             {
                 _paint.Color = Accent; _paint.Style = SKPaintStyle.Stroke; _paint.StrokeWidth = 1;
                 tabPixels.Inflate(-.5f, -.5f); _canvas.DrawRect(tabPixels, _paint); _paint.Style = SKPaintStyle.Fill;
             }
-            Hit(tabBounds, (_, _) => _ui.SelectTab(tab), heightExtra: HeaderExtra); x += name.Length + 3;
+            Hit(tabBounds, (_, _) => _ui.SelectTab(tab), offsetY: Spacing.PanelTopOffset + Spacing.Gap, heightExtra: HeaderExtra - Spacing.Gap); x += name.Length + 3;
         }
-        PanelBounds content = new(b.X, b.Y + 2, b.Width, Math.Max(0, b.Height - 2));
+        PanelBounds content = new(b.X, b.Y + Spacing.ContentTopRows, b.Width, Math.Max(0, b.Height - Spacing.ContentTopRows));
         _canvas.Save(); _canvas.ClipRect(Pixels(content));
         switch (_ui.State.ActiveTab)
         {
-            case WorkspaceTab.Chat: DrawChat(content, _ui.State.Chat); break;
+            case WorkspaceTab.Chat: DrawChat(content, _ui.State.Chat, Spacing.Gap / 2f); break;
             case WorkspaceTab.Code: DrawCode(content); break;
             case WorkspaceTab.Visualizer: DrawGraph(content); break;
         }
@@ -194,13 +205,16 @@ public sealed class WorkspacePainter : IDisposable
     }
     private void DrawCode(PanelBounds b)
     {
+        _canvas.Save(); _canvas.Translate(0, Spacing.Gap / 2f);
         Text(_ui.State.Preview is { } preview ? Path.GetRelativePath(_ui.State.ProjectRoot, preview.Path) + " / read-only" : "Code / read-only", b.X + 1, b.Y, Muted, b.Width - 2);
+        _canvas.Restore();
         PanelBounds surface = new(b.X + 1, b.Y + 2, Math.Max(0, b.Width - 2), Math.Max(0, b.Height - 3));
         Fill(surface, Background); _canvas.Save(); _canvas.ClipRect(Pixels(surface));
         string[] lines = (_ui.State.Preview?.Content ?? "Select a file in the explorer to open its preview.").Replace("\r", "").Split('\n');
         int top = Math.Min(_ui.CodeTop, Math.Max(0, lines.Length - Math.Max(1, surface.Height - 1)));
         for (int i = 0; i < surface.Height - 1 && i + top < lines.Length; i++)
         {
+            if (_ui.CodeMatchLine == i + top + 1) Fill(new(surface.X, surface.Y + 1 + i, surface.Width, 1), Selection);
             Text((i + top + 1).ToString().PadLeft(4), surface.X + 1, surface.Y + 1 + i, Muted);
             string line = lines[i + top].Replace("\t", "    ");
             Text(_ui.CodeLeft >= line.Length ? "" : line[_ui.CodeLeft..], surface.X + 7, surface.Y + 1 + i, TextColor, surface.Width - 8);
@@ -225,15 +239,17 @@ public sealed class WorkspacePainter : IDisposable
         }
         lines.Add(new(part, start, text.Length)); return lines;
     }
-    private void DrawChat(PanelBounds b, ChatPreviewState chat)
+    private void DrawChat(PanelBounds b, ChatPreviewState chat, float titleInset = 0)
     {
         if (b.Width < 4 || b.Height < 3) { Text("Enlarge window", b.X, b.Y, Muted); return; }
+        _canvas.Save(); _canvas.Translate(0, titleInset);
         UiText(_ui.Overlay == WorkspaceOverlay.ElementChat ? "Discussion / " + (_ui.OverlayTarget?.Name ?? "element") : "Discussion du projet", b.X + 2, b.Y, TextColor, b.Width - 4, title: true);
+        _canvas.Restore();
         int inner = Math.Max(1, b.Width - 5);
         List<Line> draft = Wrap(_ui.Editor.Text, inner);
         int inputHeight = Math.Min(Math.Max(3, draft.Count + 2), Math.Max(3, b.Height / 2));
         PanelBounds input = new(b.X + 1, b.Y + b.Height - inputHeight, b.Width - 2, inputHeight);
-        int bottomGap = b.Height >= 7 ? 10 : 0;
+        int bottomGap = b.Height >= 7 ? 10 + Spacing.Gap : Spacing.Gap;
         List<(string Text, bool Right, bool Label, bool Thinking)> history = [];
         if (chat.Messages.Count == 0)
         {
@@ -272,7 +288,7 @@ public sealed class WorkspacePainter : IDisposable
         Hit(new(b.X, b.Y + 2, b.Width, space), (_, _) => { if (_ui.Overlay == WorkspaceOverlay.None) { _ui.FocusHistory(true); } });
         _canvas.Save(); _canvas.Translate(0, -bottomGap);
         Round(input, Raised, 7);
-        Outline(input, _ui.AcceptsText ? Accent.WithAlpha(150) : Border, 7);
+        Outline(input, _ui.AcceptsText && _ui.ActiveEditor == _ui.Editor ? Accent.WithAlpha(150) : Border, 7);
         DrawEditor(input, _ui.Editor, draft, inner);
         if (input.Width > 30) UiText("Enter send / Shift+Enter newline", input.X + input.Width - 31, input.Y + input.Height - 1, Muted, 29, small: true);
         _canvas.Restore();
@@ -324,7 +340,7 @@ public sealed class WorkspacePainter : IDisposable
             if (z > a) Fill(new(input.X + 3 + new StringInfo(line.Text[..a]).LengthInTextElements, row,
                 Math.Max(1, new StringInfo(line.Text[a..z]).LengthInTextElements), 1), Muted.WithAlpha(90));
             Text(line.Text, input.X + 3, row, TextColor, inner);
-            if (i == cursorLine && _ui.AcceptsText)
+            if (i == cursorLine && _ui.AcceptsText && _ui.ActiveEditor == editor)
             {
                 int column = new StringInfo(line.Text[..Math.Clamp(editor.Cursor - line.Start, 0, line.Text.Length)]).LengthInTextElements;
                 Rect((input.X + 3 + column) * CW, row * CH + 3, 1.5f, CH - 6, Accent);
@@ -426,7 +442,7 @@ public sealed class WorkspacePainter : IDisposable
             if (right > left && bottom > top) _graphHits.Add((node.Id, new(left, top, right - left, bottom - top), origin));
             bool selected = node.Id == _ui.State.Graph.SelectedId;
             RoundedPixels(SKRect.Create(card.X * CW + 2, card.Y * CH + 4, card.Width * CW, card.Height * CH), new SKColor(0, 0, 0, 65), 7);
-            Round(card, selected ? SKColor.Parse(_color ? "#262735" : "#292929") : Raised, 7);
+            Round(card, selected ? Selection : Raised, 7);
             Outline(card, selected ? Accent : Hovered(card) ? Muted : Border, 7);
             UiText(node.Name, card.X + 1, card.Y, TextColor, card.Width - 2, title: _ui.State.Graph.Zoom != PreviewZoom.Overview);
             Circle((card.X + 1) * CW + 3, (card.Y + 1) * CH + 11, 2.4f, StatusColor(node.Status));
@@ -477,26 +493,29 @@ public sealed class WorkspacePainter : IDisposable
     }
     private static string Status(PreviewDesignStatus status) => status switch
     { PreviewDesignStatus.ToValidate => "À valider", PreviewDesignStatus.Validated => "Validé", PreviewDesignStatus.InProgress => "En cours", _ => "Implémenté" };
-    private SKColor StatusColor(PreviewDesignStatus status) => !_color ? TextColor : SKColor.Parse(status switch
-    { PreviewDesignStatus.ToValidate => "#a49cba", PreviewDesignStatus.Validated => "#88b8dc", PreviewDesignStatus.InProgress => "#debf87", _ => "#92bfa2" });
+    private SKColor StatusColor(PreviewDesignStatus status) => !_color ? TextColor : Readable(SKColor.Parse(status switch
+    { PreviewDesignStatus.ToValidate => "#a49cba", PreviewDesignStatus.Validated => "#88b8dc", PreviewDesignStatus.InProgress => "#debf87", _ => "#92bfa2" }), Active, 3);
     private void DrawOverlay()
     {
         _hits.Clear(); // Modal hit regions never leak through to underlying panels.
         Rect(0, 0, _ui.Columns * CW, _ui.Rows * CH, new SKColor(0, 0, 0, 170));
+        if (_ui.Overlay != WorkspaceOverlay.Appearance) _pickerDrag = 0;
         int width = Math.Min(_ui.Columns - 2, _ui.Overlay is WorkspaceOverlay.ElementChat or WorkspaceOverlay.Keybindings ? 100 : 66);
         int height = Math.Min(_ui.Rows - 2, _ui.Overlay is WorkspaceOverlay.ElementChat or WorkspaceOverlay.Keybindings ? 30 : 15);
+        if (_ui.Overlay == WorkspaceOverlay.Appearance) { width = Math.Min(_ui.Columns - 2, 72); height = Math.Min(_ui.Rows - 2, 24); }
         width = Math.Max(1, width); height = Math.Max(1, height);
         PanelBounds box = new((_ui.Columns - width) / 2, (_ui.Rows - height) / 2, width, height);
         if (_ui.Overlay == WorkspaceOverlay.Menu && _ui.OpenNavbarIndex is { } menuIndex)
         {
             width = Math.Min(_ui.Columns - 2, 38); height = Math.Min(_ui.Rows - 3, _ui.MenuItems.Count + 6);
             int menuX = 2 + GraphicalWorkspaceController.NavbarLabels.Take(menuIndex).Sum(label => label.Length + 3);
-            box = new(Math.Clamp(menuX, 1, Math.Max(1, _ui.Columns - width - 1)), 2, Math.Max(1, width), Math.Max(1, height));
+            box = new(Math.Clamp(menuX, 1, Math.Max(1, _ui.Columns - width - 1)),
+                (Spacing.NavbarTop + Spacing.NavbarHeight + Spacing.Gap + CH - 1) / CH, Math.Max(1, width), Math.Max(1, height));
         }
         Round(box, Active, 2); Outline(box, Border, 2);
         Rect(box.X * CW, (box.Y + 1) * CH + 4, 2, CH - 8, Accent);
         _canvas.Save(); _canvas.ClipRect(Pixels(box));
-        UiText(_ui.Overlay switch { WorkspaceOverlay.Menu => _ui.MenuTitle, WorkspaceOverlay.Options => "Component options", WorkspaceOverlay.Details => "Component / demo details", WorkspaceOverlay.ElementChat => "Component chat / demo", _ => "Keybindings" }, box.X + 2, box.Y + 1, Accent, box.Width - 9);
+        UiText(_ui.Overlay switch { WorkspaceOverlay.Menu => _ui.MenuTitle, WorkspaceOverlay.Options => "Component options", WorkspaceOverlay.Details => "Component / demo details", WorkspaceOverlay.ElementChat => "Component chat / demo", WorkspaceOverlay.Appearance => "Appearance", _ => "Keybindings" }, box.X + 2, box.Y + 1, Accent, box.Width - 9);
         UiText("Esc", box.X + box.Width - 5, box.Y + 1, Muted, 4, small: true);
         Hit(new(box.X + box.Width - 8, box.Y, 8, 2), (_, _) => _ui.CloseOverlay());
         if (_ui.Overlay is WorkspaceOverlay.Menu or WorkspaceOverlay.Options)
@@ -519,6 +538,7 @@ public sealed class WorkspacePainter : IDisposable
         else if (_ui.Overlay == WorkspaceOverlay.ElementChat)
             DrawChat(new(box.X + 1, box.Y + 3, box.Width - 2, box.Height - 4), _ui.CurrentChat);
         else if (_ui.Overlay == WorkspaceOverlay.Keybindings) DrawBindings(box);
+        else if (_ui.Overlay == WorkspaceOverlay.Appearance) DrawAppearance(box);
         _canvas.Restore();
     }
     private void DrawBindings(PanelBounds b)
@@ -550,6 +570,7 @@ public sealed class WorkspacePainter : IDisposable
     }
     public void PointerDown(float x, float y, bool right = false)
     {
+        _pickerDrag = 0;
         ClickPixels(x, y, right);
         if (right || _ui.Overlay != WorkspaceOverlay.None) return;
         var pointer = new System.Numerics.Vector2(x, y);
@@ -586,11 +607,13 @@ public sealed class WorkspacePainter : IDisposable
     { _paint.Color = color; _paint.StrokeWidth = 1; _canvas.DrawLine(x1, y1, x2, y2, _paint); }
     public void Hover(float x, float y)
     {
+        if (_pickerDrag != 0) Pick(x, y);
         var point = new System.Numerics.Vector2(x, y);
         if (_pointer == point) return;
         _pointer = point; _ui.Dirty = true;
     }
-    private bool Hovered(PanelBounds b) => b.Contains((int)MathF.Floor(_pointer.X / CW), (int)MathF.Floor(_pointer.Y / CH));
+    private bool Hovered(PanelBounds b, int offsetY = 0)
+    { SKRect pixels = Pixels(b); pixels.Offset(0, offsetY); return pixels.Contains(_pointer.X, _pointer.Y); }
     private void Round(PanelBounds b, SKColor color, float radius) => RoundedPixels(Pixels(b), color, radius);
     private void RoundedPixels(SKRect rect, SKColor color, float radius)
     { _paint.Color = color; _paint.Style = SKPaintStyle.Fill; _canvas.DrawRoundRect(rect, radius, radius, _paint); }

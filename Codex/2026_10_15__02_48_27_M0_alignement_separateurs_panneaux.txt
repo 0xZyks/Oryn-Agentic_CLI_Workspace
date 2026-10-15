@@ -1,0 +1,22 @@
+Palier : M0
+Date locale : 2026-10-15T02:48:27.473408+02:00 — Europe/Paris
+
+Demande
+Aligner la ligne sous Sources dans l'explorateur sur celle sous les onglets centraux.
+
+Résultat et décisions
+Hauteur commune des bandeaux de tous les panneaux (explorateur, centre et visualiseur docké) : 39 px normal / 34 dense, reprise du bandeau central retenu. Séparateurs alignés et titres recentrés. Nom du projet dans l'explorateur légèrement abaissé et heading/commandes du graphe docké décalés avec leurs hits pour conserver l'air sous le bandeau. Onglets, recherche, lignes de fichiers et viewports conservés.
+Fichiers : src/Oryn.Ui.Sdl/WorkspacePainter.cs ; README.md ; docs/m0-verification.md ; présent log. Modifications précédentes conservées ; aucune dépendance ni paramètres utilisateur changés.
+
+Vérifications actuelles
+Build Debug solution --no-restore -m:1 -nr:false réussi, zéro warning/erreur. Full smoke SDL dummy/software 41 étapes et checks offscreen/compact réussis. Capture .local/aligned-headers-preview/21-file-icons.png examinée : séparateurs et premières lignes de contenu alignés. Publish autonome Release linux-x64 réussi dans .local/aligned-headers-publish/. Markdown et git diff --check réussis.
+Installation locale : backup /tmp/oryn-aligned-headers-backup-20261015-024811-5d204758 ; six DLL/PDB CLI/App/SDL mis à jour après autorisation sandbox, dépendances identiques et bytes SHA-256 vérifiés. oryn --check installé réussi. Relancer Oryn.
+
+Historique et limites
+Les 132 tests App et le smoke Wayland des passes précédentes n'ont pas été relancés ici : retouche de rendu seulement. Pas de nouveau contrôle Windows/macOS/high-DPI, ni validation physique utilisateur.
+
+Commit
+Aucun commit ni push. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
+
+Suite
+Retour utilisateur sur les alignements après relance ; poursuivre M0 selon sa demande.

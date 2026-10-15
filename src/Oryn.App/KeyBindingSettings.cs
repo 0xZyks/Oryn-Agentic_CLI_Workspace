@@ -13,7 +13,7 @@ public enum KeyboardAction
     TextSubmit, TextNewline, TextBackspace, TextDelete, TextLeft, TextRight, TextUp, TextDown, TextHome, TextEnd,
     TextSelectLeft, TextSelectRight, TextSelectUp, TextSelectDown, TextSelectHome, TextSelectEnd, TextSelectAll, TextCopy, TextCut, TextPaste,
     ToggleHistory, DialogClose, DialogNext, DialogPrevious, DialogConfirm, BindingNext, BindingPrevious, BindingApply, BindingSave,
-    ToggleNavbarFocus, NextNavbar, PreviousNavbar, ConfirmNavbar, LeaveNavbar
+    ToggleNavbarFocus, NextNavbar, PreviousNavbar, ConfirmNavbar, LeaveNavbar, EditAppearance, SearchFiles, SearchClear, SearchToggleFocus, SearchResultUp, SearchResultDown, SearchOpenResult
 }
 [Flags]
 public enum InputModifiers { None = 0, Ctrl = 1, Alt = 2, Shift = 4, AltGraph = 8, System = 16 }
@@ -97,6 +97,13 @@ public sealed record KeyBindingSettings
         new(KeyBindingGroup.Tabs, KeyboardAction.PreviousTab, ["Left"]),
         new(KeyBindingGroup.Tabs, KeyboardAction.ConfirmTab, ["Enter"]),
         new(KeyBindingGroup.Tabs, KeyboardAction.ReturnToContent, ["Esc"]),
+        new(KeyBindingGroup.Workspace, KeyboardAction.EditAppearance, []),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchFiles, ["Ctrl+F"]),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchClear, ["Esc"]),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchToggleFocus, ["Tab"]),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchResultUp, ["Up"]),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchResultDown, ["Down"]),
+        new(KeyBindingGroup.Explorer, KeyboardAction.SearchOpenResult, ["Enter"]),
         new(KeyBindingGroup.Explorer, KeyboardAction.MoveUp, ["Up"]),
         new(KeyBindingGroup.Explorer, KeyboardAction.MoveDown, ["Down"]),
         new(KeyBindingGroup.Explorer, KeyboardAction.OpenSelection, ["Enter"]),

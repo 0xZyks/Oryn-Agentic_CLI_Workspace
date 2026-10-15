@@ -1,0 +1,31 @@
+Palier : M0
+Date locale : 2026-10-15T02:36:04.302462+02:00 — Europe/Paris
+
+Demande
+Revoir les espacements trop serrés en reprenant le gap entre FileExplorer et centre : recherche, navbar, haut des panneaux, titres et contenu intérieur, au-dessus et au-dessous.
+
+Résultat et décisions
+Gap de base 9 px, cohérent avec la gouttière horizontale existante. Navbar : plus d'air sous l'identité, ligne d'items 30 px avec padding, 9 px avant les panneaux. Panneaux décalés visuellement vers le bas et séparés du statut par 9 px ; titres/onglets dans bandeaux communs 30 px, contenu démarré plus bas. Recherche décalée avec espace avant la liste et avant les résultats sous leur résumé. Composer chat conserve sa marge sous lui relative au panneau décalé, sauf limite très petite déjà prévue.
+Profil dense sous 18 lignes logiques : gaps verticaux 4 px, offsets de contenu réduits pour préserver l'accès. Pas d'augmentation du gap horizontal demandé comme référence. Pas d'aération artificielle entre chaque ligne d'un fichier/arborescence.
+WorkspaceSpacing porte les métriques en pixels logiques, indépendant de SDL/Skia ; drawing et counts de viewport utilisent les mêmes valeurs. Hits et hover des onglets/recherche/liste, extents des splitters, origines de graphe dock/centre et menu dropdown alignés. Clics dans le gap navbar/panneau n'activent pas un panneau ; WheelPixels ignore les espaces haut/bas avant routage, sans voler le focus.
+
+Fichiers de cette passe
+Nouveau : src/Oryn.App/WorkspaceSpacing.cs.
+Modifiés : src/Oryn.App/GraphicalWorkspaceController.cs ; GraphicalWorkspaceController.SettingsSearch.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs ; WorkspacePainter.SettingsSearch.cs ; SdlWorkspace.cs ; tests/Oryn.App.Tests/GraphicalWorkspaceTests.cs ; tests/Oryn.Ui.Smoke/AppearanceSearchChecks.cs ; ChatRenderingChecks.cs ; Program.cs ; README.md ; docs/m0-verification.md ; présent log.
+Modifications des prompts précédents (architecture documentaire, couleurs/recherche/icônes) conservées. Aucun changement de dépendances, modules natifs, conversations ou paramètres utilisateur.
+
+Vérifications actuelles réellement exécutées
+Build Debug final : dotnet build Oryn.slnx --no-restore -m:1 -nr:false, 0 warning/0 erreur.
+132 tests App réussis, dont nouvelle vérification wheel dans gaps et contenu. Checks offscreen tab/composer/search/hovers, gap de fond non cliquable, picker, themes et vue minimale réussis.
+41-stage SDL smoke final dummy/software réussi. Captures .local/spacing-preview/ inspectées : file tree/chat, recherche, compacte360×264 et dock.
+Publish autonome Release linux-x64 réussi sans restore, sortie .local/spacing-publish/. CLI/domain smoke réussi sur cet exécutable. Runner .local/spacing-release-smoke/ avec DLL App/SDL exactes du publish : smoke Wayland natif réussi (SDL backend opengl pour présentation, dessin Skia raster), captures .local/spacing-wayland/.
+Vérification Markdown liens/ancres/titres et préservation M1–M7 réussie. git diff --check réussi.
+
+Installation
+Mise à jour autorisée des six DLL/PDB CLI/App/SDL sous ~/.local/share/oryn. Dépendances identiques vérifiées avant remplacement ; sauvegarde, staging et comparaison SHA-256 réussis. Backup : /tmp/oryn-spacing-backup-20261015-023511-16e1f722. oryn --check installé réussi. Relancer l'application pour charger cette version. Pas de modification des profils appearance/keybindings de l'utilisateur.
+
+Historique, limites et suite
+Les validations de couleurs/recherche précédentes restent historiques, complétées par les suites réexécutées ci-dessus. Windows/macOS, matériel high-DPI et ressenti physique non validés dans cette passe. Captures raster ne mesurent pas le compositeur. Base M0 conservée ; attendre le retour sur les marges avant d'autres retouches. M-Native/M1 ne sont pas implémentés.
+
+Commit
+Aucun commit ni push créé. HEAD de référence : c7efbb274a133c0c9429a8586a4632ffbbcb2c5a.
