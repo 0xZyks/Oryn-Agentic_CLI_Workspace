@@ -6,7 +6,7 @@ using Oryn.Ui.Sdl;
 using SDL;
 using static SDL.SDL3;
 
-return args.Contains("--x11-keyboard") ? X11KeyboardSmoke.Run() : Smoke.Run(args);
+return args.Contains("--chat-preview") || args.Contains("--markdown-preview") ? ChatUiPreview.Run(args) : args.Contains("--x11-keyboard") ? X11KeyboardSmoke.Run() : Smoke.Run(args);
 
 static unsafe class Smoke
 {
@@ -25,7 +25,7 @@ static unsafe class Smoke
             File.WriteAllText(Path.Combine(root, "example.cs"), "class Example\n{\n    // read-only preview\n}\n");
             LocalWorkspaceFiles files = new(root, new()); WorkspaceState state = new(root);
             state.LoadRoot(files.ListAsync(root, default).GetAwaiter().GetResult());
-            using GraphicalWorkspaceController ui = new(state, files, new(new()), Path.Combine(root, "keys.json"), Path.Combine(root, "appearance.json"));
+            using GraphicalWorkspaceController ui = new(state, files, new(new()), Path.Combine(root, "keys.json"), Path.Combine(root, "appearance.json"), inferenceProvider: new Oryn.TestSupport.StubInferenceProvider());
             using SdlWorkspace window = new(ui, fps: 60);
             Stopwatch time = Stopwatch.StartNew(); int phase = 0; long idleRaster = 0, idlePresented = 0; System.Numerics.Vector2 dragGoal = default, dragOrigin = default; GraphBox beforeDrag = default; Guid firstMember = default;
             window.Run(host =>
@@ -44,7 +44,7 @@ static unsafe class Smoke
                         Key(SDL_Keycode.SDLK_RETURN, SDL_Keymod.SDL_KMOD_SHIFT); Text("Second line"); Key(SDL_Keycode.SDLK_RETURN); break;
                     case 3:
                         Check(state.Chat.Messages[0].Text == "Bonjour 👩‍💻\nSecond line", "Shift+Enter newline / Enter sends");
-                        Check(state.Chat.IsThinking, "demo reply begins asynchronously");
+                        Check(state.Chat.IsThinking, "stub provider reply begins asynchronously");
                         host.Capture(Path.Combine(captures, "18-thinking-live.png")); Text("next draft"); Key(SDL_Keycode.SDLK_A, SDL_Keymod.SDL_KMOD_CTRL); Key(SDL_Keycode.SDLK_C, SDL_Keymod.SDL_KMOD_CTRL); Key(SDL_Keycode.SDLK_X, SDL_Keymod.SDL_KMOD_CTRL); Key(SDL_Keycode.SDLK_V, SDL_Keymod.SDL_KMOD_CTRL); break;
                     case 4:
                         if (state.Chat.IsThinking) return;

@@ -1,6 +1,6 @@
 namespace Oryn.App;
 
-public enum KeyboardScope { Explorer, Tabs, TextEditor, History, Content, Graph, Menu, Details, ElementChat, Bindings, Navbar, Appearance, SearchEditor, SearchResults }
+public enum KeyboardScope { Explorer, Tabs, TextEditor, History, Content, Graph, Menu, Details, ElementChat, Bindings, Navbar, Appearance, SearchEditor, SearchResults, ElementHistory }
 
 public sealed record KeyboardContext(WorkspacePanel Panel, PanelFocusArea Area, bool Resizing = false,
     bool ContentAcceptsTab = false, bool ContentAcceptsText = false, bool GraphActive = false, KeyboardScope? Scope = null);
@@ -161,6 +161,8 @@ public sealed class KeyboardRouter
         {
             KeyboardAction.Quit => true,
             KeyboardAction.EditAppearance or KeyboardAction.SearchFiles => normal,
+            KeyboardAction.OpenInferenceSetup or KeyboardAction.SelectFastModel or KeyboardAction.SelectCoreModel
+                or KeyboardAction.LoadOlderChat or KeyboardAction.ToggleSourceContext => normal,
             KeyboardAction.SearchClear or KeyboardAction.SearchToggleFocus => scope is KeyboardScope.SearchEditor or KeyboardScope.SearchResults,
             KeyboardAction.SearchResultUp or KeyboardAction.SearchResultDown or KeyboardAction.SearchOpenResult => scope == KeyboardScope.SearchResults,
             KeyboardAction.ToggleNavbarFocus => normal,
@@ -172,10 +174,11 @@ public sealed class KeyboardRouter
                 or KeyboardAction.FocusCode or KeyboardAction.FocusVisualizer or KeyboardAction.ToggleTabFocus => normal,
             KeyboardAction.NextTab or KeyboardAction.PreviousTab or KeyboardAction.ConfirmTab or KeyboardAction.ReturnToContent => scope == KeyboardScope.Tabs,
             KeyboardAction.MoveUp or KeyboardAction.MoveDown or KeyboardAction.OpenSelection or KeyboardAction.ExpandSelection or KeyboardAction.Collapse => scope == KeyboardScope.Explorer,
-            KeyboardAction.ContentUp or KeyboardAction.ContentDown or KeyboardAction.ContentLeft or KeyboardAction.ContentRight => scope is KeyboardScope.Content or KeyboardScope.Graph or KeyboardScope.History,
+            KeyboardAction.ContentUp or KeyboardAction.ContentDown or KeyboardAction.ContentLeft or KeyboardAction.ContentRight => scope is KeyboardScope.Content or KeyboardScope.Graph or KeyboardScope.History or KeyboardScope.ElementHistory,
             KeyboardAction.GraphZoomIn or KeyboardAction.GraphZoomOut or KeyboardAction.GraphResetZoom or KeyboardAction.GraphEnterComponent
                 or KeyboardAction.GraphExitComponent or KeyboardAction.GraphOptions => scope == KeyboardScope.Graph,
-            KeyboardAction.ToggleHistory => scope is KeyboardScope.TextEditor or KeyboardScope.History,
+            KeyboardAction.ToggleHistory => scope is KeyboardScope.TextEditor or KeyboardScope.History or KeyboardScope.ElementChat or KeyboardScope.ElementHistory,
+            KeyboardAction.TextCopy or KeyboardAction.TextSelectAll => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Appearance or KeyboardScope.SearchEditor or KeyboardScope.History or KeyboardScope.ElementHistory,
             KeyboardAction.TextSubmit or KeyboardAction.TextNewline => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Appearance or KeyboardScope.SearchEditor,
             >= KeyboardAction.TextBackspace and <= KeyboardAction.TextPaste => scope is KeyboardScope.TextEditor or KeyboardScope.ElementChat or KeyboardScope.Bindings or KeyboardScope.Appearance or KeyboardScope.SearchEditor,
             KeyboardAction.DialogClose => !normal,

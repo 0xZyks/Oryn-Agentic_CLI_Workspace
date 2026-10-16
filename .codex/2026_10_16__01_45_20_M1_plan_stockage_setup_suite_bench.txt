@@ -1,0 +1,17 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande : intégrer au plan M1 une compression/segmentation de l’historique avec ID de projet, proposer une gestion de contexte, prévoir un setup matériel et des suggestions de modèles, préparer des tests vérifiables que l’utilisateur exécutera, ajouter le benchmark bout en bout.
+
+Résultat : plan M1 à sept points ajouté à README_ORYN.md ; document docs/m1-completion-and-validation.md détaillant les propositions de stockage local identifié, journal actif/segments scellés compressés sans perte, chargement paresseux, index dérivé du modèle de connaissance commun, budget de contexte, setup à capacité mesurée et protocole d’acceptation/benchmark. README.md pointe vers ce document.
+
+Batterie préparée : benchmarks/m1/cases.json (m1-public-json-v1), 12 cas de compréhension C#, extraction textuelle avec décisions/propositions/négation, logique, ambiguïtés et calcul. Oracles explicites avec justification. scripts/benchmarks/m1.py prépare des prompts sans oracles, workspaces isolés avec configuration adaptée et captures/mesures vierges ; grade corrige les JSON capturés manuellement, distingue absence/JSON invalide/réponse incorrecte/réussite et résume les mesures renseignées. Aucun appel modèle ni exécution de code produit par un modèle dans cet utilitaire. Les anciens benchmarks de génération C# restent une référence séparée hors Oryn.
+
+Décisions/propositions : interprétation du « remote file dans .local » comme dépôt local séparé, sans transmission distante ; compression de stockage distincte du résumé sémantique et du budget de tokens ; ne pas décompresser toute l’archive au lancement ; index/cache RAG reconstruisible et distinct des sources canoniques ; séparation no-model et core-only ; pas de sélection matérielle fondée uniquement sur le nombre de paramètres ou RAM installée. Ces architectures restent proposées et non implémentées.
+
+Vérifications exécutées : analyse syntaxique AST du script Python, lecture JSON et contrôle statique des 12 IDs distincts et des champs attendus ; git diff --check réussi. Aucune batterie, aucun cas, aucun modèle ni benchmark exécuté, conformément au souhait de l’utilisateur de les exécuter lui-même. Le correcteur n’a pas été validé dynamiquement dans cette session.
+
+Limites : la suite est publique et étroite, pas un benchmark tenu à l’écart ni une mesure générale des capacités de code/architecture. Ses réponses sont JSON ; elle ne compile pas d’implémentations générées. Les mesures sont saisies par l’utilisateur et les valeurs absentes restent inconnues. Compression, ID de stockage, récupération RAG, setup, changement de profils et télémétrie automatique restent à implémenter. Pas de nouveau champ de configuration non supporté introduit.
+
+Fichiers concernés : README_ORYN.md, README.md, docs/m1-completion-and-validation.md, benchmarks/m1/cases.json, scripts/benchmarks/m1.py et ce log. Modifications préexistantes conservées. Aucun commit associé, aucun push.
+
+Suite : utilisateur prépare et exécute les cas sur sa version d’Oryn ; implémentation suivante à borner sur fiabilité du chat/budgets/persistance avant le setup et basculement multi-model. Ne pas interpréter ces documents comme un moteur HIE déjà développé.

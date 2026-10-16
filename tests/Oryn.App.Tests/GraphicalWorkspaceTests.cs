@@ -69,7 +69,7 @@ public sealed class GraphicalWorkspaceTests
     {
         DelayedFiles files = new(); WorkspaceState state = new("/tmp");
         state.LoadRoot(new("/tmp", [new("/tmp/a", "a", false, false), new("/tmp/b", "b", false, false)], false, null));
-        using GraphicalWorkspaceController ui = new(state, files, new(new()), "/tmp/unused-oryn-test-profile");
+        using GraphicalWorkspaceController ui = new(state, files, new(new()), "/tmp/unused-oryn-test-profile", inferenceProvider: new Oryn.TestSupport.StubInferenceProvider());
         ui.OpenSelection(); state.Select(1); ui.OpenSelection();
         files.Second.SetResult(new("/tmp/b", "new", false, null));
         await WaitPreview(ui, "/tmp/b"); files.First.SetResult(new("/tmp/a", "old", false, null));
@@ -111,7 +111,7 @@ public sealed class GraphicalWorkspaceTests
         ui.WheelPixels(x, (files.Y + files.Height) * 22 - 2, 0, -1); Assert.Equal(0, ui.ExplorerTop);
         ui.WheelPixels(x, top + 100, 0, -1); Assert.True(ui.ExplorerTop > 0);
     }
-    private static GraphicalWorkspaceController Create() => new(new("/tmp"), new LocalWorkspaceFiles("/tmp", new()), new(new()), "/tmp/unused-oryn-test-profile");
+    private static GraphicalWorkspaceController Create() => new(new("/tmp"), new LocalWorkspaceFiles("/tmp", new()), new(new()), "/tmp/unused-oryn-test-profile", inferenceProvider: new Oryn.TestSupport.StubInferenceProvider());
     private static async Task WaitPreview(GraphicalWorkspaceController ui, string path)
     {
         for (int i = 0; i < 100; i++) { ui.Tick(0); if (ui.State.Preview?.Path == path) return; await Task.Delay(5); }

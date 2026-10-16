@@ -1,0 +1,19 @@
+Palier : M1 — reprise de contexte
+Date locale : 2026-10-15T15:23:12.813934+02:00 ; fuseau Europe/Paris.
+
+Demande et résultat
+Lire AGENTS.md et recharger les logs M1 avant de développer le module. Lecture d'AGENTS.md, README_ORYN.md et des deux logs M1 : 2026_10_15__04_04_12 (dernier par horodatage du nom) et 2026_10_15__03_58_40. Aucun log M0 lu.
+
+Observations actuelles
+HEAD : 251b776, starting M1 architecture ; git status --short vide avant journalisation. Solution active : App, Cli, Ui.Sdl et trois projets de tests. ChatPreviewState reste une démo sans inférence ni stockage, Hello World! après attente de 1600 ms dans le contrôleur.
+Préserver UI SDL3/SkiaSharp et Visualiser existant. M1 vise chat global local streamé, annulation, erreurs, configuration/core-only et persistance/reprise par projet. Backend Ollama/llama.cpp, modèles Qwen3 0.6B/4B/8B et SQLite restent candidats à vérifier. M-Native est distinct.
+
+Vérifications exécutées et limites
+Lectures, inventaire fichiers/projets, inspection ciblée chat/contrôleur, git status et dernier commit. Aucun build, test ou backend lancé. Aucun code applicatif modifié, installation ou téléchargement.
+Validations historiques : résultats M0 cités dans les journaux non rejoués ; Windows/macOS/high-DPI restent à valider selon passation.
+
+Fichiers et commit
+Seul ce journal ajouté. Aucun commit ni push créé. Écriture initiale refusée car .codex est protégé ; nouvelle tentative avec autorisation sandbox.
+
+Travail prévu
+Sur demande d'implémentation : inspection machine/backends/modèles, PoC mesuré et ADR, première tranche chat global streamé avec Stop et erreurs ; puis persistance/reprise, contexte fichier choisi et tests d'échec. Aucune capacité M1 acquise annoncée.

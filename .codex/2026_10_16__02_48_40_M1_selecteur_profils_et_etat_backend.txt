@@ -1,0 +1,27 @@
+Palier : M1. Fuseau : Europe/Paris (CEST).
+
+Demande
+L’utilisateur signale que sélectionner GPT-OSS dans le setup ne semble pas fonctionner et que l’erreur persiste en forçant la config. Il précise ensuite lancer avec « la commande » et propose de transmettre la nouvelle erreur après correction du sélecteur. Priorité finale : rendre le sélecteur fiable et lisible, puis attendre le nouveau diagnostic si nécessaire.
+
+Observations actuelles (lecture seule)
+Le fichier projet sélectionne Core GPT-OSS, CpuMoeLayers 2, FlashAttention on, contexte 4096. Lecture contrôlée des processus hors sandbox : Oryn tourne depuis le build Debug du dépôt via dotnet run ; le serveur déjà lancé utilise effectivement gpt-oss-20b-MXFP4.gguf, --n-cpu-moe 2 et --flash-attn on. Lecture de son endpoint public /health : HTTP 200, status ok. Il occupait 10536 MiB GPU ; cela prouve un chargement observé, pas l’absence de tout autre échec lors d’un basculement ultérieur. Aucune clé API lue, aucune requête de génération envoyée, aucun processus adopté/arrêté. Quelques métadonnées de messages (état, longueur, date seulement) indiquent des réponses Complete récentes ; pas de texte de conversation affiché. La commande installée ~/.local/bin/oryn pointe vers une ancienne installation distincte ; elle n’a pas été mise à jour. Ne pas confondre ce binaire avec le processus Debug observé.
+
+Problèmes corrigés
+- Rouvrir le setup remettait systématiquement la sélection à l’index zéro, quel que soit le modèle configuré : préselection du CatalogId actif après détection.
+- Appliquer/sonder la même entrée recréait un profil à partir des suggestions et écrasait les réglages personnalisés : réutilisation du profil existant pour le même slot/CatalogId, y compris ModelPath, contexte et placement. Le probe utilise et consigne désormais ce même profil effectif.
+- Ajout d’un état backend distinct : non chargé, chargement, échec ou chargé avec nom de fichier et slot. Affiché dans le chat et le setup. Chemin de configuration et réglages mémoire effectifs visibles dans le setup.
+- Action d’application nomme le fichier sélectionné ; clic ligne = sélection, Entrée/clic action = application. Indication du basculement en cours et refus des doubles activations pendant le chargement.
+- Une erreur de startup antérieure n’est effacée qu’après chargement réussi et si son texte correspond encore exactement ; les erreurs indépendantes de chat/stockage ne sont pas effacées.
+- --check inclut profil effectif et répertoire de l’application pour diagnostiquer mauvais build/config. Les éditions externes de config restent chargées au lancement, pas de hot reload ajouté.
+- Nouveau seuil de confirmation téléchargement : 28 lignes logiques, pour laisser visibles les détails nécessaires avec les nouvelles lignes d’état. Aucun téléchargement implicite.
+
+Fichiers
+src/Oryn.App/{ChatPreviewState,GraphicalWorkspaceController.Inference,InferenceSetup}.cs ; src/Oryn.Cli/Program.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs ; tests/Oryn.App.Tests/InferenceM1Tests.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs ; docs/m1-llama-cpp-integration.md.
+
+Vérifications exécutées
+Compilation complète dotnet build Oryn.slnx --no-restore hors sandbox réussie, zéro avertissement/erreur. git diff --check réussi. Scénarios préparés/compilés pour préselection, conservation des réglages à la sauvegarde et à l’échec d’un faux backend, hit regions sélection/application et confirmation avant téléchargement. Tests, smoke UI, nouveau chargement de modèle et benchmarks NON exécutés selon préférence utilisateur. L’inspection /health a porté uniquement sur le serveur déjà lancé par l’utilisateur.
+
+Limites et suite
+Redémarrer Oryn avec le build actuel (dotnet run --project src/Oryn.Cli --no-build --), sélectionner GPT-OSS puis Entrée/action Appliquer, vérifier l’état et communiquer Copier erreur si échec. Ne pas présenter la cause d’un nouvel échec GPT-OSS comme connue avant réception du nouveau diagnostic. Aucune modification de la config locale ou des données de chat pendant cette tâche. Pas de certification de l’interface native ou du presse-papiers par la seule compilation.
+
+Commit associé : aucun. Pas de commit/push ; changements antérieurs conservés.

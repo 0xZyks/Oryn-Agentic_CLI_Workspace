@@ -1,0 +1,38 @@
+Palier : M1 — évaluation individuelle spécialisée code/architecture
+Date : 2026-10-15T17:19:11.694321+02:00 ; fuseau Europe/Paris.
+
+Demande
+Évaluer précisément Coder seul sur problèmes code/architecture avec réponses vérifiables et sûres. L'utilisateur insiste sur fiabilité et efficacité du futur rôlecode. Pas de nouveau modèle téléchargé ni pipeline M5 demandé.
+
+Résultat et conclusion scoped
+Qwen2.5-Coder7B Instruct Q6_K (artefact officiel déjà vérifié) n'est pas suffisamment fiable sur ce jeu pour être retenu comme unique expert code/architecture Oryn. Candidat étroit de propositions vérifiées seulement ; aucune décision produit définitive, modèle par défaut des scripts inchangé. L'interprétation encourageante du précédent petitjeu est explicitement tempérée dans docs/m1-candidate-models.md.
+Banc13problèmes :6implémentations/correctifs exécutables,4diagnosticsC# à vérités établiesparruntime,3architecturesàcontraintes fermées. Références et tests cachés aux prompts ; modèle seul, pas préparateur. Profilsamplerequesttemp0.2/top-p0.95/top-k40/min-p0/presence0,8192contexte,F16KV,Flashon,1slot. Troisgraines42/7/123.
+
+Vérifications du banc réellement exécutées
+6références positives passent ;6mutants compilent mais échouentauxcontrats ; preuvesexécutables .NET10 confirment keymutable false,try/finallyreturn1,WhenAllattenddeuxièmetâche,puisInvalidOperationException,WaitAsyncdéjàannulé+finallyRelease=>SemaphoreFullException,count1. Tests topographiques par énumération indépendante des24permutations/64petitsDAG ; moyennes oracledecimal+aléatoirefixe ;UTF8coupeàchaquefrontière ; étatschat/annulation/providersignoranttoken/disposal.
+Runtimegénéré isolé Bubblewrap horssandbox autorisé (unshareall,pasréseau,pasdépôt/home,binaire/runtimelectureseule,tmpprivé,envvidé,CPU5s,wall10s,GC256MiB). Projetscompilateurfixes sanspackages/analyzers/projetLLM. Limitefichierinitiale1MiB empêchait CoreCLRdechargerCoreLib ; corrigée128MiB AVANTtoutappelmodèle, référencespasséesensuite. Ce défautinfrastructure n'estpas scoredmodèle.
+V1figé avantpremièresrequêtes :hash e6b6495bed0586c28a997543a01b5a6df18da7d37ef14d5b7bf2dd94b3c2aab5,341checks. Relecture aprèsrésultats retire2exigencesnonexplicitementdemandées : exceptionobligatoireaucancel (fin normalevalide), manual_linkobligatoirementtrue dansquestionneledemandantpas. V2revalidé :343checks (113,17,134,29,39,11),hash5fb4308da51e7328dca79f2e476edbd139f77b0eb8e5de796a5a3c8951457389. Mêmesréponsesréévaluées sansgénération ; testsinchangésréutilisés,codeasync réexécuté. Scoresinchangéscarechousencoreexplicitementfautifs. V1sourcesconservéesdans artifacts/m1/coder-solo/protocol-v1/,rapportsoriginauxpréservés. RéparationshistoriquesavaientfeedbackV1,critèresfinauxV2signalés ; pasdedissimulationdechangementoracle.
+
+Résultats français finaux (répétitions, pas39problèmesindépendants)
+Implémentations :2/6 aux3graines ; moyenneetfusionintervallespassenttoujours.5/6compilent ;UTF8necompilepas. TopolexicographiqueutiliseFIFOetéchoue ;UTF8inventesurchargeGetChars7args ;Stopperdtextepartiel ;asyncForwardémetfragmenttardifsi providerignoretoken. Tous4échouentencoreaprès1feedbackgénériquepargraine (12réparationssansgain).
+Diagnostics :1/4,2/4,2/4. Keymutablecorrect ;finallyprévoit2au lieu1 ;WhenAllcorrect2/3 ;semfinallymasqueannulationnonvu.
+Architecture :1/3aux3graines. Transactiondurable/reprisecorrecte ;pipelineUIrépondcapacité4/drop_oldest/producteurUIviolantmemory/no-loss/latence ;identitéambiguëremplacéeparguess.
+Totalpremieressai :4/13,5/13,5/13 ; identiqueaprèsfeedbackgénérique. Pasdetruncationpremièresréponses ; pasdefaillancerunnerdansrésultatsmodèle.
+
+Contrôles supplémentaires
+Anglais :contrats/policytraduitsmanuellement,mêmesoracles,seed42,scores3/13initial,puis4/13aprèsréparationmoyenne. Exploratoireunegraines ;wrapperréparationpartiellementfrançais,comparaisonlanguepropreaupremieressaiuniquement. Neprouvepaséchecdetouspromptsanglais.
+SansFlashAttention :7diagnostics/architectureFRseed42,scores2/7commeaFlashon ;7sortiesbrutesidentiques. Pasdecertificationtoutbackend,aucunautrebackend/quantification/tailleévalué.
+Contre-exemplesprécis :3réparationsalternativesrepartantdespremièresréponsesseed42, pas3etentativesséquentielles. TopoetStoprestentincorrects ;asyncannulationcorrigée(pass11checks,enfiniterationnormalautorisé). Résultat1/3sélectionné,nonagrégéauxscores initiauxni présentécommeétude3graines.
+
+Efficacité réellement mesurée
+BatchFR231.64s inclutchargement,39réponsesinitiales,12réparations,build/tests. Générationinitiale95.43s/3982tokens ;réparations63.69s/2600tokens. Médianedécodage43.8tokens/s. Duréesinitialesmédianesparproblème :moyenne1.88s,merge4.13s,topo7.40s,UTF85.20s ;paslatencesavecvérification.
+GPUéchantillonné6799MiBchargé/6821MiBfin(~6.66GiB),pasmesurepic. RSS879816KiB/HWM6430992KiB inclutmmap/chargement. MachinesameDebian13,Ryzen5500,RTX306012GiB,pilote550.163.01,llama.cppb11658CUDA12.8. Tousserveursfinauxexit0,sanskillforcé,arrêtés. AucunrésultatdeGUI/longprojet/multifichiers/OSautre revendiqué.
+
+Fichiers
+Nouveauxscripts coder_cases.py,coder_verify.py,coder_bench.py,coder_english.py,coder_regrade.py,coder_counterexamples.py ; evaluate.server reçoitoptionFlash (défautonconservé). docs/m1-coder-solo-evaluation.md :protocole,oracles,tableaux,reproduction,limites ; liensREADME,doccandidateetADR0013 actualisés. Binaires/modèles/restedes fichiersappinchangés ; modificationspréexistantespréservées. Syntaxepy_compile (--tousscripts),CLIhelp,gitdiff--check réussis. AucunbuildsolutionOryn ;nombreuxbuilds/testsprojetsjetablesdu banc exécutés. Aucuncommit/pushcréé.
+
+Rapports inspectables ignorésGit
+artifacts/m1/coder-solo/results.json (original),results.regraded-v2.json (gradefinal),checks/ etserverlog ; coder-solo-v2/self-test/oracles.json ; coder-solo-en/results.regraded-v2.json ; coder-solo-flash-off/results.json ; coder-solo-concrete-feedback/results.json. Toutcode/retourscompilateur/testsbrutsconservés. Aucuneclé/secret.
+
+Limites et suite
+13problèmessynthétiquesciblés,pasbenchmarkexhaustif,architecturecontraintesexplicitespasjugementgénéral,3grainespasnouvellesquestions. Tests343assertionsneprouventpasabsenced'autresbugs. Refusdeconfianceautonomejustifiépourcetteconfig7BQ6,pascondamnationfamilleQwen ni tousworkflowsoutillés. Réutilisermêmebancavantchoisirmodèleplusfiable ;étendreplus tardàcorrectifsprojetmultifichiersetoutilsdéterministes. N'intégrerpaslemodèlecommeautoritédesidentités/statuts/décisions. GemmaencorebloquéaccèsHFlorsdernierprompt,nontraitédanscelui-ci ;GPTOSSexplicitementreporté. M1appencoredémo,pasproviderC#nipersistenceimplémentéeparcetteévaluation.

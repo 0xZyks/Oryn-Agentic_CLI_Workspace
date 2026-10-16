@@ -1,0 +1,29 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande et observation actuelle
+L’utilisateur a communiqué le diagnostic complet de llama-server : sortie 1, flash_attn disabled, contexte 4096, cudaMalloc échoue sur une allocation de 96 MiB, puis échec de création du KV cache. Il s’agit d’un manque de VRAM au chargement. La note sur n_ctx_seq inférieur au contexte d’entraînement est informative, pas l’erreur fatale.
+
+Cause de configuration identifiée
+Le profil intégré demandait toutes les couches GPU sans les deux couches d’experts CPU utilisées par le benchmark hybride GPT-OSS. Le lanceur Python legacy laissait Flash Attention off, contrairement au benchmark. Les paramètres de placement CPU des experts et de Flash Attention n’étaient pas exposés/transmis par le profil App. Mesure HISTORIQUE de référence, non reproduite ici : documentation docs/m1-gptoss-evaluation.md, contexte 8192, deux couches experts CPU, Flash Attention on, F16 KV ; environ 809 MiB d’experts déplacés sur CPU et occupation GPU totale échantillonnée maximale 11307 MiB. Ces anciennes mesures ne certifient pas la marge avec l’UI et le bureau actuels.
+
+Résultat livré
+- ModelProfile expose CpuMoeLayers (défaut zéro, plage bornée) et FlashAttention (auto/on/off, défaut auto).
+- Paramètres transmis au serveur natif (--n-cpu-moe/--flash-attn) et au launcher compatible Python (--cpu-moe/--flash).
+- oryn.settings.json local explicitement corrigé : Core GPT-OSS, CpuMoeLayers 2, FlashAttention on, contexte 4096 inchangé, GpuLayers 99 inchangé. Poids et KV F16 non requantifiés.
+- Setup : suggestions GPT-OSS sur NVIDIA/Linux reprennent deux couches experts CPU et Flash Attention on, avec motif visible. CPU-only et Metal restent sans cet offload d’experts et Flash auto ; pas d’hypothèse de VRAM distincte sur mémoire unifiée. Les profils externes existants ne sont pas réécrits silencieusement.
+- Erreur CUDA out-of-memory précédée d’un diagnostic lisible indiquant profil, contexte et paramètres, en conservant code de sortie et logs. Aucun retry ou changement de modèle/placement automatique.
+
+Fichiers
+src/Oryn.App/{ModelProfile,LlamaCppRuntime,InferenceSetup}.cs ; oryn.settings.json ; tests/Oryn.App.Tests/InferenceM1Tests.cs ; docs/m1-llama-cpp-integration.md ; docs/adr/0016-m1-local-history-context-and-setup.md.
+
+Vérifications réellement exécutées
+- Lecture de l’aide du binaire installé b11658 : options Flash Attention et CPU expert layers présentes ; retour 0. Cela ne charge pas de modèle.
+- dotnet build Oryn.slnx --no-restore hors sandbox : solution complète réussie, zéro avertissement/erreur.
+- git diff --check et lecture JSON du profil : réussis.
+- Tests préparés/compilés, NON exécutés selon préférence utilisateur : roundtrip config et transmission réelle des arguments aux deux branches via faux processus sans modèle ; diagnostic CUDA compréhensible et trace conservée ; suggestion hybride NVIDIA et distinction CPU-only.
+- Aucune inférence, aucun chargement de modèle, probe, test suite ou benchmark lancé. Aucun téléchargement.
+
+Limites et prochaine étape
+L’utilisateur doit fermer puis relancer Oryn avec le build courant, par exemple dotnet run --project src/Oryn.Cli --no-build --, et soumettre une demande. La correction reprend des paramètres historiquement mesurés, mais le chargement dans l’application n’est pas encore confirmé. La VRAM libre fluctue avec le bureau et les autres applications ; en cas de nouvel OOM, demander/inspecter le diagnostic puis envisager explicitement davantage d’experts CPU plutôt que dégrader silencieusement le modèle. Tests/benchmarks restent à l’exécution de l’utilisateur.
+
+Commit associé : aucun. Pas de commit/push ; autres modifications préexistantes préservées.

@@ -116,5 +116,5 @@ public sealed class ScopedKeyboardTests
     }
 
     private static GraphicalWorkspaceController Create(KeyBindingSettings? keys = null) =>
-        new(new("/tmp"), new LocalWorkspaceFiles("/tmp", new()), new(keys ?? new()), "/tmp/unused-oryn-scoped-keys");
+        new(new("/tmp"), new LocalWorkspaceFiles("/tmp", new()), new(keys ?? new()), "/tmp/unused-oryn-scoped-keys", inferenceProvider: new Oryn.TestSupport.StubInferenceProvider());
 }

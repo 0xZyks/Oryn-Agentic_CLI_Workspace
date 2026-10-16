@@ -1,0 +1,34 @@
+Palier : M1 — candidats et expérience séquentielle multi-modèle
+Date : 2026-10-15T16:45:52.465367+02:00 ; fuseau Europe/Paris.
+
+Demande
+Tester Gemma3 12B et Qwen2.5-Coder ; GPT-OSS reporté explicitement. L'utilisateur suggère un modèle préparant/analysant pour un autre modèle spécialisé. Expérience locale limitée autorisée, pas pipeline produit M5.
+
+Résultats actuels et blocage réel
+Qwen2.5-Coder7B Instruct Q6_K officiel téléchargé (6254198784o), Apache2, révision13fb94bfda8c8cf22497dc57b78f391a9acb426a ; SHA25646291ddea1bfb608fe63d9a1907eea6918bda87a7626593edc4bf97c5fd73f9d vérifié via setup --verify-only. Binaires existants conservés.
+Gemma3 12B IT QAT Q4_0 officiel seulement préparé/pinné (révision7929e34ac7c459bbfd1f38d7358e6839f204578b,8074473920o,SHA256dd53172ff3a7b1b16c8fb3d944b87f42a6228ff2de3825b8813ae90d988434cd). Accès public vérifié : échec DNSsandbox puis nouvelle tentative autorisée horssandbox HTTP401. Aucun HF_TOKEN/HUGGING_FACE_HUB_TOKEN ni fichier tokenHF configuré lors des deux vérifications. Question asynchrone demandant acceptation conditions officielles et configuration locale, sans demander le secret dans la conversation. Aucune réponse reçue à la rédaction de ce journal. Ne pas considérer Gemma comme testé ; ne pas accepter de conditions ni contourner le gate. Reprendre dès accès configuré, sans redemander l'autorisation de tester déjà fournie.
+
+Mesures exécutées Coder
+Même Debian13/Ryzen5500/RTX3060 12GiB/pilote550.163.01 ; llama.cppb11658 CUDA12.8, Flashon, KV F16,8192contexte,1slot,cacheRAMsnapshots0,profil Coder temp0.7/top-p0.8/top-k20/min-p0/presence0. Q6 sélectionné pour réduire perte de quantification ; comparaison avec8B/14BQ4 non isolée sur quantification.
+29/29couchesGPU. Débit44.06/44.13tokens/s ; premiertexte0.060/0.046s sur courts prompts. GPU total après requêtes6913MiB(~6.75GiB), retour646MiB après arrêt. RSS905196KiB(~0.86GiB),HWM6429856KiB(~6.13GiB), inclutmmap/chargement, paspicRAMsystème ni picVRAM. Entrée synthétique5597tokens zérocache : clé correcte,17sorties,premiertexte3.00s,total3.38s. Calcul34 correct,161tokens ordinaires,total3.68s. Pas de raisonnement séparé déclaré pourCoder/Gemma ; ne pas simuler une capacité Qwen3.
+SmokeCoder réussi : SSEprogressif/fin, déconnexion→idle~0.10s+compteurstable,nouvelle requête,malformed400,arrêtpropreexit0. Rapport artifacts/m1/coder7b-q6-extended-8192.json et log. Son champ nominalbudget256 était hérité du serveur mais raisonnement désactivé ; codecorrigé pour afficherNone à l'avenir pour modèles sans capacité.
+
+Expérience duo (pas runtime applicatif)
+Script evaluate.py :6questionsC# avec réponsesconnues +2méthodesgénérées. Même requêtes et sampling temp0.2/top-p0.95/top-k40/min-p0/presence0/thinkingoff ; graines42/7/123. Score6questions = exactitude sémantique après éventuelle suppression d'une clôture MarkdownJSON, pas conformitéJSONbrut. Les six questions sont répétées, pas18questions indépendantes.
+Chargement8B→déchargementcomplet→Coder, jamais deux modèlesrésidents ensemble. Les notes sont explicitement faillibles. Pas de scheduler/agentsM5 ni transmissiondistante.
+Préliminaire instructionspréparateur+questiondansunmêmemessage :8B2/6,Coder5/6,duo4/6 ; rapportcandidate-evaluation.json préservé.
+Suivi rôlepréparateur séparé enmessage système : graines42/7/123,8Bdirect2/6,2/6,2/6 ; Coderdirect5/6,4/6,4/6 ; duo3/6,3/6,3/6. Notes8B parfois mauvaises ou répondantauformatdelademande malgré rôle. Coder corrige parfois notes, mais correcteclosure333→incorrecteaprèsnotes. Ne pas généraliser à toutmulti-modèle ni classerglobalement les modèles.
+Sur8demandes : sommeappelsCoderdirect4.65–4.67s,préparation+réponse10.56–10.95s horsstart/stop ; pas latenceutilisateur boutenbout. Ready1.3–1.8s/modèle danspassescachées ; extinction~0.2s ; coûtbasculevariable.
+Rapports candidate-evaluation-role-seed42/7/123.json +logsserveurspécifiques, toussousartifacts/m1 ignoréGit. Tousserveursarrêtésexit0.
+
+Vérifications code généré et fondements
+Groundtruth déterministe exécutable .NET10 sous /tmp/oryn-m1-csharp-ground-truth :333,6,2,1 pourclosure/LINQ/divisionentière/filterexception. Casinterface default déjàvérifiécompileursessionprécédente ; pas réannoncé comme nouvellecompilation ici.
+check_code.py compileprojetsfixestemporaires sanspackages/analyzers/buildcontrôlésparmodèle. Exécutionuniquementpourvariantesexactesnormaliséesmanuellementrevues et autoriséesdansscript (guardGuidbool etiterator simpleavec/sanscheckavantyield). Code inconnu seulementcompilé. Aucun codegénéré exécuté horssandbox par evaluate.py.
+Toutes9pairesfinales compilent. Tousguards passenttablevérité. Méthodesdirectes8B/Coder passent sourceignorantannulation ; les3pairesduo omettentThrowIfCancellationRequestedetéchouentcomportementmalgrécompilation. Résultats*.code-check.json. Deuxrequêtesdegénération explicitentdéjàlesinvariants : paspreuveconceptionautonome.
+
+Fichiers et validations supplémentaires
+manifest.json candidatsCoder/Gemma/capacités/profils ; setup.py sélectionexistante et lectureauthlocale (headercurlstdin,pasargv/logs). Cheminauthréel non testé fautecompte. run.py profilsparmodèle/refusreasoningonsanscapacité ; smoke.py fonctionséparéescapacités/systemmessages/sampling ; nouveauxevaluate.py/check_code.py. docs/m1-candidate-models.md :résultats,commandes,limites,Gemmabloqué ; liensdocPoCetADR0013. Modèlesetrapportsignorés. Changementspréexistants et ancienslogsconservés.
+py_compile scriptsPython, --help setup/evaluate/check_code, gitdiff--check réussis. Compilationettestscomportementdécritsci-dessus réellementexécutés. Aucun changementdecodeappOryn, ni buildsolution/revalidationSDL ouWindows/macOS. Aucuncommit/pushcréé.
+
+Décisions et suite
+Pasdemodèlepardéfautchangé ; scriptsgardent8B. Coder candidatutilerôlecode surpetitjeu, duo8Bprépare→Coder pasbonpardéfautici (pluslentetmoinscorrect). Favorisercomparaison représentative/routagemesuré/preuvescompilateur. Gemma nécessiteaccèsofficielutilisateurpourterminertestsdemandés ; l'autorisationdedownload/testpersiste. GPT-OSSdéféré. M1resteincomplet :UIencoredémo,pasproviderC#ni persistence. TestsGemmaetbranchementchatrestentàfaire ; n'étendrepas auM5surbaseexpérience.

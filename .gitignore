@@ -5,3 +5,4 @@ artifacts/
 TestResults/
 .DS_Store
 .oryn/
+**/__pycache__/

@@ -4,5 +4,19 @@
   "ShowHiddenFiles": false,
   "MaxDirectoryEntries": 1000,
   "MaxPreviewCharacters": 65536,
-  "RenderFramesPerSecond": null
+  "RenderFramesPerSecond": null,
+  "InferenceModelPath": null,
+  "InferenceRunnerPath": null,
+  "PythonExecutable": null,
+  "InferenceEndpoint": "http://127.0.0.1:18080",
+  "LlamaServerPath": null,
+  "InferenceAssetsRoot": null,
+  "SelectedModelProfile": "core",
+  "ModelProfiles": {},
+  "StartupTimeoutSeconds": 120,
+  "GenerationTimeoutSeconds": 180,
+  "ChatDataRoot": ".local/oryn/projects",
+  "ChatSegmentBytes": 262144,
+  "ChatRecentMessages": 40,
+  "InferenceSetupCompleted": false
 }

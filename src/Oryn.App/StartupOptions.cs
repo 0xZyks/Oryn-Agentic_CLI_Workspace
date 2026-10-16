@@ -6,6 +6,8 @@ public sealed record StartupOptions(string ProjectRoot, bool ShowHelp, bool Show
     public bool OverrideRenderCadence { get; init; }
     public int? RenderFramesPerSecond { get; init; }
     public string? KeybindingsPath { get; init; }
+    public bool ShowInferenceSetup { get; init; }
+    public bool InspectHardware { get; init; }
     public static StartupOptions Parse(IReadOnlyList<string> args, string workingDirectory)
     {
         string? path = null;
@@ -15,6 +17,7 @@ public sealed record StartupOptions(string ProjectRoot, bool ShowHelp, bool Show
         bool overrideRenderCadence = false;
         int? framesPerSecond = null;
         string? keybindings = null;
+        bool setup = false, hardware = false;
         for (int i = 0; i < args.Count; i++)
         {
             string arg = args[i];
@@ -26,6 +29,8 @@ public sealed record StartupOptions(string ProjectRoot, bool ShowHelp, bool Show
                     case "-h": case "--help": help = true; continue;
                     case "--version": version = true; continue;
                     case "--check": check = true; continue;
+                    case "--setup": setup = true; continue;
+                    case "--hardware": check = true; hardware = true; continue;
                     case "--no-color": color = false; continue;
                     case "--ascii": unicode = false; continue;
                     case "--keybindings":
@@ -54,6 +59,7 @@ public sealed record StartupOptions(string ProjectRoot, bool ShowHelp, bool Show
         // Resolve against the caller's working directory, never the executable location.
         string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path ?? ".", workingDirectory));
         return new(root, help, version, check, color, unicode, config)
-            { OverrideRenderCadence = overrideRenderCadence, RenderFramesPerSecond = framesPerSecond, KeybindingsPath = keybindings };
+            { OverrideRenderCadence = overrideRenderCadence, RenderFramesPerSecond = framesPerSecond, KeybindingsPath = keybindings,
+                ShowInferenceSetup = setup, InspectHardware = hardware };
     }
 }

@@ -1,0 +1,17 @@
+Palier principal : M1 — Europe/Paris.
+
+Demande : intégrer llama.cpp au chat local d’Oryn, en tenant compte du prochain RAG sans implémenter ce jalon maintenant.
+
+Résultat livré : ajout d’un provider indépendant utilisant l’API OpenAI-compatible SSE de llama-server ; lancement asynchrone du script existant scripts/inference/run.py ; validation de /health ; liaison loopback ; streaming non bloquant, annulation avec Escape, erreurs visibles, arrêt du processus détenu par Oryn ; historique global persistant atomiquement en JSON sous .oryn/global-chat.json ; paramètres de modèle, runner, Python et endpoint validés. Ajout d’une frontière ChatContext avec sources, actuellement vide.
+
+Fichiers concernés : src/Oryn.App/Inference.cs, ChatStore.cs, ChatPreviewState.cs, GraphicalWorkspaceController.cs, WorkspaceSettings.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.cs ; src/Oryn.Cli/Program.cs ; oryn.settings.example.json ; README.md ; docs/m1-llama-cpp-integration.md ; docs/adr/0014-m1-llama-cpp-chat-adapter.md.
+
+Décisions : un seul GGUF chargé à la fois ; core-only sans chemin de modèle ; le modèle est explicitement configuré pour éviter un chargement lourd inattendu ; RAG, routage multi-modèle et chats par élément persistants restent hors de cette tranche. Le runner existant est le PoC Linux/CUDA ; aucune compatibilité multiplateforme n’est revendiquée.
+
+Validations exécutées : dotnet build src/Oryn.Ui.Sdl/Oryn.Ui.Sdl.csproj --no-restore (réussi, 0 avertissement/erreur) ; git diff --check (réussi) ; vérification du chemin relatif vers scripts/inference/run.py. Le build CLI a échoué dans la résolution MSBuild des références sans diagnostic, y compris après restore, code de sortie 1 et 0 erreur affichée. Aucun smoke graphique/inférence end-to-end exécuté dans cette session.
+
+Observations : le backend et les modèles existent déjà dans .local/inference ; l’API SSE avait été mesurée dans la validation historique décrite par docs/m1-inference-poc.md. Ces mesures historiques ne valident pas le câblage du frontend livré ici.
+
+Limites et prochaine étape : régler InferenceModelPath dans un fichier JSON privé et faire un premier lancement UI avec un modèle adapté ; vérifier streaming, annulation et redémarrage avec historique. Examiner l’échec silencieux de build CLI avant de considérer M1 validé de bout en bout. Ajouter ensuite un retrieval lexical sourcé derrière ChatContext, selon le jalon prévu.
+
+Commit associé : aucun. Aucun commit ni push effectué.

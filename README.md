@@ -1,12 +1,32 @@
-# Oryn — M0 engineering workspace
+# Oryn — local engineering workspace
 
 Oryn is a local-first, keyboard-first, terminal-inspired graphical engineering environment with a **native SDL3 + SkiaSharp interface**. Its TUI-inspired frame uses monospace typography, compact bars, closely spaced panels, thin nearly square outlines, dark blue-black surfaces and a restrained lavender focus accent. Oryn assists engineering and architecture alongside existing code editors. **SDL + OpenGL remains the v1.0 rendering target.** Product vision: [README_ORYN.md](README_ORYN.md); implementation choice: [ADR 0006](docs/adr/0006-sdl3-skia-raster-m0.md).
 
 M0 provides a lazy file explorer, read-only file previews, optional visualizer docking and resizable panels. Chat opens at startup. The central tabs are Chat, Sources (read-only previews) and Visualiser, in that order; a contextual inspector appears when the map has enough width. The focused panel is brighter and marked by a thin violet bar across its top. Chrome uses the existing 9-pixel panel gutter as its spacing unit: navbar/panel separation, panel/status separation and search/list margins. Below 18 logical rows, vertical gaps reduce to 4 pixels to retain access. Panel headers share one aligned separator height (39 pixels normally, 34 in dense mode); the central tabs have inset margins and use the selected background rather than an underline, and the chat composer leaves a 10-pixel bottom margin when space permits. The same application state handles keyboard and mouse interaction independently of SDL and SkiaSharp.
 
-The global chat and chats attached to graph members are **demos**: every prompt receives `Hello World!` after a short animated wait. Drafts and histories survive view/dialog switches during the session, but not process exit. The graph is an explicitly fictitious seven-card fixture with stable UUIDs, typed members, labeled relationships and simulated statuses. There is no inference, real source analysis, persistent graph or human status-validation workflow yet. No project files are edited or sent over the network.
+M1 connects global chat to a local llama.cpp server with streaming and cancellation. First-run setup detects available hardware, suggests model profiles and installs pinned assets only after confirmation. Configured Fast/Core profiles can be switched from Agents, with one owned backend resident at a time. Project history uses a stable UUID, a recoverable journal and lazily loaded gzip segments under `.local/oryn/projects/<uuid>/`; old `.oryn/global-chat.json` files are migrated without deleting the original. The model context has explicit input/output budgets, and a selected source excerpt may be attached to the next request. Without a model, navigation and saved data remain available. The graph is still an explicitly fictitious fixture; persistent real analysis, full retrieval and human proposal workflows remain later milestones.
+
+The chat renders Markdown natively (headings, emphasis, lists, code, quotes and tables), with full-width messages, mouse selection and copy icons below messages. The icon copies original Markdown; Ctrl+C on a selection copies displayed text. See [the M1 guide](docs/m1-llama-cpp-integration.md) and [the Markdown rendering decision](docs/adr/0017-native-chat-markdown.md).
 
 See [the workshop prototype and rollback instructions](docs/design/workshop-prototype.md).
+
+M1's [local llama.cpp inference PoC](docs/m1-inference-poc.md) documents the pinned
+backend, model candidates and hardware measurements. The graphical chat uses the
+pinned model catalog and accepts a manually configured GGUF. It can launch a native
+`llama-server` directly, while retaining the explicit Python runner configuration.
+There is no automatic semantic model router yet.
+See [M1 integration instructions](docs/m1-llama-cpp-integration.md) for setup,
+chat persistence, streaming, cancellation and platform limits.
+The [M1 completion and user-run validation plan](docs/m1-completion-and-validation.md)
+describes the history/context/setup design and the prepared manual quality suite
+and end-to-end benchmark protocol. Behavioral tests remain user-executed.
+The [individual Coder evaluation](docs/m1-coder-solo-evaluation.md) records
+executable checks and current model limitations; no inference model is accepted
+as a production code/architecture authority by these experiments.
+The subsequent [GPT-OSS evaluation](docs/m1-gptoss-evaluation.md) and
+[larger Coder hybrid experiment](docs/m1-large-coder-evaluation.md) compare
+quality and hardware tradeoffs; these remain separate from the application.
+For a plain-language summary and current ranking, see the [M1 model recap](docs/m1-model-recap.md).
 
 ## Build and run
 
@@ -138,9 +158,11 @@ Super+K opens the grouped action list. Click an action or use Tab/Shift+Tab to s
 
 The default profile uses the platform application-data directory (`~/.config/oryn/keybindings.json` on Linux). A missing file loads defaults without creating it. `--keybindings /path/to/keys.json` selects an explicit profile; see [oryn.keybindings.example.json](oryn.keybindings.example.json). Profiles are never loaded automatically from the opened project.
 
-Settings are explicit: `oryn --config /path/to/settings.json`; see [oryn.settings.example.json](oryn.settings.example.json). `--no-color` or `NO_COLOR` selects monochrome styling; `--ascii` replaces optional decorative Unicode glyphs. Chat labels use **Oryn** with a drawn star and **User** with a drawn point; the four-position Thinking animation is drawn with Skia shapes, independently of font glyph coverage in both modes. Filenames and source text retain Unicode. Text editing follows grapheme boundaries; complex-script shaping, bidirectional text and complete font fallback are not yet implemented. Glyph availability depends on installed fonts.
+Settings load automatically from `oryn.settings.json` in the opened project root; [oryn.settings.example.json](oryn.settings.example.json) lists supported properties. `--config` provides an explicit override. `--setup` or **Settings / Agents → Inference setup / models** opens hardware detection and profile selection; `--hardware` emits a local JSON report without downloads. Setup writes catalog-based profiles, and relative model/runner/executable paths resolve from the project root. **Agents → Select Fast / Select Core** switches configured profiles. **Project → Load older project chat** pages archives; **Project → Toggle selected source context** attaches a bounded, identified preview excerpt to the next request only. See [the M1 guide](docs/m1-llama-cpp-integration.md) for installation targets, memory-estimate limitations, persistence/recovery and context budgeting. Native execution of new Windows/macOS installer targets remains unverified.
 
-Hidden files are excluded by default. Each directory displays at most 1,000 entries and previews read at most 65,536 characters; truncation/errors are reported. Descendant symlinks are visible but not followed. Access stays within the project root. Composer input is bounded to 65,536 UTF-16 code units. Workspace state and conversations remain session-only.
+`--no-color` or `NO_COLOR` selects monochrome styling; `--ascii` replaces optional decorative Unicode glyphs. Chat labels use **Oryn** with a drawn star and **User** with a drawn point; the Thinking animation is drawn independently of font glyph coverage. Filenames and source text retain Unicode. Text editing follows grapheme boundaries; complex-script shaping, bidirectional text and complete font fallback are not yet implemented.
+
+Hidden files are excluded by default. Each directory displays at most 1,000 entries and previews read at most 65,536 characters; truncation/errors are reported. Descendant symlinks are visible but not followed. Access stays within the project root. Composer input is bounded to 65,536 UTF-16 code units. Workspace layout and graph state remain session-only; global chat identity persists under ignored `.oryn/`, with journal/archives in the configured local data root (default `.local/oryn/projects`).
 
 ## Appearance and explorer search
 
@@ -177,7 +199,7 @@ For Linux/X11, the additional platform test sends events to its own X11 window b
 SDL_VIDEODRIVER=x11 dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --x11-keyboard
 ```
 
-Current validation: build with zero warnings/errors, 132 App tests, CLI/domain smoke and both software/dummy and native Linux SDL smoke passed on Debian 13 x64. Captures were visually inspected. Windows/macOS, high-density hardware and native installer execution for the migrated frontend remain unverified. See [M0 verification](docs/m0-verification.md). Set `ORYN_DEBUG=1` for exception traces.
+Historical M0 validation: 132 App tests, CLI/domain smoke and both software/dummy and native Linux SDL smoke passed on Debian 13 x64. The M1 solution and updated test projects compile with zero warnings/errors, but the M1 test/benchmark execution is reserved for the user and has not been reported as passed. Captures were visually inspected. Windows/macOS, high-density hardware and native installer execution for the migrated frontend remain unverified. See [M0 verification](docs/m0-verification.md). Set `ORYN_DEBUG=1` for exception traces.
 
 The old Python PTY scripts and `Oryn.Tui.Prototype` sources describe the historical terminal prototype. They are excluded from the current solution/CLI and are not tests of the SDL frontend.
 

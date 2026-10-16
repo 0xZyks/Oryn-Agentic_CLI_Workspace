@@ -29,7 +29,7 @@ public sealed partial class WorkspacePainter
     private bool DefaultTheme => _ui.DisplayAppearance.ThemeColor == "#090F16";
     private int _pickerDrag;
     private SKRect _pickerBounds;
-    public void PointerUp() => _pickerDrag = 0;
+    public void PointerUp() { _pickerDrag = 0; _ui.CurrentChat.Selection.End(); }
     private void Pick(float x, float y)
     {
         if (_ui.Overlay != WorkspaceOverlay.Appearance) { _pickerDrag = 0; return; }

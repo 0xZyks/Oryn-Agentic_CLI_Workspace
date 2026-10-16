@@ -1,0 +1,17 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande : bilan du travail restant sur M1 après consignation de la recherche HIE.
+
+Observations actuelles : chat local confirmé fonctionnel par l’utilisateur ; provider SSE, annulation, configuration projet et stockage JSON global présents. Un seul chemin de modèle est configurable, sans registre Fast/Core, changement à chaud ou métriques de génération. ChatContext.Empty est toujours transmis, donc aucun contexte du dépôt n’est récupéré automatiquement. Les tests ChatPreviewTests attendent encore des réponses Hello World de la démo.
+
+Travail recommandé pour clôturer la base M1 : fiabiliser cycle de vie serveur (annulation au démarrage, port déjà utilisé, délais et fermeture), limiter les générations et la concurrence, borner le contexte/historique et la sortie, sécuriser la reprise de l’historique interrompu/corrompu sans perte silencieuse, vérifier configuration et reprise après annulation. Clarifier les états sans modèle et core-only : core-only signifie un modèle principal, pas aucun modèle. Donner au besoin un contexte explicite borné pour les questions projet, sans avancer tout le RAG M6.
+
+Suite multi-model inscrite sous M1 : profils Qwen3-8B Fast et GPT-OSS Core, paramètres/contextes par modèle, choix manuel, basculement avec un seul gros modèle résident, états visibles, file bornée et mesures par modèle (chargement, premier contenu visible, tokens, débit, durée, mémoire observée). Router appris et HIE restent facultatifs et ultérieurs.
+
+Validation restant à réaliser : build CLI reproductible, actualisation des anciennes attentes de démo, smoke bout en bout streaming/annulation/renvoi/redémarrage/historique/sans modèle/backend absent et, ensuite, basculement de profils. Le dernier échec CLI est historique : aucun build relancé pendant ce bilan. Support multiplateforme du backend Python/CUDA non établi.
+
+Vérifications exécutées : relecture critères M1 et tranche multi-model, dernier log, code provider/runtime/settings/controller/chat/store et tests concernés. Aucun test/build/benchmark exécuté ; aucun code modifié pour cette demande.
+
+Fichiers concernés : uniquement ce log. Aucun commit associé ni push.
+
+Prochaine étape proposée : stabilisation/validation du chat existant, puis profils et basculement Fast/Core avec observabilité. HIE ne doit pas élargir cette tranche.

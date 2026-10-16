@@ -1,0 +1,77 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; horodatage local : 2026-10-16T03:41:45.397802+02:00.
+
+DEMANDE ET PRIORITE DE LA PROCHAINE SESSION
+L'utilisateur arrête pour ce soir. Il demande de reprendre par la batterie complète de tests M1 et les benchmarks, avec les chemins des fichiers à lancer pour tester les modèles. Ne pas commencer M2, le RAG complet ou le HIE avant le bilan de cette validation. Les exécutions étaient réservées à l'utilisateur : préparer/accompagner son exécution et consigner les résultats réels, sans présenter une suite compilée comme exécutée. Aucun test ni benchmark lancé pendant cette passation.
+
+OBSERVATIONS ACTUELLES
+- M1 dispose du backend llama.cpp possédé par Oryn, streaming/annulation, profils Fast/Core, configuration projet, setup matériel, historique journal/gzip et contexte borné.
+- L'utilisateur a confirmé que le sélecteur fonctionne et que GPT-OSS démarre.
+- UI récente : messages pleine largeur, séparateurs utilisateur, icône de copie sous chaque message, sélection de texte ; rendu Markdown natif. Ctrl+C sur une sélection copie le texte affiché ; l'icône copie le Markdown source complet.
+- La commande oryn installée peut viser une ancienne installation distincte du checkout. Pour vérifier ce code, utiliser dotnet run --project src/Oryn.Cli --no-build -- <workspace>.
+- Configuration de référence : oryn.settings.json ; GPT-OSS core, contexte 4096, CpuMoeLayers=2, FlashAttention=on. Ne pas perdre ce réglage mémoire ; l'ancien tout-GPU/Flash désactivé provoquait un OOM sur la RTX 3060 12 Go.
+- Beaucoup de modifications et fichiers non suivis préexistent ; les préserver. Aucun commit/push créé.
+
+VALIDATIONS HISTORIQUES RECENTES (PAS DES EXECUTIONS DE CETTE SESSION)
+- Dernière implémentation Markdown : dotnet build Oryn.slnx --no-restore réussi, zéro avertissement/erreur ; git diff --check réussi, selon le log précédent 2026_10_16__03_33_08_M1_markdown_chat_natif.txt.
+- Captures hors fenêtre générées et inspectées, notamment artifacts/m1/markdown-ui-preview. Ce rendu seul ne valide ni événements SDL réels ni presse-papiers.
+- Les nouvelles suites automatisées et smoke SDL sont préparées/compilées, mais pas encore exécutées. Les anciens benchmarks hors Oryn existent ; ils ne prouvent pas les performances du M1 intégré.
+
+ORDRE DE REPRISE : VALIDATION COMPLETE M1
+Toutes les commandes ci-dessous partent de /home/zyks/Documents/Lab/Oryn_CLI. Utiliser un nouveau nom de dossier par campagne ; ne pas écraser les artefacts historiques. Compiler de nouveau si le code a changé.
+
+1. Build et régressions de l'application
+   dotnet build Oryn.slnx --no-restore
+   dotnet test tests/Oryn.App.Tests --no-build --no-restore
+   dotnet run --project tests/Oryn.Smoke --no-build --no-restore
+   dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- artifacts/m1/ui-validation-next
+   Projets : tests/Oryn.App.Tests/Oryn.App.Tests.csproj ; tests/Oryn.Smoke/Oryn.Smoke.csproj ; tests/Oryn.Ui.Smoke/Oryn.Ui.Smoke.csproj.
+   Régressions ciblées : tests/Oryn.App.Tests/InferenceM1Tests.cs, ChatSelectionTests.cs, ChatMarkdownTests.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs.
+   Le smoke UI ouvre une vraie fenêtre et emploie un provider de test ; il ne remplace pas les scénarios avec un vrai modèle. Le build peut demander une exécution hors sandbox : respecter les permissions, ne pas contourner un refus.
+
+2. Intégration manuelle dans Oryn, avec espaces de travail jetables
+   Protocole de référence : docs/m1-completion-and-validation.md, section 5, scénarios I01 à I11 ; guide technique : docs/m1-llama-cpp-integration.md.
+   Vérifier configuration/découverte et override ; annulation pendant chargement et génération, absence de tokens tardifs ; fermeture et arrêt des seuls processus possédés ; reprise après redémarrage et interruption ; historique corrompu préservé ; absence de modèle/backend et port occupé ; dépassement de contexte explicite ; changements Fast/Core ; compression/sealing et reprise ; setup matériel/refus de téléchargement.
+   Vérifier aussi UI réelle : Markdown pendant le streaming, sélection dans les deux sens et entre messages, Ctrl+C et icône, brouillon conservé, défilement, petite fenêtre, resize/scaling, chat par élément et clavier/souris.
+   Le workflow général export/import n'est pas implémenté : marquer cette partie d'I10 non disponible. Ne pas marquer un test indisponible ou non lancé comme réussi.
+
+3. Batterie de qualité complète DANS ORYN, à répéter pour GPT-OSS et Qwen3-8B si installés
+   Script : scripts/benchmarks/m1.py ; cas et réponses attendues : benchmarks/m1/cases.json.
+   Exemple pour le profil actuellement sélectionné dans oryn.settings.json :
+   python3 scripts/benchmarks/m1.py prepare --config oryn.settings.json --output artifacts/m1/manual-next-gptoss --label gptoss20b
+   dotnet run --project src/Oryn.Cli --no-build -- artifacts/m1/manual-next-gptoss/workspaces/C01
+   Pour chacun des 12 cas C01 à l'ensemble des identifiants exportés : ouvrir son workspace isolé, coller prompts/<ID>.txt dans le chat, enregistrer uniquement la réponse dans answers/<ID>.txt. Ne pas injecter les oracles dans le contexte. Ne pas réutiliser un historique déjà alimenté pour déclarer un départ sans contexte.
+   Remplir measurements.csv avec les observations réelles ; valeurs inconnues laissées vides.
+   python3 scripts/benchmarks/m1.py grade --run artifacts/m1/manual-next-gptoss
+   Préparer une seconde campagne avec une configuration sélectionnant réellement Qwen3-8B et un autre dossier. --label est une étiquette, pas un changement ni une preuve du modèle chargé ; vérifier le statut de chargement et le fichier GGUF. La préparation et la notation n'appellent aucun LLM : les réponses passent par Oryn.
+   Cette suite publique de développement contient 12 problèmes fermés vérifiables (C#, texte, raisonnement, ambiguïtés, calcul) ; elle ne certifie pas à elle seule la programmation agentique générale.
+
+4. Benchmarks du système intégré
+   Protocole : docs/m1-completion-and-validation.md, section 6 ; tableau manuel measurements.csv et rapport de la campagne.
+   Relever pour chaque profil/condition : modèle réel et hash/quantification, backend/version/arguments, révision et état dirty, matériel/OS, contexte/sortie, sampling/raisonnement, charge de fond ; chargement et changement de modèle, délai avant première réponse VISIBLE, durée totale, annulation, tokens si fournis, RAM/VRAM observées, taille avant/après compression et temps de réouverture.
+   Distinguer froid/chaud et modèle déjà prêt/démarrage inclus ; répéter les conditions, conserver erreurs/échecs/outliers. Le débit des tokens de raisonnement n'est pas celui du texte visible. Les métriques manuelles sont approximatives ; la télémétrie automatique complète n'est pas implémentée. Ne pas inventer des ressources inconnues ni un p95 avec trop peu d'échantillons.
+   Comparer backend seul et Oryn sur des tâches/réglages comparables. Les campagnes historiques ci-dessous ne remplacent pas cette mesure intégrée.
+
+CHEMINS DES TESTS/BENCHMARKS DE MODELES HORS ORYN
+Ces scripts sont des PoC Linux/NVIDIA historiques, pas des commandes de tests internes à l'UI. Lire leurs options et le protocole avant exécution, utiliser des dossiers neufs, et fermer proprement Oryn avant de démarrer un autre gros modèle sur le même GPU/port 18080.
+- scripts/inference/manifest.json : modèles/candidats, versions et profils historiques ; fichiers GGUF locaux sous .local/inference/models/.
+- scripts/inference/smoke.py : chargement, streaming, déconnexion/annulation, erreurs, mémoire et contexte ; CLI : python3 scripts/inference/smoke.py --help. Protocoles/exemples : docs/m1-inference-poc.md et docs/m1-candidate-models.md.
+- scripts/inference/gptoss_probe.py : fit/latence/débit et annulation pour GPT-OSS, Qwen3-Coder-30B et Devstral. Exemple GPT-OSS avec offload expert :
+  python3 scripts/inference/gptoss_probe.py --model gptoss20b-mxfp4 --context 4096 --cpu-moe 2 --throughput-repeats 3 --output artifacts/m1/backend-next-gptoss.json
+  Ce probe utilise son protocole historique de raisonnement ; ce n'est pas automatiquement le profil interactif Oryn. Lire docs/m1-gptoss-evaluation.md et docs/m1-large-coder-evaluation.md avant de comparer.
+- scripts/inference/coder_bench.py : qualité code/diagnostic/architecture, multi-seeds, une réparation vérifiée ; scripts/inference/coder_cases.py et coder_english.py : tâches ; scripts/inference/coder_verify.py : compilation/exécution et vérification (module utilisé par coder_bench, pas un lanceur autonome).
+  python3 scripts/inference/coder_bench.py --self-test --output artifacts/m1/coder-next-gptoss
+  python3 scripts/inference/coder_bench.py --model gptoss20b-mxfp4 --model-sampling --context 8192 --cpu-moe 2 --reasoning on --reasoning-effort medium --reasoning-budget -1 --code-limit 6144 --json-limit 4096 --seeds 42 7 123 --output artifacts/m1/coder-next-gptoss
+  Cet exemple reproduit le protocole historique 8192/medium, distinct du profil chat 4096/low. Valider l'enveloppe mémoire avant la campagne. Pour un autre modèle, reprendre ses réglages mesurés, pas les réglages GPT-OSS par défaut. Protocoles : docs/m1-coder-solo-evaluation.md, docs/m1-gptoss-evaluation.md, docs/m1-large-coder-evaluation.md. Ces vérifications peuvent compiler/exécuter du code généré ; conserver l'isolation prévue et vérifier Bubblewrap/prérequis au préalable.
+- scripts/inference/evaluate.py et scripts/inference/check_code.py : comparaison générale/rôles/chaîne planner-coder et vérification associée ; voir docs/m1-candidate-models.md. Ne pas les confondre avec le benchmark intégré Oryn.
+- scripts/inference/agent_probe.py : prototype d'agent outillé sur quelques tâches fermées ; ce n'est pas encore un agent intégré Oryn. Lire --help et le protocole grandes capacités avant lancement.
+- scripts/inference/coder_regrade.py et coder_counterexamples.py : réévaluation de campagnes historiques et contre-exemples ; ne pas mélanger versions d'oracles/protocoles.
+- scripts/inference/setup.py : installation/vérification des assets (ce n'est pas un benchmark ; ne pas télécharger inutilement). scripts/inference/run.py : lancement seul du backend.
+- Synthèse des anciens résultats et limites : docs/m1-model-recap.md.
+
+TRAVAIL PREVU APRES LES EXECUTIONS
+Collecter rapports et artefacts, distinguer tests réussis/échoués/non exécutés/non disponibles, corriger les défauts démontrés, relancer les vérifications affectées puis produire un bilan M1 qualité/performance. Ne pas déclarer une compatibilité Windows/macOS sur la seule validation Linux. RAG complet, résumés, export/import et HIE restent des travaux ultérieurs ; pas de nouveau chantier ce soir.
+
+VALIDATIONS DE CETTE PASSATION
+Lecture des consignes/vision, du dernier log M1, du protocole M1 et des scripts/projets pour vérifier les chemins/options documentés. Création de ce log uniquement. Aucun build, test, fenêtre, modèle, probe, téléchargement ou benchmark exécuté ; aucun code applicatif modifié.
+Commit associé : aucun.

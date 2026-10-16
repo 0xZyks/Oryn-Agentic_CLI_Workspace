@@ -1,0 +1,46 @@
+Palier : M1 — fuseau Europe/Paris (CEST, UTC+02:00)
+
+Demande
+Évaluer GPT-OSS localement, puis chercher une solution probante pour Qwen3-Coder-30B ou Devstral. Comparer l’inférence seule à une boucle locale agent avec outils.
+
+État actuel et résultat
+- Machine : RTX 3060 12 Gio, Ryzen 5 5500, 16 Gio RAM ; llama.cpp b11658 CUDA 12.8. Le modèle et le backend restent dans .local/ ignoré. Aucun changement n’a été apporté au runtime graphique Oryn.
+- GPT-OSS-20B MXFP4 : empreinte mémoire compatible en pratique au contexte mesuré. Le meilleur profil testé est contexte 8192, deux couches d’experts CPU, F16 KV. Banc solo sur 13 tâches, trois graines : 10/13, 9/13, 8/13 au premier jet ; après réparation 10/13, 10/13, 9/13. Vue sans les deux descriptions ambiguës : 9/11 après réparation sur les trois graines. Médiane de débit 60.16 tokens/s, mais médiane avant le premier contenu visible 15.92 s avec raisonnement.
+- GPT-OSS outil natif : 3/4 fixtures réussies (Merge, événements, asynchronisme) ; UTF-8 utilise le plafond de 4096 tokens sans appeler un outil. Durée 183.19 s, arrêt serveur exit 0, maximum GPU échantillonné 11337 MiB. Une reprise ciblée UTF-8 en effort low évite la troncature et fait deux appels de test, mais échoue encore sur splits/CRLF et sur l’exception UTF-8 invalide/incomplète ; durée 85.79 s.
+- Qwen3-Coder-30B-A3B Q4_K_M : configuration hybride mesurée viable en mémoire. Banc solo, trois graines : 7/13, 7/13, 6/13 au premier jet ; 7/13 après réparation dans chaque graine. Vue sans deux ambiguïtés : 6/11, 6/11, 5/11. Agent borné : 2/4 fixtures, Merge et événements passent ; UTF-8 et asynchronisme échouent. Durée de la course agent complète 154.59 s.
+- Devstral Small 2 24B Q4_K_M : profil de 28/41 couches GPU et profil 16 blocs FFN CPU avec KV Q8 chargent tous les deux, retrouvent une clé depuis 6122 tokens, diffusent, s’annulent et s’arrêtent proprement. Le débit reste environ 5.8–6.1 tokens/s et la première réponse au long contexte prend environ 31.6 s. Le second profil baisse l’occupation GPU échantillonnée d’environ 0.8 Gio sans accélérer ; placement FFN et précision KV changent simultanément.
+- Devstral solo (une graine) : 5/13 initial et après une réparation ; aucune des six tâches d’implémentation ne passe. Vue 5/11 hors descriptions ambiguës. L’agent natif réussit Merge, UTF-8 et asynchronisme ; les événements échouent après trois vérifications et huit tours. Durée agent 1041.18 s (17.35 min), exit 0.
+- Les runs natifs utilisent des fichiers fixture isolés, read_file/write_file/run_tests bornés, exemples publics, tests indépendants exécutables, 8 tours maximum et arrêt contrôlé par l’hôte au premier succès. Ce n’est ni un benchmark général d’agent de dépôt ni l’agent de production Oryn. Les scores agent ne se combinent pas avec les scores solo, car contrats clarifiés, code initial cassé et exemples supplémentaires changent le contexte.
+
+Fichiers concernés
+- docs/m1-large-coder-evaluation.md : performances, score solo Devstral et comparaison native-agent Qwen/Devstral.
+- docs/m1-gptoss-evaluation.md : choix GPT-OSS, test agent natif et sensibilité à l’effort de raisonnement.
+- scripts/inference/agent_probe.py : ajout des paramètres consignés --reasoning-effort et --max-tokens, avec plafond borné 256–16384.
+- Rapports bruts ignorés sous artifacts/m1/ : devstral-baseline-valid.json, devstral-ffn-q8.json, devstral/results.json, devstral-agent/results.json, gptoss20b-agent/results.json, gptoss20b-agent-low-utf8/results.json.
+
+Décisions et recommandations
+- Conserver GPT-OSS-20B comme meilleur candidat local mesuré pour le rôle principal ; lui adjoindre un contrôleur à outils borné et tests déterministes à prototyper. Il n’est pas déclaré équivalent à Codex/Claude Code ni accepté comme autorité de production.
+- Garder Devstral comme preuve qu’un agent outillé récupère plusieurs défauts du solo, mais ne pas le choisir comme modèle principal sur cette machine : ~6 tokens/s et 17 minutes pour les quatre fixtures.
+- Qwen3-Coder-30B reste techniquement logeable, mais ses scores solo et agent ne justifient pas son coût mémoire/débit par rapport à GPT-OSS.
+- Le mode Q8 KV est seulement une configuration mesurée ; son éventuel effet qualité n’a pas été isolé.
+
+Vérifications exécutées
+- Tests d’oracle de référence déjà prouvés avant les bancs ; aucun code d’oracle ou score historique n’a été modifié.
+- Bancs solo C# compilés et exécutés dans l’isolation prévue ; tool-agent a lancé les vérifications indépendantes. Les serveurs de tous les rapports finaux sortent avec code 0.
+- python3 -m py_compile scripts/inference/agent_probe.py : réussi.
+- git diff --check sur les deux rapports et le script : réussi.
+- Aucun build de l’application graphique n’a été nécessaire ou prétendu.
+
+Limites et incidents
+- Deux cas du banc solo (merge et événements) ont des formulations ambiguës ; les vues principales les excluent, sans altérer les prompts, oracles ou rapports originaux.
+- Un premier démarrage Devstral a échoué lors de la lecture UTF-8 du log contenant des octets de vocabulaire ; aucun prompt n’a été envoyé. Le lecteur est devenu tolérant aux octets invalides et le profil de référence a été relancé avec succès.
+- Les extrêmes mémoire sont des échantillons après disponibilité, pas des pics garantis. Les compteurs swap globaux ne sont pas imputables au seul serveur.
+- GPT-OSS en effort low évite de consommer tout son plafond en raisonnement sur la fixture UTF-8, sans corriger la solution. Les résultats restent limités aux fixtures sélectionnées.
+
+État historique, distinct des mesures de ce prompt
+Les évaluations Qwen3-8B/14B, Qwen2.5-Coder-7B et GPT-OSS solo sont consignées dans les logs M1 antérieurs. Gemma 3 reste bloqué par l’accès au dépôt gated, sans contournement. Les résultats anciens sont conservés et n’ont pas été réécrits.
+
+Prochaine étape
+Décider si l’on implémente dans le jalon M1 le premier adaptateur llama.cpp + chat persistant/streaming/annulation, en prenant GPT-OSS comme profil de référence. Le contrôleur agent et l’application de changements au dépôt relèvent d’une tranche distincte ; commencer par outils à permissions bornées et preuves explicites. Ne pas lancer l’optimisation poids/kernel avant mesure d’un goulot réel.
+
+Commit associé : aucun ; HEAD reste 251b776.

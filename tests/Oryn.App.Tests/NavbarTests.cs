@@ -60,7 +60,7 @@ public sealed class NavbarTests
         using var ui = Create(); ui.OpenNavbarMenu(0);
         ui.Key(InputKey.Parse("Down"), 0); Assert.Equal(0, ui.OverlaySelection);
         Assert.Equal("File", ui.MenuTitle); Assert.Single(ui.MenuItems);
-        ui.OpenNavbarMenu(1); ui.Key(InputKey.Parse("Enter"), 1);
+        ui.OpenNavbarMenu(4); ui.Key(InputKey.Parse("Enter"), 1);
         Assert.Equal(WorkspaceOverlay.Menu, ui.Overlay); Assert.False(ui.State.QuitRequested);
         ui.OpenOverlay(WorkspaceOverlay.Menu); Assert.Equal(6, ui.MenuItems.Count);
         Assert.Equal("Workspace", ui.MenuTitle); ui.Key(InputKey.Parse("Enter"), 2);

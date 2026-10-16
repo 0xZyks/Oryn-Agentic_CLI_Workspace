@@ -1,0 +1,28 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande
+Ajouter le formatage Markdown au chat, en conservant la mise en page pleine largeur, la sélection de texte et la copie récemment intégrées.
+
+Résultat livré
+- Dépendance Markdig 1.3.2 pinnée (BSD-2-Clause), déjà présente dans le cache NuGet local. Parseur CommonMark/AST à positions sources précises, extensions tables, task lists et texte barré ; conversion en blocs/runs App sans dépendance Skia/SDL. Pas de parseur regex maison ni de webview.
+- Nouveau rendu Skia natif : titres, gras/italique/combiné, barré, code inline, blocs de code fenced/indentés avec fond et en-tête de langage, listes ordonnées/puces/imbriquées/tâches, citations, règles horizontales, libellés de liens soulignés et tableaux pipes. Colonnes égales avec reflow des cellules, passage en cellules empilées pour très petite largeur. Cases de tâches ASCII [x]/[ ] pour éviter de dépendre d’un glyphe de police. Les fences incomplètes restent lisibles pendant le streaming.
+- Sélection toujours ancrée aux UUID/positions sources. Hit testing mesuré sur les styles réellement affichés ; Ctrl+C copie le texte affiché sans marqueurs cachés ni destinations des liens, en décodant les entités. Les tables copient leurs cellules séparées par tabs ; listes imbriquées avec indentation. Le bouton de message conserve la copie du Markdown brut intégral. Aucun historique ni contenu envoyé au modèle n’est réécrit.
+- Pas d’exécution HTML/code ni de fetch d’images. HTML traité littéralement, images limitées à l’alt text, liens mis en forme sans ouverture automatique. Pas de moteur de coloration syntaxique, rendu de mathématiques ou diagrammes ajouté. Conversion bornée en profondeur, parsing au-dessus de 262144 caractères remplacé par texte brut. Les tokens transformés atomiques (p. ex. entités) restent associés à leur span source complet.
+- Cache de layout par texte/largeur, polices stylées mises en cache et libérées à la fermeture. État applicatif et sélection conservés hors SDL/Skia.
+
+Fichiers
+Nouveaux : src/Oryn.App/ChatMarkdown.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.Markdown.cs ; tests/Oryn.App.Tests/ChatMarkdownTests.cs ; docs/adr/0017-native-chat-markdown.md.
+Modifiés : src/Oryn.App/{Oryn.App.csproj,ChatTextSelection.cs,GraphicalWorkspaceController.cs} ; src/Oryn.Ui.Sdl/{WorkspacePainter.Chat.cs,WorkspacePainter.cs} ; tests/Oryn.Ui.Smoke/{ChatRenderingChecks.cs,ChatUiPreview.cs,Program.cs} ; README.md ; docs/m1-llama-cpp-integration.md ; les six lockfiles actifs pour Markdig direct/transitif.
+
+Validations réellement exécutées
+- Documentation primaire de Markdig tag 1.3.2 et XML/nuspec du package local consultés ; aucune donnée du projet/chat transmise.
+- Restauration .NET depuis /home/zyks/.nuget/packages uniquement, NuGetAudit désactivé pour cette restauration locale ; puis restauration de la cible linux-x64 de la CLI afin de préserver les sections RID des lockfiles existants. Pas de dépendance/modèle téléchargé. Diffs de lockfiles limités à l’ajout Markdig et de sa dépendance projet, anciennes sections Linux conservées.
+- dotnet build Oryn.slnx --no-restore hors sandbox : solution complète réussie, zéro avertissement/erreur ; git diff --check réussi.
+- Rendu SEUL exécuté via dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --markdown-preview artifacts/m1/markdown-ui-preview. Ce chemin n’exécute aucune suite de tests ni fenêtre SDL, provider ou historique réel.
+- Captures fictives inspectées : Markdown complet, partie basse/tableaux/code, compact, sélection, streaming avec fence non fermée ; variantes large/high-density/élément également générées. Projection de copie fictive exportée en markdown-visible.txt à côté du markdown-source.md pour revue. Captures sous artifacts ignoré.
+- Tests préparés et compilés mais NON exécutés selon préférence utilisateur : styles/spans, code littéral/fence ouverte, listes imbriquées/quotes/tables, échappements/entités/Unicode, distinction extrait affiché/source brute et brouillon préservé, plusieurs syntaxes partielles. Scénario UI préparé pour hit testing d’un texte gras/code inline avec copie de l’extrait puis du message brut.
+
+Limites et suite
+Aucun test automatisé, smoke interactif natif ou benchmark LLM lancé. Captures hors fenêtre ne prouvent pas les événements SDL/presse-papiers réels. Les blocs de code sont formatés mais pas colorés lexicalement ; liens non ouverts et images non téléchargées par ce renderer. Certaines transformations de Markdown se sélectionnent comme un token atomique. Redémarrer le build courant avec dotnet run --project src/Oryn.Cli --no-build --, puis vérifier un message Markdown avec sélection/copie et streaming ; suites à l’exécution de l’utilisateur.
+
+Commit associé : aucun. Pas de commit/push ; modifications préexistantes préservées.

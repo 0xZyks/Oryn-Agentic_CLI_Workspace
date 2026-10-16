@@ -1,0 +1,17 @@
+Palier : M1. Fuseau : Europe/Paris (CEST).
+
+Demande : erreur llama-server lors de l’utilisation du chat ; pouvoir sélectionner le texte ou copier un message.
+
+Observations actuelles : configuration locale Core GPT-OSS-20B MXFP4, contexte 4096, offload 99 couches. Aucun diagnostic d’erreur enregistré ne permet de déterminer la cause exacte signalée. Question asynchrone envoyée pour obtenir le texte exact ; pas de réponse reçue au moment de rédaction. GPU accessible via nvidia-smi hors sandbox : RTX 3060, 12288 MiB au total, 11213 MiB libres lors de la lecture. L’échec NVIDIA en sandbox était une restriction d’accès, pas une preuve de panne pilote. Le binaire local retourne --help avec succès et expose les options de raisonnement/cache utilisées ; cela ne valide pas le chargement du modèle.
+
+Résultat : bouton Copier à côté de chaque message non vide, global ou par élément, copie intégrale sans reformatage/avec Unicode et sauts de ligne. Bouton Copier erreur sous le diagnostic courant. Requête de copie indépendante du renderer dans le contrôleur ; SDL effectue la copie et rapporte succès/échec sans fermer l’application. Le brouillon est préservé. Sélection de sous-texte par glisser non implémentée. Sur un long message, remonter à son en-tête pour accéder au bouton.
+
+Backend : correction d’une course de diagnostic à la sortie rapide du processus : attente bornée de drainage stdout/stderr avant construction de l’erreur ; affichage des vingt dernières lignes bornées au lieu de cinq. Un timeout de drainage conserve le code de sortie. Clé API masquée avant troncature des lignes. La cause de l’erreur utilisateur reste à identifier ; ne pas annoncer le backend réparé sans son diagnostic.
+
+Fichiers : src/Oryn.App/{GraphicalWorkspaceController,LlamaCppRuntime}.cs ; src/Oryn.Ui.Sdl/{WorkspacePainter,SdlWorkspace}.cs ; tests/Oryn.App.Tests/InferenceM1Tests.cs ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs ; docs/m1-llama-cpp-integration.md.
+
+Vérifications : compilation complète de Oryn.slnx hors sandbox réussie, zéro avertissement/erreur ; git diff --check réussi. Vérifications préparées et compilées pour copie Unicode/non tronquée/préservation brouillon, diagnostic de processus quittant immédiatement avec clé masquée, hit regions des boutons. Tests NON exécutés, selon préférence utilisateur ; aucun lancement de modèle, probe, inférence ou benchmark effectué. Pas de validation visuelle/native du presse-papiers dans cette session. Une première compilation a révélé un retour SDL_GetError nullable, corrigé avant le build réussi.
+
+Prochaine étape : relancer le build actuel via dotnet run --project src/Oryn.Cli --no-build -- ; reproduire l’erreur et utiliser Copier erreur pour communiquer son contenu. Corriger la cause selon ce diagnostic, puis utilisateur exécute tests et smoke. Le nouveau code ne modifie pas la configuration ou les historiques existants.
+
+Commit associé : aucun ; pas de commit ni push. Changements préexistants préservés.

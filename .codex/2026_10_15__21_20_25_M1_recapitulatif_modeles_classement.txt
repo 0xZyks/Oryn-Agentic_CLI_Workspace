@@ -1,0 +1,31 @@
+Palier : M1 — fuseau Europe/Paris (CEST, UTC+02:00)
+
+Demande
+Fournir une synthèse accessible des modèles évalués, expliquer le débit tokens/s, donner un classement et rappeler le rôle des outils/du contrôleur dans la qualité finale.
+
+Résultat
+- Création de docs/m1-model-recap.md en français, avec une explication du token, les résultats comparables des bancs C#, un tableau des modèles généralistes, le classement pratique, les mesures de boucle agent et les modèles qui restent non testés.
+- README.md référence le récapitulatif M1.
+- Le récapitulatif distingue temps de lecture du contexte, vitesse de génération et qualité des sorties ; les chiffres de benchmarks sont présentés avec les écarts de protocole et les incertitudes.
+- Classement proposé pour le développement local : GPT-OSS-20B avec outils; Qwen3-Coder-30B; Qwen2.5-Coder-7B; Devstral Small 2. Les modèles Qwen3-8B/14B sont rapportés comme références de chat/vitesse sans score de code comparable. Gemma 3 12B et DeepSeek-R1-Distill-Qwen-7B n’ont pas été testés ; Gemma reste bloqué par le dépôt gated.
+- Le classement pondère principalement la correction C# vérifiée, la capacité à corriger avec outils et la vitesse sur la machine de mesure. Ce n’est pas un classement universel.
+
+Fichiers concernés
+- docs/m1-model-recap.md (nouveau)
+- README.md (lien vers le récapitulatif)
+- Les données source restent dans docs/m1-inference-poc.md, docs/m1-candidate-models.md, docs/m1-coder-solo-evaluation.md, docs/m1-gptoss-evaluation.md, docs/m1-large-coder-evaluation.md et les rapports bruts ignorés artifacts/m1/.
+
+Vérifications exécutées
+- AGENTS.md et README_ORYN.md lus ; dernier journal de passation M1 consulté.
+- Présence vérifiée des cinq rapports cibles et absence de liens locaux cassés vers ces fichiers.
+- git diff --check sur README.md et le nouveau récapitulatif : réussi.
+- Aucun test automatisé ou build exécuté, car le changement est documentaire.
+- HEAD : 251b776. Aucun commit créé.
+
+Limites
+- Les protocoles, quantifications et stratégies de raisonnement varient entre certains modèles ; les scores permettent de comparer les configurations mesurées, pas d’isoler chaque architecture.
+- Les tâches sont synthétiques et peu nombreuses. L’agent outillé est testé sur quatre fixtures isolées, pas sur un dépôt complet ni dans le runtime Oryn.
+- Les modèles n’ayant pas été exécutés ne sont pas classés.
+
+Prochaine étape
+Poursuivre M1 avec un unique modèle principal (GPT-OSS comme référence mesurée), streaming/annulation/persistance, puis introduire les outils et la validation déterministe en tranche séparée. Mesurer davantage sur des changements représentatifs du dépôt avant d’accepter un agent de code.

@@ -784,6 +784,134 @@ Custom native rendering, inference kernels, advanced scheduling, full semantic g
 
 **Done when:** ask a question about an opened project; see streamed response; cancel safely; restart and recover conversation. No API key required.
 
+#### M1 completion plan — persistence, context, setup and benchmarks [PROPOSED]
+
+The following work items refine M1 and its multi-model follow-up; they are not implemented merely by being listed here. See [the M1 data/context/setup plan and user-run validation protocol](docs/m1-completion-and-validation.md).
+
+**Implementation snapshot (2026-10-16):** lifecycle ownership/cancellation, ID-based journal/gzip storage and legacy migration, bounded model context, first-run hardware suggestions, consented pinned installation and manual profile selection are now implemented in the working tree. The solution and prepared tests compile; functional tests, real setup/model probes and benchmarks remain to be executed by the user. See [the implemented M1 guide](docs/m1-llama-cpp-integration.md). Retrieval indexing, semantic summaries and HIE remain future work.
+
+1. **Backend lifecycle:** reliable startup, cancellation, deadlines, bounded concurrency, port ownership and shutdown without orphaned processes.
+2. **Project history:** investigate stable project UUIDs and a configurable local data repository, an active recoverable journal and immutable sealed segments compressed without loss. Load recent history lazily; retain originals as canonical sources and derive a project-scoped retrieval index later. Compression is not semantic summarization and does not reduce the model's token budget. Preserve chats and human decisions across migration, interruption, corruption and export/import.
+3. **Context budgets:** count input with the selected model's tokenizer where available, reserve output/template/system space, and select bounded recent turns plus explicit source excerpts. Archive older turns without deleting them; later retrieval/summaries must retain references and distinguish generated content from original messages.
+4. **First-run setup and model profiles:** inspect available RAM, supported backend/devices and VRAM, explain candidate profile/download sizes, then suggest rather than force an installation. Validate a small candidate with a user-initiated local probe before promoting it. Support smaller CPU-oriented profiles, explicit overrides, offline/no-model operation and single-core-model operation; raw hardware capacity alone does not predict useful latency.
+5. **User-run test battery:** prepare versioned programming, structured-text, logic and ambiguity tasks with objective expected outputs, plus lifecycle/persistence scenarios. The user executes tests; record missing, failed, partial and passed cases separately. Closed-answer checks do not establish general code-generation or architecture ability.
+6. **Integration acceptance:** update obsolete demo expectations and verify the complete chat/configuration/restart/cancellation path, including explicit distinctions between no-model mode and core-only (one primary model).
+7. **End-to-end benchmarking:** measure the actual Oryn path as well as standalone inference, distinguish cold/warm and Fast/Core runs, include failures/loading/switching/repair costs, and report correctness, time to first visible output, total latency, tokens and observed resources. Treat unavailable instrumentation as unavailable, never as a zero or a measured peak. Keep this baseline separate from future HIE A/B/C experiments.
+
+#### Follow-up — Multi-model integration [PROPOSED]
+
+**Next inference priority:** preserve the working local chat while introducing model profiles and explicit user-selected **Fast / Core** modes. This is planned infrastructure, not a claim that automatic multi-model orchestration already works.
+
+- Configure model location, backend/template compatibility, sampling, reasoning limits and context budgets per profile. GPT-OSS and Qwen3-8B are current measured candidates, not universal requirements.
+- Support selection, lazy loading, reuse, unloading and visible switching states. Start with one large model resident at a time, a bounded inference queue and reliable cancellation/shutdown; preserve core-only operation.
+- Track loading/switching time, input/output token usage, first visible response, generation rate and end-to-end duration per model. Report observed RAM/VRAM when available; distinguish measurements from estimates and account for weights, KV cache and context budget.
+- Keep logical agent roles independent from physical model selection. A learned tiny-model router is optional and must demonstrate value over manual selection or deterministic rules, including its loading and inference overhead.
+
+**Verification target:** select Fast or Core, observe the selected model and loading state, generate and cancel a response, switch without leaving an orphaned backend or assuming simultaneous residency, and compare recorded metrics. Instrument these paths before automating model choice; a sophisticated scheduler is not a prerequisite for useful tools.
+
+#### Research follow-up — Oryn Hybrid Intelligence Engine (HIE) [PROPOSED] [LATER]
+
+**Status and placement:** architectural research to explore after the multi-model integration above. HIE does not replace that foundation, authorize a rewrite, introduce a new required milestone, or gate M2–M7 and the v0.1 release. This section records a hypothesis and evaluation plan, not a proven performance improvement or an instruction to implement all proposed engines.
+
+##### Vision and hypothesis
+
+Explore a modular hybrid intelligence runtime combining general-purpose LLMs, Fast/Core model profiles, deterministic tools, retrieval, logical specialized agents and, only when justified, narrow learned subsystems or domain adapters. The objective is **higher validated task quality under measured resource and latency constraints**, rather than larger models, more components or guaranteed lower latency on every request.
+
+The candidate flow is:
+
+```text
+Request + project context
+          |
+          v
+Candidate problem representation (when useful)
+          |
+          v
+Routing + planning, constrained by independent policy
+          |
+          +---- Deterministic tools / retrieval
+          +---- Fast / Core LLM and logical specialized agents
+          +---- Optional narrow learned subsystem
+          |
+          v
+Execution + validation
+          |
+          +---- Result with evidence
+          +---- Clarification / bounded correction / replanning
+```
+
+Paths may be combined. Probabilistic inference remains useful for language interpretation, synthesis and proposing solutions; formalizable operations should use tools that can supply verifiable evidence. Decomposition alone does not establish the capabilities of a larger model.
+
+##### Candidate Problem Intermediate Representation (Problem IR)
+
+Investigate a revisable representation of user intent, inputs/outputs, relevant entities/symbols, constraints, assumptions, missing information, ambiguities, candidate operations, required capabilities and validation criteria. Start with narrow executable tasks rather than a universal problem ontology. Exploratory conversations need not pass through a detailed IR.
+
+For “Create a function that returns elements sharing the same ID in a list”, a candidate interpretation might be:
+
+```json
+{
+  "intent": "generate_function",
+  "operation": "duplicate_detection",
+  "key": "ID",
+  "input": "collection<T>",
+  "output": null,
+  "language": null,
+  "ambiguities": [
+    "duplicate_groups_or_flat_results",
+    "all_matching_elements_or_only_extra_occurrences"
+  ],
+  "constraints": { "preserve_order": null },
+  "validation_criteria": []
+}
+```
+
+This is a hypothesis about the request. Schema validity does not establish semantic correctness. Keep explicit user requirements separate from generated assumptions, attach source references where applicable, and retain unresolved alternatives. Contradictory evidence or failed validation may require clarification or replanning. A deterministic engine can execute the wrong interpretation correctly; do not silently promote an inferred interpretation to a user-approved decision.
+
+Problem IR and execution traces must reference the **shared project knowledge model** and stable UUIDs where available. They must not become a competing opaque memory or be confused with the language-neutral code IR in section 7.1.
+
+##### Candidate engines and responsibility boundaries
+
+- **Deterministic engines:** parser/compiler/static-analysis integration, symbol/type resolution, explicit constraint checks, algorithm catalogs, narrowly scoped templates and test execution. Prefer these when the task is sufficiently formalized; report unsupported or partial results.
+- **Specialized neural engines:** optional classification, candidate ranking, error categorization, semantic similarity or retrieval reranking. Confidence/risk estimates require calibration. Compare CPU and GPU execution including batching, transfer, residency and contention; GPU use does not imply lower latency.
+- **Specialized LLM agents:** initially configure roles such as Coder, Analyzer and Architect using existing models, instructions, contexts, tools, output contracts and evaluation suites. Several roles may share one model. Dedicated models or LoRA adapters remain optional experiments.
+
+Keep the following responsibilities logically distinct without requiring four services or new assemblies:
+
+| Responsibility | Purpose |
+|---|---|
+| Semantic router | Identify required capabilities and candidate execution paths; permit abstention or clarification. |
+| Policy engine | Enforce permissions, tool access, budgets and approval boundaries independently of model instructions. |
+| Execution planner | Build bounded plans, manage dependencies and handle fallbacks or replanning. |
+| Resource scheduler | Manage queueing, concurrency and model residency within measured memory/context budgets. |
+
+The scheduler must account for model weights, KV cache, context size, optional subsystem memory, transfer costs, GPU contention and switching overhead. Begin with simple bounded tasking; this proposal does not authorize custom inference kernels, a GPU allocator or a complex native scheduler.
+
+##### Experimental baselines and observability
+
+Compare three configurations using a fixed, versioned suite of straightforward, ambiguous and multi-domain programming tasks:
+
+| Configuration | Execution | Evaluation purpose |
+|---|---|---|
+| A — Standalone LLM | Request → GPT-OSS/reference model → response | Establish raw model quality, token use, latency and resource baseline. |
+| B — LLM with tools | Reference model + sourced retrieval/index + compiler/static analysis/tests → result with checks | Measure the benefit of context and deterministic tooling without a dedicated HIE planner. |
+| C — HIE prototype | Context + candidate Problem IR + router/planner/policy + selected engines + validation/replanning | Test whether explicit representation and routing improve on B. |
+
+For **B versus C**, match the available models, tools, context, hardware conditions, acceptance criteria and execution budgets as far as possible. Record differences rather than crediting all gains to orchestration. A and B intentionally differ in tool access; their scores are not interchangeable with standalone model benchmarks.
+
+Measure functional correctness, validation outcomes, total latency, time to first visible content, input/output tokens, number of LLM/tool calls, loading/switching overhead, observed memory peaks, CPU/GPU utilization, recovery rate and resource/time cost per successful task. Include failed attempts, repairs and clarification overhead. Distinguish reasoning tokens from visible output where supported, cold from warm runs, sampled maxima from true peaks, and raw inference from end-to-end Oryn performance. Report latency distributions and the limits of small evaluation suites.
+
+Routing can have several valid answers: evaluate task success and execution cost rather than assuming one model label is always correct. Keep evaluation tasks separate from examples used to tune routing, prompts or adapters. Compilation, test success and satisfaction of the user's actual intent are distinct checks; generated tests and repeated model agreement are not independent proof.
+
+##### Progressive research sequence
+
+1. **Preserve the operational LLM foundation.** Keep backend, streaming, cancellation, persistence and core-only behavior functional.
+2. **Complete the multi-model slice above with instrumentation.** Start with explicit selection; do not require automatic routing to proceed.
+3. **Introduce execution contracts and observability.** Record request/context references, authorized operations, budgets, outcomes and evidence. Start with a few typed contracts; reuse existing application tasking and knowledge storage.
+4. **Establish configuration B.** Add sourced retrieval and deterministic verification through the relevant language-analysis, tooling and retrieval milestones. Do not postpone useful tools until a complete multi-model scheduler exists.
+5. **Prototype a small configuration C.** Test revisable IR and capability routing on a few recurring categories; bound retries and preserve clarification and single-model fallbacks. Promote the approach only if it improves on B under stated budgets.
+6. **Consider learned specialization after collecting verified outcomes.** Specify a recurring task → configure a logical agent/tools/indexes → collect traces → independently verify/filter examples → optionally train/distill an adapter or narrow model → benchmark on held-out tasks → promote or reject a versioned update. Capable models may assist dataset/specification creation, but their outputs are not automatically ground truth. Updates must be reversible; never silently train production weights from unverified interactions.
+
+**Research acceptance:** retain additional components only when reproducible results demonstrate a meaningful benefit over simpler baselines. Longer explanations, more calls or a more elaborate architecture are not evidence of better engineering assistance. Narrow learned engines, automatic routing and fine-tuning remain research options, not new v0.1 obligations.
+
 ### M2 — Persistence + foundational graph
 
 **Build:** SQLite migrations; UUID entities/edges; project/concept nodes; statuses; manually create/edit/link nodes; graph list/viewport; simple navigation and progress summaries.
@@ -881,6 +1009,7 @@ Native interoperability checks are planned acceptance coverage, not tests alread
 - SDL/.NET bindings, SkiaSharp drawing backend, text input, display scaling and native packaging; the SDL + SkiaSharp frontend choice is decided.
 - Local inference: llama.cpp vs Ollama, packaging and streaming ergonomics.
 - Model lineup: Qwen3 0.6B / 4B / 8B candidates vs a single quantized core model; benchmark real tasks and memory.
+- HIE research after multi-model integration: compare a reference LLM, the same LLM with tools, and explicit problem representation/routing before adopting specialized learned engines or adapters; see the research follow-up under M1.
 - C# Roslyn-first integration versus a narrower multi-language syntax-only first pass.
 - SQLite schema, full-text indexing and when embeddings add enough value.
 - Native API details, cancellation, table-capacity negotiation, build/discovery and packaging; the language ownership and function-pointer direction are decided.

@@ -1,0 +1,15 @@
+Palier principal : M1 — Europe/Paris.
+
+Demande : éviter une configuration llama.cpp externe propre à une machine et charger les réglages depuis le projet pour faciliter le développement cross-platform.
+
+Résultat : Oryn découvre maintenant automatiquement `oryn.settings.json` à la racine du projet ouvert. `--config` garde la priorité comme surcharge explicite. Les chemins relatifs de modèle et runner restent résolus depuis la racine du projet. `--check` expose le chemin et la source de configuration. Documentation et ADR 0015 mises à jour.
+
+Fichiers concernés : src/Oryn.App/WorkspaceSettings.cs, src/Oryn.Cli/Program.cs, README.md, docs/m1-llama-cpp-integration.md, docs/adr/0015-project-local-settings-discovery.md.
+
+Décision : config à la racine et versionnable, poids/binaries locaux pouvant rester dans `.local/`; `.oryn/` conserve l’historique. La portabilité du fichier ne signifie pas que le runner Linux/CUDA actuel supporte déjà les autres OS.
+
+Validations exécutées : build Oryn.Ui.Sdl, réussi avec zéro avertissement/erreur ; `git diff --check`, réussi. Build CLI toujours en échec pendant la résolution MSBuild, sans diagnostic (code 1, zéro erreur affichée). Aucun test ni smoke de découverte de configuration exécuté.
+
+Prochaine étape : copier `oryn.settings.example.json` vers `oryn.settings.json` dans le projet et y renseigner le modèle existant avec un chemin relatif. Puis corriger le build CLI et valider la découverte automatique ainsi que l’override `--config`.
+
+Commit associé : aucun. Aucun commit ni push effectué.

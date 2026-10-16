@@ -1,0 +1,21 @@
+Palier : M1. Fuseau : Europe/Paris (CEST).
+
+Demande
+Fournir au modèle le nom technique du modèle actif afin qu’il puisse répondre « Je suis Oryn, propulsé par GPT-OSS-20B » plutôt que confondre son rôle d’assistant avec le moteur d’inférence.
+
+Résultat
+Le runtime transmet au provider le basename du GGUF effectivement lancé. Le provider ajoute au prompt système une identité lisible pour les fichiers connus du catalogue (GPT-OSS, Qwen, Coder, Gemma, Devstral), distincte du rôle Oryn. Cette identité actuelle est incluse dans le comptage du contexte et dans la requête de génération et prévaut sur les descriptions de modèles présents dans l’historique. L’alias API aléatoire n’est jamais utilisé comme nom de modèle. Le fichier lancé/chemin explicite a priorité sur le CatalogId ; un fichier inconnu ou renommé reste « famille non identifiée », sans inventer une architecture ni incorporer son nom non fiable comme instruction. Aucun changement des outils/capacités, config ou historiques.
+
+Fichiers
+src/Oryn.App/Inference.cs ; src/Oryn.App/LlamaCppRuntime.cs ; tests/Oryn.App.Tests/InferenceM1Tests.cs ; docs/m1-llama-cpp-integration.md.
+
+Vérifications exécutées
+Compilation complète dotnet build Oryn.slnx --no-restore hors sandbox : réussie, zéro avertissement/erreur. git diff --check : réussi. Trois cas préparés/compilés sur serveur HTTP simulé : identité GPT-OSS, Qwen après identité contraire dans l’historique, fichier custom inconnu ; vérification de la cohérence template/comptage/génération malgré alias aléatoire et CatalogId contradictoire. Tests NON exécutés selon préférence utilisateur. Aucun appel à un modèle, probe, benchmark, téléchargement ou redémarrage de l’application utilisateur.
+
+Limites
+Le nom est une métadonnée fournie par l’application à partir du fichier lancé, pas une attestation cryptographique de poids manuels ni une garantie que le LLM suivra toujours sa consigne. L’affichage du modèle chargé dans Oryn reste la référence. Les fichiers personnalisés renommés ne sont pas devinés. Le coût du contexte supplémentaire est inclus dans le budget existant.
+
+Suite
+Redémarrer le build courant puis demander « Tu utilises quel modèle ? ». Le nom s’adapte lors d’un changement de provider/modèle sans changer l’identité Oryn.
+
+Commit associé : aucun ; pas de commit/push. Modifications préexistantes conservées.

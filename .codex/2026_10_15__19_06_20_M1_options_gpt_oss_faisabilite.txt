@@ -1,0 +1,7 @@
+Palier : M1
+Date : 2026-10-15T19:06:20.787703+02:00 ; fuseau Europe/Paris.
+Demande : options après résultats faibles de Coder, faisabilité GPT-OSS-20B.
+Observations : relecture dernier log M1 et doc candidats, état Git préservé. Documentation officielle OpenAI consultée : https://developers.openai.com/cookbook/articles/gpt-oss/run-locally-ollama et run-locally-lmstudio ; cible confortable 16GB VRAM/mémoire unifiée, MXFP4 et offload CPU possible plus lent. Machine historique RTX3060 12GiB et RAM16GB séparées, pas mémoire unifiée. Aucune nouvelle mesure GPU ou génération ce tour.
+Conclusion : essai GPT-OSS20B plausible avec répartition GPU/CPU, pas garantie tout GPU ni débit/qualité. Commencer contexte4096/1slot puis8192, vérifier pression RAM/VRAM et swap, budget raisonnement suffisant et format natif Harmony. Réutiliser banc vérifiable puis petit essai outils si progrès. Candidat à privilégier parmi ceux discutés, pas capacité qualité acquise. Qwen3 14B tient déjà mais qualité non validée sur banc approfondi ; Gemma toujours accès bloqué ; modèles 24/30B plus contraignants, pas tests ni nouveaux téléchargements autorisés par simple question.
+Suite proposée : mesure matérielle GPTOSS20B et même banc, puis outils bornés. Cette discussion réouvre le candidat antérieurement différé sans lancer de téléchargement.
+Fichiers : ce log uniquement. Aucun commit associé, aucun commit/push créé. Validations historiques distinctes : mesures 14B et évaluation Coder consignées dans logs précédents ; aucun nouveau test exécuté.

@@ -1,0 +1,17 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande : avis architectural sur la proposition utilisateur Oryn Hybrid Intelligence Engine (HIE). Le document reçu se termine au début de sa Phase 2. Demande de revue uniquement ; aucune implémentation HIE autorisée ou entreprise.
+
+Observations actuelles : l’utilisateur confirme qu’une conversation fonctionne avec le modèle dans la fenêtre. Le code inspecté expose un provider llama.cpp en streaming et un unique chemin de modèle configuré ; le registre de profils, le basculement Fast/Core et les métriques par modèle ne sont pas encore implémentés. Le README distingue déjà rôles logiques, modèles physiques, politiques/outils/priorités et mode core-only.
+
+Avis et propositions, non décisions approuvées : direction hybride cohérente, à conserver comme hypothèse expérimentale. Préserver la comparaison A/B/C. Instrumenter tôt les appels et budgets ; ajouter ensuite profils et sélection manuelle avec un seul gros modèle résident ; établir une boucle outils/retrieval/validation mesurée (B), puis évaluer les contrats IR étroits et le routage explicite (C). Ne pas conditionner les outils à un ordonnanceur multimodèle complet. Réseaux spécialisés, routage appris et fine-tuning restent différés jusqu’à l’existence de données vérifiées et d’un gain démontré.
+
+Points de vigilance : IR faillible avec ambiguïtés, sources et décisions utilisateur distinctes ; validation syntaxique différente de vérification fonctionnelle et de pertinence de l’intention ; tests indépendants et tâches tenues à l’écart de l’ajustement ; B/C comparés à contexte, outils et budgets équivalents ; coûts d’échecs, chargements et réparations inclus ; réutiliser le modèle de connaissance unifié plutôt que créer une mémoire parallèle. Séparation logique des responsabilités sans multiplication de services ou moteur d’inférence maison.
+
+Fichiers modifiés : uniquement ce log. Aucun changement du README, de la roadmap ou du code. Aucun commit associé, aucun push.
+
+Vérifications exécutées : lecture des sections agents/inférence et jalons du README_ORYN, dernier log M1, bilan des modèles M1 et provider/runtime actuels. Aucun build, test ou benchmark exécuté pour cette revue.
+
+Validations historiques : mesures locales du bilan M1 ; elles ne prouvent aucun bénéfice HIE. Le fonctionnement du chat est une observation utilisateur, distincte d’une campagne de validation complète.
+
+Suite proposée : discuter et préciser la Phase 2 reçue incomplète ; si implémentation demandée, préparer une petite tranche profils/observabilité tout en préservant le chat actuel. HIE n’est pas adopté comme remplacement global de la roadmap.

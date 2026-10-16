@@ -1,4 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><AllowUnsafeBlocks>true</AllowUnsafeBlocks></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/Oryn.Ui.Sdl/Oryn.Ui.Sdl.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../src/Oryn.Ui.Sdl/Oryn.Ui.Sdl.csproj" />
+    <Compile Include="../Support/StubInferenceProvider.cs" Link="Support/StubInferenceProvider.cs" />
+  </ItemGroup>
 </Project>

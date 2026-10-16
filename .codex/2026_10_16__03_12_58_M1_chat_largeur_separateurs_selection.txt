@@ -1,0 +1,30 @@
+Palier principal : M1. Fuseau : Europe/Paris (CEST).
+
+Demande
+L’utilisateur confirme que le sélecteur et le chargement GPT-OSS fonctionnent. Il demande ensuite des corrections du chat : séparateurs au-dessus et au-dessous des prompts utilisateur, texte utilisateur/Oryn sur toute la largeur, icône de copie sous le message, sélection de texte à la souris pour copier un extrait.
+
+Résultat livré
+- Rendu du chat extrait dans WorkspacePainter.Chat.cs. Fin de la limite de 76 caractères et de l’alignement des messages utilisateur à droite. Corps alignés à gauche sur toute la largeur disponible, retours mesurés en pixels par graphèmes avec coupures aux espaces si possible. Préservation des espaces, tabs et retours originaux pour la copie.
+- Séparateurs pleine largeur autour des prompts utilisateur. Icône vectorielle de deux feuilles sous chaque message non vide et sous l’erreur ; label au survol, copie complète et retour dans la barre de statut. Aucun asset/font d’icône externe ajouté.
+- ChatTextSelection dans App : ancres par UUID de message et indices UTF-16 sur frontières de graphèmes. Sélection en avant/arrière, multi-lignes/multi-messages, Ctrl+C extrait et Ctrl+A historique chargé. Deux sauts de ligne entre messages copiés ; aucun retour ajouté à cause du wrapping visuel. État de sélection séparé des messages persistés.
+- Drag sur texte : surlignage, hit testing basé sur les mesures réellement dessinées, défilement en dépassant le viewport, arrêt au relâchement/perte de focus, pas de drag démarré au clic droit. Sélection préservée au reflow/paging/append des réponses. Ancrage de la zone de lecture quand de nouvelles lignes arrivent pendant la lecture/sélection.
+- Focus historique distinct de l’éditeur, y compris dans ElementChat via ElementHistory. Ctrl+C n’édite pas le brouillon ; Ctrl+X/Backspace ne modifient pas l’historique. Tab/clic compositeur retourne à la saisie. Échap efface une sélection après les priorités d’annulation existantes. Aide clavier affichée dans le footer.
+- Revue visuelle : correction supplémentaire du rendu du chat en arrière-plan qui pouvait réinitialiser le scroll de la discussion par élément. Seul le chat interactif peut mettre à jour scroll/géométrie de sélection.
+
+Fichiers principaux
+src/Oryn.App/ChatTextSelection.cs (nouveau), ChatPreviewState.cs, GraphicalWorkspaceController.cs, KeyboardRouter.cs ; src/Oryn.Ui.Sdl/WorkspacePainter.Chat.cs (nouveau), WorkspacePainter.cs, WorkspacePainter.SettingsSearch.cs ; tests/Oryn.App.Tests/ChatSelectionTests.cs (nouveau) ; tests/Oryn.Ui.Smoke/ChatRenderingChecks.cs, ChatUiPreview.cs (nouveau), Program.cs ; docs/m1-llama-cpp-integration.md.
+
+Vérifications réellement exécutées
+- dotnet build Oryn.slnx --no-restore hors sandbox : solution complète et scénarios préparés compilent, zéro avertissement/erreur.
+- git diff --check réussi.
+- Mode de rendu SEUL exécuté : dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --chat-preview artifacts/m1/chat-ui-preview. Il ne lance ni la suite de tests ni SDL, provider, historique réel ou modèle. Fixture fictive dans son propre dossier temporaire supprimé à la fin ; captures PNG générées sous artifacts ignoré.
+- Inspection visuelle des captures 1280, large 1920, compacte 630, sélection, densité x2 et discussion par élément. Icônes et séparateurs visibles, largeur utilisée, surlignage reflow cohérent. La capture ElementChat a révélé le problème de scroll d’arrière-plan, corrigé et capture régénérée.
+- Tests unitaires et smoke interactif NON exécutés selon préférence utilisateur. Préparés : 5 cas App (Unicode/emoji/combinaisons, sélection inversée/multi-messages/paging, append streaming, copie/lecture seule/brouillon, chat élément/focus), scénarios SDL de hit regions copie sous messages/erreur, sélection au-delà de 76 colonnes/reflow, drag auto-scroll/clic droit et non-régression du scroll modal. Anciennes coordonnées de tests de copie adaptées.
+
+Limites
+Pas de validation native des événements souris/presse-papiers dans une fenêtre SDL pendant cette tâche ; les captures hors fenêtre ne la remplacent pas. La sélection partielle concerne les corps des messages, pas les lignes d’erreur/contexte système (copie intégrale de l’erreur conservée). Pas de parseur Markdown, sélection par mots au double-clic ou éditeur riche ajouté. Aucun modèle/backend téléchargé ou lancé, pas de benchmark, pas de config/historique utilisateur modifié.
+
+Suite
+Redémarrer le build courant via dotnet run --project src/Oryn.Cli --no-build -- ; vérifier les séparateurs, pleine largeur, icône sous message, drag + Ctrl+C, Tab retour au brouillon et scroll pendant streaming/petite fenêtre. L’utilisateur exécute ensuite les suites préparées selon le guide. Confirmation utilisateur du sélecteur/GPT-OSS constitue une validation manuelle de ce chemin, pas une validation générale de tout M1.
+
+Commit associé : aucun. Aucun commit/push ; modifications antérieures conservées.

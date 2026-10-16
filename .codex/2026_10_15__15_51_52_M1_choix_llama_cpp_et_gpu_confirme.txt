@@ -1,0 +1,8 @@
+Palier : M1 ; date : 2026-10-15T15:51:52.183868+02:00 ; fuseau Europe/Paris.
+Demande : accord sur diagnostic matériel, modèle unique, PoC mesuré et intégration ; préférence utilisateur pour llama.cpp plutôt qu'Ollama.
+Choix de travail : llama.cpp via llama-server local, contrat provider C# indépendant ; proposer Qwen3 8B GGUF quantifié Q4_K_M comme premier candidat à vérifier. Pas d'intégration native directe nécessaire pour ce PoC.
+Observations actuelles : nvidia-smi hors sandbox réussit : RTX 3060, 12288 MiB VRAM, 11390 MiB libres, pilote 550.163.01. L'échec précédent ne prouve donc pas un pilote défectueux ; GPU inaccessible dans le sandbox. Modules NVIDIA chargés. gcc/g++ présents dans PATH ; cmake/ninja/nvcc non trouvés. Aucun modèle/llama-server trouvé par la recherche ciblée /usr/local, /opt et /home/zyks/Documents/Lab (pas un inventaire exhaustif).
+Vérifications exécutées : documentation officielle llama.cpp build et tools/server ; inspection système et nvidia-smi avec autorisation hors sandbox. Aucun téléchargement, installation, benchmark ou modification applicative. Validations historiques non rejouées.
+Suite prévue : sélectionner une version du backend et une distribution compatible avec le pilote, vérifier licence/provenance du GGUF, puis setup local et tests streaming/annulation/mesures avant branchement UI et persistance. Optimisations : contexte borné, GPU, modèle unique réutilisé ; autres réglages après mesure.
+Fichiers : seul ce journal. Aucun commit ni push créé.
+Sources : https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md ; https://github.com/ggml-org/llama.cpp/tree/master/tools/server

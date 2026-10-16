@@ -1,0 +1,28 @@
+Palier : M1 — première tranche backend autonome
+Date : 2026-10-15T16:02:20.134127+02:00 ; fuseau Europe/Paris.
+
+Demande et résultat
+Utilisateur autorise le démarrage du setup llama.cpp et du modèle unique ; souhaite envisager plus puissant si marge. Backend et Qwen3 8B Q4_K_M téléchargés, vérifiés, exécutés sur RTX 3060. Pas d'installation système, service, changement de pilote ni second modèle. Chat SDL encore démo M0 : aucun adaptateur C# ou stockage implémenté ici.
+
+Observations actuelles
+HEAD initial 251b776. Les trois journaux de reprise antérieurs étaient non suivis ; préservés. Binaires officiels llama.cpp b11658 Linux x64 CUDA12.8 et runtime, révision GGUF officielle Qwen 7c41481f57cb95916b40956ab2f0b139b296d974, Apache-2.0, 5027783488 octets. Toutes empreintes SHA256 vérifiées et fixées dans le manifest. .local/inference et artifacts/m1 sont ignorés par Git.
+Machine Debian13 x64, Ryzen5 5500, RAM classe16Go, RTX3060 12288MiB, pilote550.163.01. GPU uniquement accessible hors sandbox : les essais ont utilisé l'autorisation prévue. Aucun diagnostic de pilote cassé retenu.
+
+Choix
+ADR0013 : llama-server autonome sur 127.0.0.1:18080, modèle local et --offline, UI web désactivée, Jinja embarqué, thinking off, une génération, full GPU offload. Contrat provider indépendant et branchement au chat prévus dans prochaine tranche. M-Native reste distinct. Baseline4096 F16 sans Flash, expériences Flash à4096 puis8192. Pas d'optimisation maison.
+
+Vérifications réellement exécutées
+Téléchargements officiels repris via curl après résolution DNS bloquée dans sandbox, avec escalade. setup.py --verify-only, deux fois dont essai idempotent ; trois SHA256 OK et extraction.
+smoke réel initial puis baseline finale et deux comparaisons. Toutes37/37 couches GPU. Chaque smoke final : SSE progressif, finish_reason et DONE, déconnexion après12chunks, slot idle ~0.10s avec polling0.10s, compteur génération stable, nouvelle requête réussie, entrée malformée HTTP400, arrêt propre exit0 et backend inaccessible ensuite, mémoire GPU libérée. Aucun serveur laissé actif.
+Mesures finales (une passe par réglage, pas statistiques) :
+4096 Flash off : ready1.30s, premier contenu0.113/0.330s, débit51.87/51.91t/s, GPU total échantillonné6016MiB.
+4096 Flash on : ready1.31s, premier contenu0.049/0.048s, débit54.08/54.37t/s, GPU5798MiB.
+8192 Flash on : ready1.30s, premier contenu0.051/0.048s, débit54.04/54.30t/s, GPU6377MiB.
+Rapports bruts baseline.json, flash-4096.json, flash-8192.json et logs serveur associés sous artifacts/m1. Mémoire échantillonnée, pas pic ; readiness inclut warmup et cache OS chaud possible. Prompts courts synthétiques, deux sorties bornées160tokens et signalées tronquées ; pas de validation qualité. Une généralisation C# inexacte du modèle est explicitement relevée dans docs.
+Python py_compile pour les3scripts, commandes --help, git diff --check réussis. Pas de build/test .NET car aucun code applicatif modifié. Validations historiques M0 non rejouées ; UI, Windows/macOS et long contexte réel non testés.
+
+Fichiers
+scripts/inference/manifest.json, setup.py, run.py, smoke.py ; docs/adr/0013-m1-local-llama-server-poc.md ; docs/m1-inference-poc.md ; lien README.md ; .gitignore pour __pycache__ ; ce log. Aucun commit ni push créé.
+
+Limites et prochaine étape
+Backend prêt mais M1 incomplet. Prochaine tranche : contrat asynchrone streaming/annulable, état conversationnel et transfert borné hors thread SDL, Stop et erreurs dans chat global, puis persistance/reprise. Tester contexte fichier choisi et défaillances. La marge GPU permet d'étudier un8B moins quantifié ou candidat plus grand ; comparer qualité/latence/mémoire avec mêmes prompts et contexte avant d'en faire le défaut. Aucun gain qualité d'un modèle supérieur annoncé.

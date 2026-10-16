@@ -13,7 +13,8 @@ public enum KeyboardAction
     TextSubmit, TextNewline, TextBackspace, TextDelete, TextLeft, TextRight, TextUp, TextDown, TextHome, TextEnd,
     TextSelectLeft, TextSelectRight, TextSelectUp, TextSelectDown, TextSelectHome, TextSelectEnd, TextSelectAll, TextCopy, TextCut, TextPaste,
     ToggleHistory, DialogClose, DialogNext, DialogPrevious, DialogConfirm, BindingNext, BindingPrevious, BindingApply, BindingSave,
-    ToggleNavbarFocus, NextNavbar, PreviousNavbar, ConfirmNavbar, LeaveNavbar, EditAppearance, SearchFiles, SearchClear, SearchToggleFocus, SearchResultUp, SearchResultDown, SearchOpenResult
+    ToggleNavbarFocus, NextNavbar, PreviousNavbar, ConfirmNavbar, LeaveNavbar, EditAppearance, SearchFiles, SearchClear, SearchToggleFocus, SearchResultUp, SearchResultDown, SearchOpenResult,
+    OpenInferenceSetup, SelectFastModel, SelectCoreModel, LoadOlderChat, ToggleSourceContext
 }
 [Flags]
 public enum InputModifiers { None = 0, Ctrl = 1, Alt = 2, Shift = 4, AltGraph = 8, System = 16 }
@@ -73,6 +74,11 @@ public sealed record KeyBindingSettings
     [
         new(KeyBindingGroup.Workspace, KeyboardAction.Quit, ["Super+Q"]),
         new(KeyBindingGroup.Workspace, KeyboardAction.OpenMenu, ["F10"]),
+        new(KeyBindingGroup.Workspace, KeyboardAction.OpenInferenceSetup, []),
+        new(KeyBindingGroup.Workspace, KeyboardAction.SelectFastModel, []),
+        new(KeyBindingGroup.Workspace, KeyboardAction.SelectCoreModel, []),
+        new(KeyBindingGroup.Workspace, KeyboardAction.LoadOlderChat, []),
+        new(KeyBindingGroup.Workspace, KeyboardAction.ToggleSourceContext, []),
         new(KeyBindingGroup.Navbar, KeyboardAction.ToggleNavbarFocus, ["Shift+Tab", "F9"]),
         new(KeyBindingGroup.Navbar, KeyboardAction.NextNavbar, ["Right", "Tab"]),
         new(KeyBindingGroup.Navbar, KeyboardAction.PreviousNavbar, ["Left"]),

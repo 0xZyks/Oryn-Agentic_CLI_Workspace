@@ -1,0 +1,9 @@
+Palier : M1 ; date : 2026-10-15T15:31:45.291065+02:00 ; fuseau Europe/Paris.
+Demande : déterminer le premier travail M1, ordre backend/modèles et place des optimisations.
+Observations actuelles : Linux x86_64, Ryzen 5 5500, 15 GiB RAM (~11 disponibles), RTX 3060 identifiée par lspci. nvidia-smi échoue à communiquer avec le pilote dans cet environnement ; VRAM et accélération non validées. ollama et llama-server non trouvés dans PATH, sans preuve d'absence ailleurs.
+Proposition, non décision utilisateur : vérifier accès GPU/pilote, commencer un PoC Ollama local-only avec un modèle quantifié unique (Qwen3 8B candidat si mémoire GPU confirmée ; 4B sinon), contexte initial borné, mesurer chargement/premier token/débit et tester streaming/annulation. Puis adaptateur indépendant et branchement UI ; persistance/reprise ensuite.
+Optimisations : dès M1 quantification existante, usage GPU vérifié, contexte borné, réutilisation du modèle et génération unique. Flash Attention/cache quantifié à évaluer après référence mesurée. Runtime/kernels maison hors v0.1 ; aucune performance promise.
+Vérifications exécutées : uname, lscpu, free, command -v, lspci, df, nvidia-smi ; consultation documentation officielle Ollama FAQ/API chat et fiche qwen3:8b. Aucun backend installé, modèle téléchargé, code modifié, test ou benchmark exécuté. Validations M0 historiques non rejouées.
+Sources : https://docs.ollama.com/faq ; https://docs.ollama.com/api/chat ; https://ollama.com/library/qwen3:8b
+Fichiers : seul ce log ; aucun commit associé à cette demande.
+Suite prévue : diagnostic GPU puis setup local et PoC selon la tranche retenue.

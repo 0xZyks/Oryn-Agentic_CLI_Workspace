@@ -49,7 +49,7 @@ public sealed partial class WorkspacePainter : IDisposable
     public void Draw(SKCanvas canvas, int width, int height, float scaleX = 1, float scaleY = 1, long? animationTime = null)
     {
         _animationTime = animationTime ?? GraphicalWorkspaceController.Now;
-        _canvas = canvas; _hits.Clear(); _graphHits.Clear();
+        _canvas = canvas; _hits.Clear(); _graphHits.Clear(); _chatGeometry = null;
         canvas.Clear(Background); canvas.Save(); canvas.Scale(scaleX, scaleY);
         _ui.Resize(width, height);
         int columns = _ui.Columns, rows = _ui.Rows;
@@ -97,6 +97,8 @@ public sealed partial class WorkspacePainter : IDisposable
                 : _ui.SearchFocused ? "Search / file name or text / Enter results / Esc clear"
                 : _ui.SearchActive && _ui.State.Focus == WorkspacePanel.Explorer ? "Search results / Up-Down select / Enter open / Tab edit / Esc clear"
                 : _ui.Overlay == WorkspaceOverlay.Keybindings ? "Keybindings / Tab fields / Alt+A apply / Alt+S save / Esc cancel"
+                : _ui.HistoryFocused && (_ui.Overlay == WorkspaceOverlay.ElementChat || _ui.Overlay == WorkspaceOverlay.None && _ui.State.ActiveTab == WorkspaceTab.Chat)
+                    ? "Chat history / drag select / Ctrl+C copy / Ctrl+A all / Tab input"
                 : _ui.Overlay == WorkspaceOverlay.ElementChat ? "Component chat / Enter send / Shift+Enter newline / Esc close"
                 : _ui.Overlay != WorkspaceOverlay.None ? "Dialog / arrows select / Enter confirm / Esc close"
                 : _ui.NavbarFocused ? "Menu bar / arrows or Tab select / Enter open / Shift+Tab or Esc return"
@@ -238,65 +240,6 @@ public sealed partial class WorkspacePainter : IDisposable
             }
         }
         lines.Add(new(part, start, text.Length)); return lines;
-    }
-    private void DrawChat(PanelBounds b, ChatPreviewState chat, float titleInset = 0)
-    {
-        if (b.Width < 4 || b.Height < 3) { Text("Enlarge window", b.X, b.Y, Muted); return; }
-        _canvas.Save(); _canvas.Translate(0, titleInset);
-        UiText(_ui.Overlay == WorkspaceOverlay.ElementChat ? "Discussion / " + (_ui.OverlayTarget?.Name ?? "element") : "Discussion du projet", b.X + 2, b.Y, TextColor, b.Width - 4, title: true);
-        _canvas.Restore();
-        int inner = Math.Max(1, b.Width - 5);
-        List<Line> draft = Wrap(_ui.Editor.Text, inner);
-        int inputHeight = Math.Min(Math.Max(3, draft.Count + 2), Math.Max(3, b.Height / 2));
-        PanelBounds input = new(b.X + 1, b.Y + b.Height - inputHeight, b.Width - 2, inputHeight);
-        int bottomGap = b.Height >= 7 ? 10 + Spacing.Gap : Spacing.Gap;
-        List<(string Text, bool Right, bool Label, bool Thinking)> history = [];
-        if (chat.Messages.Count == 0)
-        {
-            history.Add(("Clarifier une idee. Explorer le systeme.", false, false, false));
-            history.Add(("Relier les concepts et discuter les choix.", false, false, false));
-            history.Add(("Demo locale / aucun modele connecte.", false, false, false));
-        }
-        foreach (ChatPreviewMessage message in chat.Messages)
-        {
-            bool right = message.Role == ChatPreviewRole.User;
-            history.Add((right ? "User" : "Oryn", right, true, false));
-            foreach (Line line in Wrap(message.Text, Math.Max(1, Math.Min(inner, 76)))) history.Add((line.Text, right, false, false));
-            history.Add(("", false, false, false));
-        }
-        if (chat.IsThinking)
-        {
-            history.Add(("Oryn", false, true, false));
-            history.Add(("Thinking...", false, false, true));
-        }
-        int space = Math.Max(0, input.Y - b.Y - 3 - (bottomGap > 0 ? 1 : 0)), top = Math.Max(0, history.Count - space - _ui.ChatScroll);
-        _canvas.Save(); _canvas.ClipRect(Pixels(new(b.X, b.Y + 2, b.Width, space)));
-        for (int i = 0; i < space && top + i < history.Count; i++)
-        {
-            var line = history[top + i];
-            int x = line.Right ? Math.Max(b.X + 1, b.X + b.Width - 2 - (int)Math.Ceiling((_font.MeasureText(line.Text) + (line.Label ? 2 * CW : 0)) / CW)) : b.X + 2;
-            int y = b.Y + 2 + i;
-            if (line.Label)
-            {
-                if (line.Right) Circle(x * CW + 5, y * CH + 11, 2.3f, Accent);
-                else Star(x * CW + 5, y * CH + 11, 5.5f, Accent);
-            }
-            else if (line.Thinking) ThinkingSpinner(x * CW + 5, y * CH + 11);
-            Text(line.Text, x + (line.Label || line.Thinking ? 2 : 0), y, line.Label ? Accent : TextColor, b.Width - 3 - (line.Label || line.Thinking ? 2 : 0));
-        }
-        _canvas.Restore();
-        Hit(new(b.X, b.Y + 2, b.Width, space), (_, _) => { if (_ui.Overlay == WorkspaceOverlay.None) { _ui.FocusHistory(true); } });
-        _canvas.Save(); _canvas.Translate(0, -bottomGap);
-        Round(input, Raised, 7);
-        Outline(input, _ui.AcceptsText && _ui.ActiveEditor == _ui.Editor ? Accent.WithAlpha(150) : Border, 7);
-        DrawEditor(input, _ui.Editor, draft, inner);
-        if (input.Width > 30) UiText("Enter send / Shift+Enter newline", input.X + input.Width - 31, input.Y + input.Height - 1, Muted, 29, small: true);
-        _canvas.Restore();
-        Hit(input, (x, y) =>
-        {
-            if (_ui.Overlay == WorkspaceOverlay.None) { _ui.FocusHistory(false); }
-            PlaceEditor(_ui.Editor, draft, input, x, y);
-        }, offsetY: -bottomGap);
     }
     private void Circle(float x, float y, float radius, SKColor color)
     {
@@ -503,6 +446,7 @@ public sealed partial class WorkspacePainter : IDisposable
         int width = Math.Min(_ui.Columns - 2, _ui.Overlay is WorkspaceOverlay.ElementChat or WorkspaceOverlay.Keybindings ? 100 : 66);
         int height = Math.Min(_ui.Rows - 2, _ui.Overlay is WorkspaceOverlay.ElementChat or WorkspaceOverlay.Keybindings ? 30 : 15);
         if (_ui.Overlay == WorkspaceOverlay.Appearance) { width = Math.Min(_ui.Columns - 2, 72); height = Math.Min(_ui.Rows - 2, 24); }
+        if (_ui.Overlay == WorkspaceOverlay.InferenceSetup) { width = Math.Min(_ui.Columns - 2, 100); height = Math.Min(_ui.Rows - 2, 30); }
         width = Math.Max(1, width); height = Math.Max(1, height);
         PanelBounds box = new((_ui.Columns - width) / 2, (_ui.Rows - height) / 2, width, height);
         if (_ui.Overlay == WorkspaceOverlay.Menu && _ui.OpenNavbarIndex is { } menuIndex)
@@ -515,7 +459,7 @@ public sealed partial class WorkspacePainter : IDisposable
         Round(box, Active, 2); Outline(box, Border, 2);
         Rect(box.X * CW, (box.Y + 1) * CH + 4, 2, CH - 8, Accent);
         _canvas.Save(); _canvas.ClipRect(Pixels(box));
-        UiText(_ui.Overlay switch { WorkspaceOverlay.Menu => _ui.MenuTitle, WorkspaceOverlay.Options => "Component options", WorkspaceOverlay.Details => "Component / demo details", WorkspaceOverlay.ElementChat => "Component chat / demo", WorkspaceOverlay.Appearance => "Appearance", _ => "Keybindings" }, box.X + 2, box.Y + 1, Accent, box.Width - 9);
+        UiText(_ui.Overlay switch { WorkspaceOverlay.Menu => _ui.MenuTitle, WorkspaceOverlay.Options => "Component options", WorkspaceOverlay.Details => "Component / demo details", WorkspaceOverlay.ElementChat => "Component chat / demo", WorkspaceOverlay.Appearance => "Appearance", WorkspaceOverlay.InferenceSetup => "Inference / premier lancement", _ => "Keybindings" }, box.X + 2, box.Y + 1, Accent, box.Width - 9);
         UiText("Esc", box.X + box.Width - 5, box.Y + 1, Muted, 4, small: true);
         Hit(new(box.X + box.Width - 8, box.Y, 8, 2), (_, _) => _ui.CloseOverlay());
         if (_ui.Overlay is WorkspaceOverlay.Menu or WorkspaceOverlay.Options)
@@ -539,7 +483,62 @@ public sealed partial class WorkspacePainter : IDisposable
             DrawChat(new(box.X + 1, box.Y + 3, box.Width - 2, box.Height - 4), _ui.CurrentChat);
         else if (_ui.Overlay == WorkspaceOverlay.Keybindings) DrawBindings(box);
         else if (_ui.Overlay == WorkspaceOverlay.Appearance) DrawAppearance(box);
+        else if (_ui.Overlay == WorkspaceOverlay.InferenceSetup) DrawInferenceSetup(box);
         _canvas.Restore();
+    }
+
+    private void DrawInferenceSetup(PanelBounds b)
+    {
+        var setup = _ui.InferenceSetup;
+        Text(_unicode ? "↑↓/Tab modèle · Échap annule / retour" : "Up/Down/Tab modele / Esc annule / retour", b.X + 2, b.Y + 2, Muted, b.Width - 4);
+        int y = b.Y + 3, end = b.Y + b.Height - 5;
+        void Row(string text, bool accent = false)
+        { if (y < end) Text(text, b.X + 2, y++, accent ? Accent : TextColor, Math.Max(1, b.Width - 4)); }
+        static string Size(long? bytes) => bytes is { } value ? $"{value / 1073741824.0:F1} Gio" : "inconnue";
+        Row(_ui.BackendStatus, true);
+        if (b.Height >= 22) Row("Config : " + _ui.ConfigurationPath);
+        if (setup.Hardware is { } hardware)
+        {
+            Row($"RAM libre {Size(hardware.RamAvailableBytes)} / {Size(hardware.RamTotalBytes)} · CPU {hardware.LogicalProcessors}");
+            if (b.Height >= 18) Row(hardware.Gpus.Count == 0 ? "GPU NVIDIA non détecté · CPU / Metal selon backend" : $"{hardware.Gpus[0].Name} · VRAM libre {Size(hardware.Gpus[0].AvailableBytes)}");
+        }
+        if (b.Height >= 22)
+        {
+            for (int i = 0; i < setup.Suggestions.Count; i++)
+            {
+                int index = i; var suggestion = setup.Suggestions[i]; int row = y;
+                if (i == setup.Selection) Round(new(b.X + 1, row, b.Width - 2, 1), Selection, 2);
+                Row((i == setup.Selection ? "> " : "  ") + suggestion.Model.FileName + (suggestion.Recommended ? " · suggéré" : ""));
+                Hit(new(b.X + 1, row, b.Width - 2, 1), (_, _) => _ui.SelectSetupSuggestion(index));
+            }
+        }
+        else if (setup.Selected is { } compact) Row("> " + compact.Model.FileName, true);
+        if (setup.Selected is { } selected)
+        {
+            if (_ui.SelectedSetupProfile is { } profile && b.Height >= 22)
+                Row($"Sélection : {selected.Slot} · ctx {profile.ContextTokens} · experts CPU {profile.CpuMoeLayers} · Flash {profile.FlashAttention}");
+            if (b.Height >= 18)
+            {
+                Row(selected.Reason);
+                Row($"Modèle {Size(selected.Model.Bytes)} · {selected.Model.License}");
+                Row("Source : huggingface.co/" + selected.Model.Repository);
+                string? key = InferenceInstallation.RuntimeKey(selected.Gpu);
+                Row(key is null ? "Backend à configurer manuellement sur cet OS/architecture" : $"Backend {InferenceInstallation.Version} / {key} · {Size(InferenceInstallation.Archives(key).Sum(a => a.Bytes))}");
+                Row("Backend : GitHub ggml-org/llama.cpp · licences dans l'archive · SHA256 vérifiés");
+                Row("Aucun projet/chat envoyé · sélection puis Entrée pour appliquer");
+            }
+        }
+        foreach (var line in Wrap(setup.Status, Math.Max(1, b.Width - 4))) Row(line.Text, true);
+        int actionY = b.Y + b.Height - 4;
+        string action = setup.Busy || _ui.ModelSwitching ? "En cours… Échap annule" : setup.ConfirmDownload ? "Entrée : confirmer le téléchargement"
+            : "Entrée / clic : appliquer " + (setup.Selected?.Model.FileName ?? "la sélection");
+        Text(action, b.X + 2, actionY, Accent, b.Width - 4);
+        Hit(new(b.X + 1, actionY, b.Width - 2, 1), (_, _) => _ui.ActivateSetupSelection());
+        int half = Math.Max(1, (b.Width - 4) / 2);
+        Text("T : essai local", b.X + 2, actionY + 1, Muted, half);
+        Text("N : continuer", b.X + 2 + half, actionY + 1, Muted, half);
+        Hit(new(b.X + 2, actionY + 1, half, 1), (_, _) => _ui.ProbeSetupSelection());
+        Hit(new(b.X + 2 + half, actionY + 1, half, 1), (_, _) => _ui.SkipInferenceSetup());
     }
     private void DrawBindings(PanelBounds b)
     {
@@ -571,6 +570,8 @@ public sealed partial class WorkspacePainter : IDisposable
     public void PointerDown(float x, float y, bool right = false)
     {
         _pickerDrag = 0;
+        _ui.CurrentChat.Selection.End();
+        _pointer = new(x, y);
         ClickPixels(x, y, right);
         if (right || _ui.Overlay != WorkspaceOverlay.None) return;
         var pointer = new System.Numerics.Vector2(x, y);
@@ -581,6 +582,9 @@ public sealed partial class WorkspacePainter : IDisposable
     public void Click(int x, int y, bool right = false) => ClickPixels(x * CW, y * CH, right);
     private void ClickPixels(float x, float y, bool right)
     {
+        if (right && _ui.Overlay is WorkspaceOverlay.None or WorkspaceOverlay.ElementChat
+            && _chatGeometry is { } geometry && geometry.Viewport.Contains(x, y))
+        { _ui.FocusHistory(true); _ui.CurrentChat.Selection.End(); _ui.Dirty = true; return; }
         for (int i = _hits.Count - 1; i >= 0; i--)
             if (_hits[i].Bounds.Contains(x, y))
             {
@@ -608,6 +612,7 @@ public sealed partial class WorkspacePainter : IDisposable
     public void Hover(float x, float y)
     {
         if (_pickerDrag != 0) Pick(x, y);
+        if (_ui.CurrentChat.Selection.Dragging) SelectChatAt(x, y, extend: true);
         var point = new System.Numerics.Vector2(x, y);
         if (_pointer == point) return;
         _pointer = point; _ui.Dirty = true;
@@ -650,5 +655,5 @@ public sealed partial class WorkspacePainter : IDisposable
         _paint.Color = color; _paint.Style = SKPaintStyle.Fill;
         _canvas.DrawText(text, x * CW, y * CH + 16, SKTextAlign.Left, _font, _paint);
     }
-    public void Dispose() { _paint.Dispose(); _font.Dispose(); _uiFont.Dispose(); _smallFont.Dispose(); _titleFont.Dispose(); _typeface.Dispose(); }
+    public void Dispose() { foreach (var font in _markdownFonts.Values) font.Dispose(); _paint.Dispose(); _font.Dispose(); _uiFont.Dispose(); _smallFont.Dispose(); _titleFont.Dispose(); _typeface.Dispose(); }
 }

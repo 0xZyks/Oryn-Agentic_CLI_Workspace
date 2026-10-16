@@ -1,0 +1,165 @@
+{
+  "backend": {
+    "version": "b11658",
+    "platform": "linux-x64-cuda12.8",
+    "archives": [
+      {
+        "name": "llama-b11658-bin-ubuntu-cuda-12.8-x64.tar.gz",
+        "sha256": "87eff1306d59864e4328f5fe7dda1a78a5fde3211fba5688e8ebcd427e831e81"
+      },
+      {
+        "name": "cudart-llama-b11658-bin-ubuntu-cuda-12.8-x64.tar.gz",
+        "sha256": "0727f896043c6a47dfa9860a083d1ebba1bc7cca7fa4ba7ec8776bf23a6ff444"
+      }
+    ]
+  },
+  "candidates": {
+    "coder7b-q6": {
+      "repository": "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF",
+      "revision": "13fb94bfda8c8cf22497dc57b78f391a9acb426a",
+      "filename": "qwen2.5-coder-7b-instruct-q6_k.gguf",
+      "bytes": 6254198784,
+      "sha256": "46291ddea1bfb608fe63d9a1907eea6918bda87a7626593edc4bf97c5fd73f9d",
+      "license": "Apache-2.0",
+      "supports_reasoning": false,
+      "sampling": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "presence_penalty": 0.0
+      }
+    },
+    "gemma12b-qat-q4": {
+      "repository": "google/gemma-3-12b-it-qat-q4_0-gguf",
+      "revision": "7929e34ac7c459bbfd1f38d7358e6839f204578b",
+      "filename": "gemma-3-12b-it-q4_0.gguf",
+      "bytes": 8074473920,
+      "sha256": "dd53172ff3a7b1b16c8fb3d944b87f42a6228ff2de3825b8813ae90d988434cd",
+      "license": "Gemma",
+      "supports_reasoning": false,
+      "gated": true,
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "top_k": 64,
+        "presence_penalty": 0.0
+      }
+    },
+    "14b-q4": {
+      "repository": "Qwen/Qwen3-14B-GGUF",
+      "revision": "530227a7d994db8eca5ab5ced2fb692b614357fd",
+      "filename": "Qwen3-14B-Q4_K_M.gguf",
+      "bytes": 9001752960,
+      "sha256": "500a8806e85ee9c83f3ae08420295592451379b4f8cf2d0f41c15dffeb6b81f0",
+      "license": "Apache-2.0"
+    },
+    "gptoss20b-mxfp4": {
+      "repository": "ggml-org/gpt-oss-20b-GGUF",
+      "revision": "ef9b12f2ff56c69cf32153a02784e7a3c88bf524",
+      "filename": "gpt-oss-20b-MXFP4.gguf",
+      "bytes": 12109566624,
+      "sha256": "27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901",
+      "license": "Apache-2.0",
+      "supports_reasoning": true,
+      "reasoning_default": "on",
+      "sampling": {
+        "temperature": 1.0,
+        "top_p": 1.0,
+        "top_k": 0,
+        "presence_penalty": 0.0
+      },
+      "reasoning_budget_default": -1
+    },
+    "qwen3coder30b-q4": {
+      "repository": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
+      "revision": "b17cb02dd882d5b6ab62fc777ad2995f19668350",
+      "filename": "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
+      "bytes": 18556689568,
+      "sha256": "fadc3e5f8d42bf7e894a785b05082e47daee4df26680389817e2093056f088ad",
+      "license": "Apache-2.0",
+      "supports_reasoning": false,
+      "sampling": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.05
+      }
+    },
+    "devstral24b-q4": {
+      "repository": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
+      "revision": "6e458b8add42681bfd023de5eab93637694aaf82",
+      "filename": "Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf",
+      "bytes": 14334446752,
+      "sha256": "d14ba9edee1bb4c4996a726deb81e49ae81800a3216f0774634238c380aee496",
+      "license": "Apache-2.0",
+      "supports_reasoning": false,
+      "sampling": {
+        "temperature": 0.15,
+        "top_p": 1.0,
+        "top_k": 0,
+        "presence_penalty": 0.0
+      }
+    },
+    "4b-q4": {
+      "repository": "Qwen/Qwen3-4B-GGUF",
+      "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+      "filename": "Qwen3-4B-Q4_K_M.gguf",
+      "bytes": 2497280256,
+      "sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+      "license": "Apache-2.0",
+      "supports_reasoning": true,
+      "reasoning_default": "off",
+      "reasoning_budget_default": 256,
+      "sampling": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "presence_penalty": 1.5
+      }
+    }
+  },
+  "model": {
+    "repository": "Qwen/Qwen3-8B-GGUF",
+    "revision": "7c41481f57cb95916b40956ab2f0b139b296d974",
+    "filename": "Qwen3-8B-Q4_K_M.gguf",
+    "bytes": 5027783488,
+    "sha256": "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785",
+    "license": "Apache-2.0"
+  },
+  "runtime_downloads": {
+    "linux-x64-cpu": [
+      {
+        "name": "llama-b11658-bin-ubuntu-x64.tar.gz",
+        "bytes": 17838436,
+        "sha256": "457c7145ecdf7d9cf575b4c7357ab8cf6eed3943576b3e9955b02bd7488e7174"
+      }
+    ],
+    "linux-x64-cuda": [
+      {
+        "name": "llama-b11658-bin-ubuntu-cuda-12.8-x64.tar.gz",
+        "bytes": 172517016,
+        "sha256": "87eff1306d59864e4328f5fe7dda1a78a5fde3211fba5688e8ebcd427e831e81"
+      },
+      {
+        "name": "cudart-llama-b11658-bin-ubuntu-cuda-12.8-x64.tar.gz",
+        "bytes": 594377586,
+        "sha256": "0727f896043c6a47dfa9860a083d1ebba1bc7cca7fa4ba7ec8776bf23a6ff444"
+      }
+    ],
+    "win-x64-cpu": [
+      {
+        "name": "llama-b11658-bin-win-cpu-x64.zip",
+        "bytes": 19529765,
+        "sha256": "d1216a024c0888de8082366ca768dafac5f883c51fd190235156c95481fd925a"
+      }
+    ],
+    "osx-arm64-metal": [
+      {
+        "name": "llama-b11658-bin-macos-arm64.tar.gz",
+        "bytes": 12186240,
+        "sha256": "13d377faac6ab7f838e9d7ecba5ea9763fa0c5aee03f8186f26a2e03d6c31e60"
+      }
+    ]
+  }
+}

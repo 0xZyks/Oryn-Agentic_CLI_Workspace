@@ -2,8 +2,16 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
+      "Markdig": {
+        "type": "Transitive",
+        "resolved": "1.3.2",
+        "contentHash": "fZgOC/3CswUrndjDTac70aQpYdtxbW5+5bRumR7vzvI2HJbkmgKisB1c9oT+GA6v0jB/JDR9BLa9FiPzQmaK6A=="
+      },
       "oryn.app": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Markdig": "[1.3.2, )"
+        }
       }
     }
   }

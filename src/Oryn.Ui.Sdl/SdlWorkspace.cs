@@ -54,6 +54,7 @@ public sealed unsafe class SdlWorkspace : IDisposable
             {
                 long now = GraphicalWorkspaceController.Now;
                 Controller.Tick(now);
+                if (Controller.TakeClipboardText() is { } copied) CopyText(copied);
                 ReadSize(); UpdateCadence(now); UpdateTextInput();
                 bool due = now - lastFrame >= Math.Max(1, 1000.0 / _fps);
                 if (due || lastFrame == 0)
@@ -192,6 +193,15 @@ public sealed unsafe class SdlWorkspace : IDisposable
             if (request == ClipboardRequest.Cut) { editor.Insert(""); Controller.EditorChanged(); }
         }
         Controller.Dirty = true;
+    }
+    private void CopyText(string value)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(value + "\0");
+        fixed (byte* text = bytes)
+        {
+            bool success = SDL_SetClipboardText(text);
+            Controller.ClipboardCompleted(success, success ? "" : SDL_GetError() ?? "Erreur SDL inconnue");
+        }
     }
     public static bool Map(SDL_KeyboardEvent ev, out InputKey key) => SdlKeyboardInput.Map(ev, out key);
     private static void Require(SDLBool result, string action) { if (!result) Fail(action); }

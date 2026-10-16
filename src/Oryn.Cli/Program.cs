@@ -20,7 +20,9 @@ try
             --help, -h       Show help
             --version        Show version
             --check          Check project access and report JSON without opening a window
-            --config <file>  Read explicit JSON settings
+            --hardware       Report local hardware and model suggestions as JSON (no download)
+            --setup          Open the inference setup in the native window
+            --config <file>  Override project settings (default: oryn.settings.json)
             --no-color       Use a monochrome palette (also respects NO_COLOR)
             --ascii          Use ASCII UI decorations
             --fps auto|N     Follow the window's monitor, or set 1–500 Hz manually
@@ -56,7 +58,8 @@ try
     if (!Directory.Exists(options.ProjectRoot))
         throw new DirectoryNotFoundException($"Project directory does not exist or cannot be accessed: {options.ProjectRoot}");
 
-    WorkspaceSettings settings = WorkspaceSettings.Load(options.ConfigPath);
+    string? configPath = WorkspaceSettings.ResolvePath(options.ProjectRoot, options.ConfigPath);
+    WorkspaceSettings settings = WorkspaceSettings.Load(configPath);
     settings = settings with { UseColor = settings.UseColor && options.UseColor, UseUnicode = settings.UseUnicode && options.UseUnicode };
     string keybindingsPath = options.KeybindingsPath ?? KeyBindingStore.DefaultPath;
     KeyboardRouter keyboard = new(KeyBindingStore.Load(keybindingsPath));
@@ -67,6 +70,8 @@ try
     if (directory.Error is not null) throw new IOException(directory.Error);
     if (options.Check)
     {
+        HardwareSnapshot? hardware = options.InspectHardware
+            ? HardwareProbe.DetectAsync(InferenceInstallation.AssetsRoot(options.ProjectRoot, settings), CancellationToken.None).GetAwaiter().GetResult() : null;
         Console.WriteLine(JsonSerializer.Serialize(new
         {
             projectRoot = options.ProjectRoot,
@@ -76,6 +81,9 @@ try
             warning = directory.Warning,
             frontend = new { window = "SDL3", drawing = "SkiaSharp", style = "architecture-workshop" },
             renderCadence = new { manualFramesPerSecond = cadence.ManualFramesPerSecond, auto = cadence.ManualFramesPerSecond is null },
+            settings = new { path = configPath ?? Path.Combine(options.ProjectRoot, WorkspaceSettings.ProjectFileName), source = configPath is null ? "defaults" : options.ConfigPath is null ? "project" : "explicit" },
+            inference = new { selectedProfile = settings.SelectedModelProfile, profile = settings.SelectedProfile, applicationDirectory = AppContext.BaseDirectory },
+            hardware, modelSuggestions = hardware is null ? null : HardwareProbe.Suggest(hardware),
             keybindings = new { path = keybindingsPath, keyboard.Settings.Super }
         }));
         return 0;
@@ -84,7 +92,8 @@ try
     state.LoadRoot(directory);
     state.Dispatch(WorkspaceCommand.ChatTab);
     state.Graph.ChangeZoom(-1);
-    using GraphicalWorkspaceController controller = new(state, files, keyboard, keybindingsPath);
+    using GraphicalWorkspaceController controller = new(state, files, keyboard, keybindingsPath, settings: settings, configPath: configPath);
+    if (options.ShowInferenceSetup) controller.OpenInferenceSetup();
     using SdlWorkspace window = new(controller, settings.UseColor, settings.UseUnicode, cadence.ManualFramesPerSecond);
     window.Run();
     return 0;

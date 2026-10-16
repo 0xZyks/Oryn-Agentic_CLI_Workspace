@@ -1,0 +1,32 @@
+Palier : M1 — exploration backend/modèle
+Date : 2026-10-15T16:21:11.680225+02:00 ; fuseau Europe/Paris.
+
+Demande
+Tester Qwen3 14B pour déterminer sa viabilité avant le branchement au chat. Autorisation de téléchargement et essais, pas de promotion implicite au modèle par défaut.
+
+Résultat actuel
+Modèle officiel Qwen3-14B-Q4_K_M téléchargé (9001752960 octets), Apache-2.0, révision530227a7d994db8eca5ab5ced2fb692b614357fd, SHA256500a8806e85ee9c83f3ae08420295592451379b4f8cf2d0f41c15dffeb6b81f0 vérifié. Installations sous .local/inference ignoré par Git ; aucun service système. 8B préservé comme défaut des scripts.
+14B viable avec llama.cpp b11658 CUDA12.8, RTX3060 12GiB pilote550.163.01, Flash on, KV F16, une génération, host prompt cache désactivé (--cache-ram0). 41/41 couches offloadGPU ; embeddings CPU-mapped subsistent.
+
+Mesures réellement exécutées (une passe finale par configuration)
+14B contexte4096 : disponibilité8.82s lors premier chargement, premier contenu0.083/0.064s, débit30.86/30.97tokens/s, GPU total après requêtes9730MiB (~9.50GiB), KV640MiB.
+14B contexte8192 étendu : disponibilité1.99s (cacheOS possible), premier contenu0.076/0.064s sur courts prompts, débit30.67/30.57t/s ; GPU10389MiB (~10.15GiB), KV1280MiB, environ1.85GiB marge à cet instant.
+Référence8B contexte8192 étendue relancée avec mêmes réglages : débit54.02/54.36t/s, premier contenu0.052/0.040s, GPU6520MiB (~6.37GiB).
+Entrée longue synthétique5580tokens sans cache réutilisé, clé centrale retrouvée par les deux,8tokens générés : premier contenu8B3.16s/14B5.80s ; total3.32/6.05s.
+Raisonnement séparé budget256, sortie totale plafonnée768 :8B439tokens totaux, premier événement0.094s/première réponse4.85s/durée8.16s ;14B441tokens,0.157s/8.52s/14.39s. Logs confirment budget épuisé puis séquence de fin imposée. Les deux concluent correctement RESULTAT=34. Contenu interne du raisonnement non conservé dans JSON, seuls comptes de chunks/caractères.
+RAM processus mesurée via /proc : RSS finale8B824848KiB (~0.79GiB),14B922624KiB (~0.88GiB). HWM durant processus incluant chargement :8B5232196KiB (~4.99GiB),14B9113052KiB (~8.69GiB). Inclut pages fichier mmap, pas uniquement mémoire privée ; pas mesure du picRAM système. Système~11.3GiB disponibles en fin de passe.
+
+Qualité : observations limitées
+Les deux modèles réussissent extraction de clé et calcul, mais répondent à tort A=OUI,B=OUI pour default interface method C# (attendu A=NON,B=OUI). Compilation temporaire .NET10 dans /tmp/oryn-m1-interface-probe : appel direct new C().M() rejeté CS1061 ; version avec seulement ((I)new C()).M() compilée sans erreur. Les deux réponses sur fragments tardifs ne fournissent pas clairement une protection par identité de génération avant application à B (revue humaine, pas score automatique).
+Aucun gain qualité14B établi par ce très petit ensemble. Maintenir candidats et évaluer sur questions projet représentatives avant choix. Pas d'essai8BQ8/14BQ5/32B ou contexte16384.
+
+Vérifications et incident corrigé
+Smokes14B4096,14B8192extended et8B8192extended finaux réussis : streaming, fin SSE, annulation par déconnexion, idle~0.10s et compteur stable, nouvelle requête, malformedHTTP400, fermeture exit0, GPU libéré, backend inaccessible ensuite. Tous serveurs arrêtés.
+Premier8Bextended interrompu SIGBUS(-7) pendant que setup réextrayait les .so en cours d'utilisation ; ne pas confondre avec échec modèle. Rapport/log préservés sous artifacts/m1/8b-extended-8192-interrupted.*. Correction : verrou flock partagé conservé à travers exec pour run.py, exclusif non bloquant pour setup.py. Vérifié contre vrai serveur14B actif : setup refuse avant extraction ; sens inverse vérifié avec verrou exclusif de setup : run refuse. Host prompt cache borné à0 pour éviter snapshotsRAM implicites dans ces benchmarks. Résultats finaux issus de relance sans collision.
+Python py_compile, --help des3scripts et git diff --check réussis. Aucun build de solution/app Oryn ; seuls builds temporaires pour preuveC# (un échec attendu, un succès). ValidationsM0 historiques non relancées. Aucun test UI ou autreOS.
+
+Fichiers
+scripts/inference/manifest.json : candidat14B ; setup.py : sélection candidat et verrou ; run.py : verrou, raisonnement borné et cacheRAM0 ; smoke.py : sélection modèle, charge longue tokenisée, mesure RAM, raisonnement et sondesqualité. docs/m1-inference-poc.md : commandes et tableaux ; ADR0013 complétée. Données brutes ignorées sous artifacts/m1. Changements préexistants README/.gitignore et journaux conservés. Aucun commit/push créé.
+
+Limites et suite
+M1 non terminé : UI encore démo, ni providerC# ni persistance. ÉchantillonsVRAM et une passe, pas picGPU ni moyenne statistique ; prompts synthétiques, pas dépôt réel ni renduSDL simultané. Matériel14B8192 viable démontré, pas modèle global optimal. Suite : soit évaluation projet plus représentative pour arbitrer8B/14B, soit adaptateur configurable permettant les deux, puis chatstream/Stop/erreurs et persistance/reprise.

@@ -1,0 +1,22 @@
+Palier : M1 — comparaison documentaire de candidats
+Date : 2026-10-15T16:24:49.563728+02:00 ; fuseau Europe/Paris.
+
+Demande
+Examiner la liste Qwen3-8B, Qwen2.5-Coder-7B, DeepSeek-R1-Distill-Qwen-7B, Qwen3-14B, Gemma3 12B, GPT-OSS20B, Qwen3-Coder30B-A3B, DevstralSmall2 pour remplacer éventuellement14B.
+
+Résultat et proposition (pas choix utilisateur ni benchmark)
+Gemma3 12B IT QAT4bit : candidat généraliste à comparer sur12GiB ; Qwen2.5-Coder7B Instruct : candidat spécialisécode avec marge mémoire ; GPT-OSS20B : expérimentation intéressante raisonnement/outils mais12GiB étroits, placementGPU/CPU à mesurer. Ne pas exclure définitivement sans essai, ni promettre fullGPU. Qwen3-Coder30B-A3B et DevstralSmall2 Q4 demandent davantage de mémoire que12GiB pour stockage de tous poids et buffers ; offload/quantification plus forte possibles mais compromis à tester, pas priorité. DeepSeekR1Distill7B utile comme comparaison raisonnement, moins prioritaire pour cœur polyvalent/code. 8B/14B restent seules références réellement mesurées.
+MoE :30.5B totaux/3.3B actifs pour QwenCoder,21B/3.6B pourGPTOSS. Actifs concerne le calcul par token ; ne transforme pas l'ensemble des poids à stocker en modèle3B.
+
+Observations actuelles vérifiées
+Métadonnées HF officielles/quantificateurs : Gemma3-12b-it-qat-q4_0 GGUF8074Mo (~7.52GiB), projecteur image séparé854Mo, gated manuel licenceGemma à accepter ; Qwen2.5Coder7B Q4_K_M4683Mo (~4.36GiB), Apache2 ; GGUF ggml-org GPTOSS20B MXFP4 12110Mo (~11.28GiB), Apache2 ; Qwen3Coder30B Q4_K_M18557Mo (~17.28GiB) chezunsloth ; DevstralSmall2 Q4_K_M14334Mo (~13.35GiB) chezbartowski. Tailles fichiers, pas mesuresVRAM d'exécution. DocumentationOpenAI LMStudio présente16GoVRAM pourGPTOSS20B, ne prouve pas impossibilité absolue12GiB sous autreconfiguration.
+
+Vérifications exécutées
+Consultation fiches officielles Qwen, Google, DeepSeek, Mistral, documentationOpenAI et métadonnées fichiers HuggingFace. Skill OpenAI Docs appliquée pourGPTOSS20B, sources officielles ouvertes ; aucun serviceAPI ni clé nécessaire. Aucun fichier modèle téléchargé, serveur lancé ou benchmark supplémentaire. Mesures8B/14B du précédent log historiques à cette demande.
+
+Fichiers/commit
+Seul ce journal ajouté ; aucun code/configuration modifié, aucun commit/push créé. Modèle par défaut des scripts reste8B.
+
+Suite proposée
+Comparer d'abord Gemma12B IT QAT (généraliste) et Qwen2.5Coder7B Instruct (code) sur jeu représentatif, paramètres adaptés à chaque modèle ; GPTOSS en essai mémoire spécialisé si souhaité. Évaluer correction, citations, français, suiviconsignes, C#, latence, contexte et RAM/VRAM, pas seulement débit ni nombreparamètres. Ne pas télécharger tous les candidats d'office.
+Sources : https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-gguf ; https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF ; https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B ; https://developers.openai.com/api/docs/models/gpt-oss-20b ; https://developers.openai.com/cookbook/articles/gpt-oss/run-locally-lmstudio ; https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct ; https://mistral.ai/news/devstral-2-vibe-cli/ ; métadonnées GGUF ggml-org/unsloth/bartowski.

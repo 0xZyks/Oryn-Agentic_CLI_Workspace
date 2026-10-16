@@ -1,0 +1,26 @@
+Palier : M1 — fuseau Europe/Paris (CEST, UTC+02:00)
+
+Demande
+L’utilisateur propose GPT-OSS comme moteur de réflexion, Qwen3-8B comme modèle standard et un petit modèle de 0,5B pour le routage. Il demande un avis et souhaite préciser la mise en place de l’environnement LLM et le rôle d’un Policy Engine.
+
+Recommandation formulée — PROPOSÉE, pas encore décidée
+- La séparation rapide/profond est cohérente : Qwen3-8B peut être évalué comme profil rapide ; GPT-OSS reste la référence de qualité mesurée pour le code et les tâches longues.
+- Ne pas confier par défaut le code/architecture à Qwen3-8B avant un banc représentatif : les essais disponibles donnent 2/6 sur six questions techniques C# synthétiques, pas un résultat de qualité satisfaisant pour le rôle standard d’ingénierie.
+- Commencer le Policy Engine avec des règles déterministes (choix utilisateur rapide/profond, type de tâche, taille du contexte, outils requis et échec des vérifications). Ne pas utiliser le score de confiance autodéclaré par un LLM comme preuve.
+- Ajouter le modèle 0,5B de routage uniquement si un jeu de requêtes évalué prouve qu’il classe mieux que ces règles, que son coût de chargement/latence est rentable et qu’il sait s’abstenir.
+- Les mesures existantes montrent GPT-OSS jusqu’à ~11,7 Gio GPU échantillonnés et Qwen3-8B ~6,4 Gio à 8192 contexte ; ils ne doivent pas être présumés résidents simultanément sur RTX 3060 12 Gio. Prévoir chargement différé et gestionnaire de ressources/switch explicite.
+- Première tranche M1 : environnement llama.cpp géré par Oryn, un modèle principal, streaming, annulation, erreurs visibles, persistance et mode core-only. Ajouter Qwen comme profil rapide et routage multi-modèle après validation de l’adaptateur, sans casser le fonctionnement avec un seul modèle.
+- Pour les modifications code : fournir des extraits sourcés, outils bornés, Roslyn/tests déterministes, limites de tours et proposition de diff revue par l’utilisateur.
+
+Éléments de preuve
+- docs/m1-model-recap.md rapporte les mesures des configurations testées.
+- README_ORYN.md prescrit la dégradation core-only, distingue rôle logique/modèle physique et met en garde contre le coût éventuel d’un routeur 0,5B et la résidence simultanée des modèles.
+- Aucun code Oryn, ADR d’architecture ou modèle n’a été modifié dans cette réponse. La stratégie reste une recommandation à confirmer par l’intégration et les mesures en application.
+
+Vérifications
+- AGENTS.md, README_ORYN.md et le dernier journal M1 consultés.
+- Aucun test ni build exécuté ; avis d’architecture uniquement.
+- HEAD : 251b776 ; aucun commit.
+
+Prochaine étape suggérée
+Implémenter le provider llama.cpp et l’état de chat M1 en prenant GPT-OSS comme référence mesurée, enregistrer le temps de démarrage/switch, la latence avant premier contenu, tokens/s, VRAM/RAM et annulation. Ensuite activer Qwen3-8B comme profil rapide explicite et évaluer des requêtes représentatives avant le routage automatique. Garder le routeur 0,5B comme option à mesurer.
