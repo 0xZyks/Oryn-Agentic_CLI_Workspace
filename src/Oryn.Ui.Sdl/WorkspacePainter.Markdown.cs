@@ -68,7 +68,7 @@ public sealed partial class WorkspacePainter
             else
             {
                 bool code = block.Kind == MarkdownBlockKind.Code;
-                float prefixWidth = block.Prefix.Length > 0 ? _font.MeasureText(block.Prefix) : 0;
+                float prefixWidth = block.Prefix.Length > 0 ? _fonts.MeasureText(block.Prefix, _font) : 0;
                 float bodyIndent = indent + prefixWidth + (code ? CW : 0);
                 if (code) result.Add(EmptyMarkdownLine(block.Start) with { CodeHeader = string.IsNullOrWhiteSpace(block.Language) ? "Code" : block.Language });
                 var lines = WrapRich(source, block.Runs, Math.Max(CW, width - bodyIndent - (code ? CW : 0)), block.Start);
@@ -108,7 +108,7 @@ public sealed partial class WorkspacePainter
                 string visible = newline ? "" : TerminalText.Sanitize(value);
                 int start = exact ? run.Start + elements.ElementIndex : run.Start;
                 int end = exact ? start + value.Length : run.End;
-                glyphs.Add(new(visible, start, end, MarkdownFont(run.Style).MeasureText(visible), newline,
+                glyphs.Add(new(visible, start, end, _fonts.MeasureText(visible, MarkdownFont(run.Style)), newline,
                     !newline && string.IsNullOrWhiteSpace(value), run.Style, run.Url));
             }
         }
@@ -140,7 +140,7 @@ public sealed partial class WorkspacePainter
             foreach (float position in columns) LineSegment(x + line.Indent + position, y, x + line.Indent + position, y + CH, Border);
             LineSegment(x + line.Indent, y + CH - 1, x + width, y + CH - 1, Border);
         }
-        if (line.Prefix.Length > 0) UiPixels(line.Prefix, x + line.Indent - _font.MeasureText(line.Prefix), y + 16, Accent, _font);
+        if (line.Prefix.Length > 0) UiPixels(line.Prefix, x + line.Indent - _fonts.MeasureText(line.Prefix, _font), y + 16, Accent, _font);
         var range = interactive && id is { } messageId && _ui.HistoryFocused ? chat.Selection.Range(chat.Messages, messageId) : null;
         _canvas.Save(); _canvas.ClipRect(SKRect.Create(x, y, width, CH));
         for (int i = 0; i < line.Styled!.Count; i++)

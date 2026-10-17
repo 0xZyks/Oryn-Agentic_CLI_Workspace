@@ -15,6 +15,7 @@ public sealed partial class WorkspacePainter : IDisposable
     private readonly SKFont _uiFont;
     private readonly SKFont _smallFont;
     private readonly SKFont _titleFont;
+    private readonly WorkspaceFonts _fonts;
     private System.Numerics.Vector2 _pointer = new(-1, -1);
     private System.Numerics.Vector2 _sceneCenter;
     private (int Width, int Height, PreviewZoom Zoom) _sceneFrame;
@@ -45,6 +46,7 @@ public sealed partial class WorkspacePainter : IDisposable
         _uiFont = new(_typeface, 14) { Edging = SKFontEdging.Antialias };
         _smallFont = new(_typeface, 12) { Edging = SKFontEdging.Antialias };
         _titleFont = new(_typeface, 15) { Edging = SKFontEdging.Antialias };
+        _fonts = new();
     }
     public void Draw(SKCanvas canvas, int width, int height, float scaleX = 1, float scaleY = 1, long? animationTime = null)
     {
@@ -635,25 +637,24 @@ public sealed partial class WorkspacePainter : IDisposable
         text = TerminalText.Sanitize(text).Replace('\n', ' ');
         float width = max == int.MaxValue ? float.MaxValue : max * CW;
         string suffix = _unicode ? "…" : "~";
-        if (font.MeasureText(text) > width)
+        if (_fonts.MeasureText(text, font) > width)
         {
             int[] positions = StringInfo.ParseCombiningCharacters(text);
             int length = positions.Length;
-            while (length > 0 && font.MeasureText(text[..positions[length - 1]] + suffix) > width) length--;
+            while (length > 0 && _fonts.MeasureText(text[..positions[length - 1]] + suffix, font) > width) length--;
             text = length > 0 ? text[..positions[length - 1]] + suffix : "";
         }
         UiPixels(text, x * CW, y * CH + 16, color, font);
     }
     private void UiPixels(string text, float x, float baseline, SKColor color, SKFont font)
-    { _paint.Color = color; _paint.Style = SKPaintStyle.Fill; _canvas.DrawText(TerminalText.Sanitize(text), x, baseline, SKTextAlign.Left, font, _paint); }
+    { _paint.Color = color; _paint.Style = SKPaintStyle.Fill; _fonts.DrawText(_canvas, TerminalText.Sanitize(text), x, baseline, font, _paint); }
     private void Text(string text, int x, int y, SKColor color, int max = int.MaxValue)
     {
         if (max <= 0) return;
         text = TerminalText.Sanitize(text).Replace('\n', ' ');
         int[] positions = StringInfo.ParseCombiningCharacters(text);
         if (positions.Length > max) text = text[..positions[Math.Max(0, max - 1)]] + (_unicode ? "…" : "~");
-        _paint.Color = color; _paint.Style = SKPaintStyle.Fill;
-        _canvas.DrawText(text, x * CW, y * CH + 16, SKTextAlign.Left, _font, _paint);
+        UiPixels(text, x * CW, y * CH + 16, color, _font);
     }
-    public void Dispose() { foreach (var font in _markdownFonts.Values) font.Dispose(); _paint.Dispose(); _font.Dispose(); _uiFont.Dispose(); _smallFont.Dispose(); _titleFont.Dispose(); _typeface.Dispose(); }
+    public void Dispose() { _fonts.Dispose(); foreach (var font in _markdownFonts.Values) font.Dispose(); _paint.Dispose(); _font.Dispose(); _uiFont.Dispose(); _smallFont.Dispose(); _titleFont.Dispose(); _typeface.Dispose(); }
 }

@@ -1,4 +1,4 @@
-"""Prepare isolated Oryn prompts and grade user-captured JSON answers; no inference."""
+"""Prepare isolated Oryn prompts and grade captured JSON answers; no inference."""
 import argparse
 import csv
 from datetime import datetime, timezone
@@ -176,7 +176,7 @@ def answer_json(text):
     return parse_json(text)
 
 
-def measurements(path, outcomes):
+def measurements(path, outcomes, method="user-captured; unknown fields excluded, not replaced with zero"):
     groups, issues, seen = {}, [], set()
     with path.open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.DictReader(stream)
@@ -211,7 +211,7 @@ def measurements(path, outcomes):
             group[kind] = {name: {"n": len(values), "median": statistics.median(values),
                                   "min": min(values), "max": max(values)}
                            for name, values in group[kind].items()}
-    return {"method": "user-captured; unknown fields excluded, not replaced with zero",
+    return {"method": method,
             "groups": list(groups.values()), "issues": issues}
 
 
@@ -248,7 +248,8 @@ def grade(args):
     report = {"suite_version": suite["version"], "run_metadata": metadata,
               "scored_at": datetime.now(timezone.utc).isoformat(),
               "passed": passed, "total": len(cases), "missing": sum(s == "missing" for s in outcomes.values()),
-              "domains": domains, "cases": cases, "measurements": measurements(run / "measurements.csv", outcomes),
+              "domains": domains, "cases": cases, "measurements": measurements(run / "measurements.csv", outcomes,
+                  metadata.get("measurement_method", "user-captured; unknown fields excluded, not replaced with zero")),
               "scope": "Strict public JSON checks only; no generated code executed and no inference performed."}
     dump(run / "report.json", report)
     print(f"{passed}/{len(cases)} passed; {report['missing']} missing. Report: {run / 'report.json'}")

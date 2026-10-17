@@ -3,6 +3,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets/Fonts/SymbolsNerdFontMono-Regular.ttf" LogicalName="Oryn.Fonts.SymbolsNerdFontMono-Regular.ttf" />
+    <EmbeddedResource Include="Assets/Fonts/LICENSE-NerdFontsSymbols.txt" />
+    <InternalsVisibleTo Include="Oryn.Ui.Smoke" />
     <ProjectReference Include="../Oryn.App/Oryn.App.csproj" />
     <PackageReference Include="ppy.SDL3-CS" Version="2026.1002.1" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />

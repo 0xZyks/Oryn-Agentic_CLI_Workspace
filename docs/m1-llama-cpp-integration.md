@@ -91,6 +91,8 @@ See [ADR 0017](adr/0017-native-chat-markdown.md) for the parser/source-span/copy
 
 If `llama-server` exits during startup, Oryn waits for redirected output to drain before displaying its exit code and the last bounded diagnostic lines. The ephemeral API key is masked. Copy that error to diagnose startup failures; a successful build alone does not validate model startup.
 
+Missing glyphs in replies, Markdown/code blocks and input use bundled **Symbols Nerd Font Mono v3.4.0**, then local system Unicode fonts. Icons are available offline without installing a font; no model configuration change is needed. Font selection and measured advances are shared by drawing/wrapping/hit testing, preserving source-based selection and copying. Extra CJK/emoji coverage depends on installed fonts; composed emoji and complex shaping remain unsupported. See [ADR 0018](adr/0018-bundled-nerd-font-fallback.md) and the [font provenance/license](../src/Oryn.Ui.Sdl/Assets/Fonts/README.md). A render-only specimen can be generated with `dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --font-preview artifacts/m1/font-ui-preview`.
+
 ## Durable project history
 
 The locator `.oryn/project.json` contains a stable project UUID and the chosen data root. Default canonical data lives under `.local/oryn/projects/<uuid>/` inside the project; set `ChatDataRoot` before creating the locator to choose another local repository. Changing a data-root setting alone is rejected for an existing locator: move/import its files deliberately. A moved workspace retaining both locator and data retains its identity; a Git clone without ignored local data does not inherit another project's history.
@@ -108,6 +110,8 @@ Before inference, Oryn applies the selected model's chat template and tokenizes 
 Older turns stay on disk. Their exclusion count and token-count status appear in chat. Interrupted/failed/truncated assistant replies are not treated as completed historical answers. **Project → Toggle selected source context** opts in to attaching the current source preview to the next submitted request only. The bounded excerpt, path, hash and attachment time are persisted with that user message; it is labeled as a preview snapshot that has not been revalidated against disk. This does not claim full repository access, semantic analysis or RAG. Archive indexing and generated semantic summaries remain later work.
 
 ## Validation prepared for the user
+
+Update 2026-10-17: the user authorized the agent to execute the public answer battery. The [scripted UI campaign](m1-automated-ui-battery.md) completed all 12 generations with real local GPT-OSS and SDL presentation; 11 answers passed strict grading and 12 histories matched after reopening. It revealed a streaming Markdown crash that was fixed. The targeted Markdown/inference tests were then run; this does not represent the full test suite or every acceptance scenario. The earlier partial campaign and its transport failures remain recorded.
 
 The solution and prepared test projects compile. Unit tests and SDL/inference/model benchmarks were not run during this change, following the user's request to execute the tests personally. No model or backend archive was downloaded by the coding agent; only small public metadata was consulted to pin the installer catalog.
 

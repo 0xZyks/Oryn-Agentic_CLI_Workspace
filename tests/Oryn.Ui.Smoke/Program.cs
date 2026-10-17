@@ -6,7 +6,7 @@ using Oryn.Ui.Sdl;
 using SDL;
 using static SDL.SDL3;
 
-return args.Contains("--chat-preview") || args.Contains("--markdown-preview") ? ChatUiPreview.Run(args) : args.Contains("--x11-keyboard") ? X11KeyboardSmoke.Run() : Smoke.Run(args);
+return args.Contains("--m1-benchmark") ? M1BenchmarkRun.Run(args) : args.Contains("--font-preview") ? FontUiPreview.Run(args) : args.Contains("--chat-preview") || args.Contains("--markdown-preview") ? ChatUiPreview.Run(args) : args.Contains("--x11-keyboard") ? X11KeyboardSmoke.Run() : Smoke.Run(args);
 
 static unsafe class Smoke
 {
@@ -19,6 +19,7 @@ static unsafe class Smoke
         Directory.CreateDirectory(captures);
         try
         {
+            FontFallbackChecks.Run();
             KeyboardChecks.Run(root);
             ChatRenderingChecks.Run(root, captures);
             AppearanceSearchChecks.Run(root, captures);

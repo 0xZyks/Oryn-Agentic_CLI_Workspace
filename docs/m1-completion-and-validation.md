@@ -1,6 +1,6 @@
 # M1 completion: project history, context, setup and user-run evaluation
 
-Status updated 2026-10-16: points 1–4 now have a compiled implementation: owned backend lifecycle, journal/gzip history, bounded context, hardware setup and profiles. The detailed behavior and current limits are in [the implementation guide](m1-llama-cpp-integration.md). The user-run battery below has not been executed. Retrieval indexing, summaries, a general export/import workflow and full automatic benchmark telemetry remain future work; design targets below must not be mistaken for executed acceptance evidence.
+Status updated 2026-10-17: points 1–4 have a compiled implementation: owned backend lifecycle, journal/gzip history, bounded context, hardware setup and profiles. The detailed behavior and current limits are in [the implementation guide](m1-llama-cpp-integration.md). A [scripted real-window GPT-OSS campaign](m1-automated-ui-battery.md) has now completed the 12 quality cases: 11 correct answers and 12 histories recovered. Full integration acceptance remains incomplete. Retrieval indexing, summaries, a general export/import workflow and comprehensive benchmark telemetry remain future work; design targets below must not be mistaken for executed acceptance evidence.
 
 ## 1. Local project history and compression
 
@@ -40,6 +40,8 @@ Selection must include quantized weights, KV cache/context, runtime/OS headroom 
 Remember the difference between **no model** (navigation and saved data remain available) and **core-only** (one primary model handles all logical roles). The current Python launcher is Linux/CUDA-specific; portable settings do not make that runtime portable.
 
 ## 4. Prepared quality battery: run it through Oryn
+
+A developer runner can also automate the actual chat/controller/backend and real SDL presentation, without manual copy/paste. See [the scripted UI battery and recorded campaign](m1-automated-ui-battery.md). The manual procedure below remains available. This runner covers the 12 quality cases and selected timing/history observations, not every integration scenario in section 5.
 
 The versioned suite is [`benchmarks/m1/cases.json`](../benchmarks/m1/cases.json). It includes C# behavior, grounded text extraction with revisions/negation, constrained reasoning, arithmetic and explicit ambiguity. Each case has a JSON output contract and a reviewed expected answer. It is a small **public development suite**, not a held-out benchmark or proof of general coding ability. The expected answers are deliberately excluded from exported prompts.
 

@@ -13,12 +13,20 @@ public sealed class LlamaCppRuntime : IAsyncDisposable
 {
     private readonly Process _process;
     private readonly Task _stdout, _stderr;
+    private readonly ConcurrentQueue<string> _diagnostics;
     private int _disposed;
-    private LlamaCppRuntime(Process process, IInferenceProvider provider, Task stdout, Task stderr)
-    { _process = process; Provider = provider; _stdout = stdout; _stderr = stderr; }
+    private LlamaCppRuntime(Process process, IInferenceProvider provider, Task stdout, Task stderr, ConcurrentQueue<string> diagnostics)
+    { _process = process; Provider = provider; _stdout = stdout; _stderr = stderr; _diagnostics = diagnostics; }
     public IInferenceProvider Provider { get; }
     public int ProcessId => _process.Id;
     public bool IsAlive => Volatile.Read(ref _disposed) == 0 && !_process.HasExited;
+    public async Task<string?> FailureDiagnosticAsync()
+    {
+        if (Volatile.Read(ref _disposed) != 0 || !_process.HasExited) return null;
+        try { await Task.WhenAll(_stdout, _stderr).WaitAsync(TimeSpan.FromSeconds(2)); }
+        catch (TimeoutException) { }
+        return $"llama-server arrêté (code {_process.ExitCode}).\n" + string.Join("\n", _diagnostics);
+    }
 
     public static async Task<LlamaCppRuntime> StartAsync(string projectRoot, WorkspaceSettings settings, CancellationToken token)
     {
@@ -63,7 +71,7 @@ public sealed class LlamaCppRuntime : IAsyncDisposable
                     {
                         using var models = JsonDocument.Parse(await response.Content.ReadAsStringAsync(requestDeadline.Token));
                         if (models.RootElement.GetProperty("data").EnumerateArray().Any(m => m.GetProperty("id").GetString() == alias) && !process.HasExited)
-                            return new(process, new LlamaCppProvider(http, endpoint, profile, alias, Path.GetFileName(model)), stdout, stderr);
+                            return new(process, new LlamaCppProvider(http, endpoint, profile, alias, Path.GetFileName(model)), stdout, stderr, tail);
                     }
                 }
                 catch (HttpRequestException) { }

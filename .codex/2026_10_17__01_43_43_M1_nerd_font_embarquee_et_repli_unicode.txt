@@ -1,0 +1,31 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; horodatage local : 2026-10-17T01:43:43.683850+02:00.
+
+Demande
+Ajouter avant la validation M1 une Nerd Font pour rendre lisibles les caractères manquants des réponses du modèle.
+
+Résultat et décisions
+Symbols Nerd Font Mono v3.4.0 embarquée, non modifiée, en ressource Oryn.Ui.Sdl avec licence MIT. Source officielle pinnée : https://github.com/ryanoasis/nerd-fonts/blob/v3.4.0/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf ; SHA256 f0f624d9b474bea1662cf7e862d44aebe1ae1f6c7f9cb7a0ca5d0e5ac9561c60. Fichier ~2.5 MB, disponible hors ligne sans installation système. Aucun changement des prompts/modèles.
+Nouveau WorkspaceFonts : conserve le texte monospace existant, Nerd Font pour les symboles absents puis matching système ; interrogation explicite de familles Unicode/emoji installées quand le matcher Skia ne répond pas. Caches bornés (2048 caractères, 64 faces), ressources natives libérées. Traitement par graphème puis scalaire Unicode pour les PUA supplémentaires ; styles Markdown conservés. Mesure et dessin partagent le repli pour wrapping, troncature et géométrie de sélection. Sources/messages/historique/copie inchangés.
+ADR 0018, provenance/licence et documentation mises à jour. Vérifications FontFallbackChecks préparées et incluses au smoke UI, non exécutées. Nouveau mode --font-preview limité au rendu fictif.
+
+Observations actuelles
+HEAD de référence 323a720. oryn.settings.json avait une modification utilisateur avant cette tâche : préservée, non éditée. Journal de reprise du prompt précédent également préservé.
+Premier rendu : icônes Nerd présentes, mais caractères CJK/emoji toujours absents car MatchCharacter ne trouvait pas les polices locales. Ajout du repli explicite par familles installées ; dernier rapport de couverture : Nerd BMP/supplémentaire résolus dans la ressource embarquée, CJK dans Droid Sans Fallback, emoji main dans Symbola, autres symboles/accents dans JetBrains Mono. Les captures finales ne montrent plus de cases manquantes sur cet échantillon.
+
+Vérifications réellement exécutées
+Téléchargement du TTF et de sa licence depuis le tag officiel v3.4.0, SHA256 et identification fc-scan vérifiés. Documentation officielle Symbols Only consultée.
+Build initial en sandbox échoue sans diagnostic (0 erreur affichée) ; compilation hors sandbox utilisée selon permissions. Une compilation intermédiaire a révélé l'absence de SKTypeface.UniqueId dans l'API ; corrigé par identité du handle détenu. Deux builds complets finaux dotnet build Oryn.slnx --no-restore hors sandbox réussis, zéro avertissement/erreur, le dernier après ajout du repli explicite.
+Rendu SEUL exécuté deux fois : dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --font-preview artifacts/m1/font-ui-preview. Captures normales/sélection/compacte/densité x2 générées ; PNG inspectés visuellement, glyph-coverage.txt lu. Fixtures isolées temporaires supprimées à la sortie, aucun historique utilisateur employé.
+git diff --check réussi. Aucune suite App/Smoke/UI interactive, modèle, probe LLM, génération ou benchmark exécuté. Pas de fenêtre SDL ni presse-papiers natif vérifiés.
+
+Fichiers concernés
+src/Oryn.Ui.Sdl/WorkspaceFonts.cs ; Assets/Fonts/README.md, LICENSE-NerdFontsSymbols.txt, SymbolsNerdFontMono-Regular.ttf ; Oryn.Ui.Sdl.csproj ; WorkspacePainter.cs, WorkspacePainter.Chat.cs, WorkspacePainter.Markdown.cs ; tests/Oryn.Ui.Smoke/FontFallbackChecks.cs, FontUiPreview.cs, Program.cs ; docs/adr/0018-bundled-nerd-font-fallback.md ; docs/m1-llama-cpp-integration.md ; README.md ; ce journal. Captures/rapport ignorés sous artifacts/m1/font-ui-preview.
+
+Validations historiques et limites
+La confirmation utilisateur du chat et les anciennes mesures de modèles restent historiques, non rejouées. Cette compilation et les captures hors fenêtre ne valident pas les événements SDL réels, ni le packaging natif Windows/macOS. Nerd Font fournit des icônes, pas tout Unicode ; la couverture supplémentaire dépend des polices installées. Caractères absents de toutes les faces toujours possibles. Shaping complexe, bidi et ligatures emoji composées non implémentés ; format controls/variation selectors non supportés ne dessinent pas de cases, source conservée.
+
+Prochaine étape
+Relancer le build courant via dotnet run --project src/Oryn.Cli --no-build -- . et vérifier les caractères réellement rencontrés, puis reprendre la validation M1 et les benchmarks réservés à l'utilisateur. La commande installée peut toujours viser une ancienne version, elle n'a pas été mise à jour. Aucun chantier M2/RAG/HIE lancé.
+
+Commit associé : aucun nouveau commit. Aucun push.

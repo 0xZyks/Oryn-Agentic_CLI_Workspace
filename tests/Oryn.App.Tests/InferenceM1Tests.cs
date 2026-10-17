@@ -82,7 +82,7 @@ public sealed class InferenceM1Tests
         }
         string journal = Path.Combine(directory, "active.jsonl"); File.AppendAllText(journal, "{invalid}\n");
         byte[] original = File.ReadAllBytes(journal);
-        Assert.Throws<JsonException>(() => new ProjectChatStore(scratch.Root));
+        Assert.ThrowsAny<JsonException>(() => new ProjectChatStore(scratch.Root));
         Assert.Equal(original, File.ReadAllBytes(journal));
     }
     [Fact]

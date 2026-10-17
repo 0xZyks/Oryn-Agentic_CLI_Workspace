@@ -31,7 +31,7 @@ public sealed partial class WorkspacePainter
             bool newline = value is "\n" or "\r\n" or "\r";
             string visible = newline ? "" : TerminalText.Sanitize(value);
             glyphs.Add(new(visible, elements.ElementIndex, elements.ElementIndex + value.Length,
-                _font.MeasureText(visible), newline, !newline && string.IsNullOrWhiteSpace(value)));
+                _fonts.MeasureText(visible, _font), newline, !newline && string.IsNullOrWhiteSpace(value)));
         }
         List<ChatVisualLine> lines = [];
         int start = 0;

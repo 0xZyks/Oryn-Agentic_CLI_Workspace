@@ -1,0 +1,24 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; date locale : 2026-10-17T01:48:34.405715+02:00.
+
+Demande
+Discuter l'exécution de la batterie depuis Oryn, le branchement du benchmark, ou le lancement local externe.
+
+Observations actuelles
+Protocole docs/m1-completion-and-validation.md relu ; scripts/benchmarks/m1.py et benchmarks/m1/cases.json inspectés. La suite actuelle comprend 12 cas fermés JSON. prepare crée des projets/historiques isolés, prompts sans oracles et fichiers de capture ; grade note les réponses et résume les mesures renseignées. Aucun appel modèle dans cet utilitaire. Aujourd'hui l'utilisateur passe manuellement les prompts dans Oryn ; pas de commande/menu de campagne automatique intégré.
+Le chat possède déjà pipeline asynchrone, canal borné, IDs de génération, préparation du contexte, persistance, durée et compteurs tokens en fin de génération. Le probe de setup mesure readiness/premier texte reçu ; cela n'est pas une preuve du premier affichage effectif dans la fenêtre. La télémétrie de campagne et cette mesure d'affichage restent à ajouter.
+
+Recommandation, non décision utilisateur ni implémentation
+Les deux approches sont locales. Commencer par la régression de l'application via terminal (.NET/tests/smokes), puis un petit lanceur de batterie qualité dans Tools/Benchmarks d'Oryn, instrumenté dès le début sur le vrai parcours du chat. Sélection de profil et répétitions, cas séquentiels avec contexte/historique isolés, progression/annulation, réponses brutes et rapports JSON/CSV, notation déterministe hors contexte du modèle. Conserver prompts/oracles existants versionnés. Distinguer premier chunk reçu/premier affichage, durée totale, chargement, tokens et ressources observables. Un modèle résident à la fois ; conditions de chargement et répétitions explicites. Comparaison backend seul ensuite comme référence technique, pas remplacement des mesures intégrées.
+Les tests d'application/SDL ne sont pas des questions à noter par le modèle. Un bouton lançant dotnet ou du shell depuis Oryn n'est pas nécessaire à cette tranche. Aucun besoin de HIE, RAG ou d'agent d'exécution pour le lanceur qualité.
+
+Vérifications de cette session
+Lecture ciblée des docs/scripts/cas, du provider et du contrôleur inférence ; inspection git status. Aucun code modifié, build, test, modèle, benchmark ou campagne lancé. Les changements Nerd Font, le journal précédent et la modification utilisateur de oryn.settings.json sont préservés.
+
+Validations historiques
+Builds et captures Nerd Font du prompt précédent ; anciennes mesures standalone M1. Non rejoués pour cette discussion et ne prouvent pas une campagne intégrée automatisée.
+
+Suite prévue
+Attendre le choix utilisateur sur l'implémentation du lanceur ; la question d'orientation n'autorise pas à le développer ni lancer une campagne. Validation complète M1 reste la priorité ; pas de nouveau chantier M2/HIE.
+
+Fichiers : uniquement ce journal. Commit associé : aucun nouveau commit ; HEAD de référence 323a720. Aucun push.

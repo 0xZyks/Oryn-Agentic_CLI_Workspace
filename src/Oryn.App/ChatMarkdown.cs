@@ -57,8 +57,9 @@ public static class ChatMarkdown
             else if (block is CodeBlock code)
             {
                 List<MarkdownRun> runs = [];
-                foreach (var line in code.Lines.Lines.Take(code.Lines.Count))
+                for (int i = 0; i < code.Lines.Count; i++)
                 {
+                    var line = code.Lines.Lines[i];
                     string text = line.Slice.ToString();
                     int start = Math.Clamp(line.Position, 0, source.Length);
                     // Slices backed by the original source retain exact indentation/content positions.

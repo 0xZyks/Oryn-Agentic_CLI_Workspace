@@ -151,7 +151,15 @@ public sealed partial class GraphicalWorkspaceController
                 status = _inferenceLifetime.IsCancellationRequested ? ChatMessageStatus.Interrupted : ChatMessageStatus.Cancelled;
                 error = elapsed.Elapsed.TotalSeconds >= settings.GenerationTimeoutSeconds ? "Délai global de génération dépassé." : "Génération annulée.";
             }
-            catch (Exception ex) { status = ChatMessageStatus.Failed; error = ex.Message; }
+            catch (Exception ex)
+            {
+                status = ChatMessageStatus.Failed; error = ex.Message;
+                if (_runtime is { } failed && await failed.FailureDiagnosticAsync() is { } diagnostic)
+                {
+                    error += "\n" + diagnostic;
+                    _completed.Enqueue(() => BackendStatus = "Backend arrêté pendant la génération");
+                }
+            }
             finally
             {
                 if (saved)

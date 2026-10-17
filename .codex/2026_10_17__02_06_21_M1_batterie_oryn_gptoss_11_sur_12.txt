@@ -1,0 +1,43 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; date locale : 2026-10-17T02:06:21.021901+02:00.
+
+DEMANDE ET AUTORISATION
+L'utilisateur demande à l'agent de faire les 12 cas manuels à sa place. Cette instruction autorise ici l'exécution de la batterie et les vérifications nécessaires, en remplacement de la réserve antérieure de ces exécutions à l'utilisateur. Portée retenue : suite publique JSON M1 sur le profil sélectionné, pas toute la roadmap ni tous les modèles.
+
+RESULTAT
+Lanceur développeur ajouté : tests/Oryn.Ui.Smoke/M1BenchmarkRun.cs, option --m1-benchmark <campagne préparée>. Il utilise le contrôleur réel, le contexte/provider/runtime réels, stockage réel et fenêtres SDL/Skia ; saisie via API du contrôleur, pas clavier/clipboard SDL simulés. Aucun bouton Tools encore ajouté. Cas séquentiels, historique/workspace vierges, serveur redémarré à chaque cas et arrêté via fermeture normale, captures après SDL_RenderPresent. Réponses attendues jamais fournies au modèle. Réponses brutes, rapport d'états, mesures, métadonnées de modèle et vérification de reprise sur disque conservés.
+Campagne complète artifacts/m1/automated-gptoss-20261017-02 : 12/12 générations Complete, 12/12 historiques récupérés avec mêmes IDs/textes/statuts ; correction déterministe 11/12. C04 faux : réponse A=true,B=true ; attendu A=false,B=true pour méthode d'interface C# à implémentation par défaut. Les 11 autres cas réussissent. Aucun oracle/prompt modifié.
+Première frame présentée médiane 4.921708s (min3.765344,max19.145584) ; fin médiane5.2974555s (min4.101235,max19.229176). Chargement et persistance inclus. Une passe par tâche, pas p95 ni performances générales. Temps mesuré après SDL_RenderPresent à60Hz ; compositeur physique non mesuré. Caches OS non contrôlés, ne pas qualifier de cold-disk. Tokens fournis par usage/backend et statut App ; raisonnement séparé inconnu. Durée de chargement seule et mémoire par cas laissées vides.
+Profil Core sélectionné dans la configuration utilisateur, conservé : GPT-OSS20B MXFP4, contexte4096, sortie1024, sécurité128, CpuMoeLayers2, FlashAttention on, raisonnement low/budget256, température1/top-p1/top-k0/presence0. SHA256 réel 27cd6c432c7672cb812a92f611cf3ba7bbc35928262bb1e1253ff4ee6ae35901, égal au catalogue. Backend b11658, machine Linux/Ryzen5500/RTX3060 12GiB. run.json conserve profil effectif, plateforme/CPU/RAM, révision dirty et empreintes/snapshot des sources.
+
+PREMIERE TENTATIVE CONSERVEE, PAS MASQUEE
+artifacts/m1/automated-gptoss-20261017-01 : C01 réussi, C02/C03 Failed sur The response ended prematurely, C04 Complete mais réponse fausse, C05 arrêt du harness sur ArgumentNullException source. Sept cas non lancés ; correction affiche1/12 et9 réponses manquantes (incluant deux générations sans réponse). Ce n'est pas une seconde campagne complète de qualité.
+Les ruptures réseau/backend C02/C03 ne se sont pas reproduites dans la campagne02 ; cause non établie, ne pas annoncer réparation permanente. Diagnostics d'arrêt serveur enrichis pour les prochaines occurrences.
+
+DEFAUTS CORRIGES
+ChatMarkdown itérait code.Lines.Lines.Take(count) alors que Markdig peut fournir une liste sous-jacente nulle pour une fence vide/encore en streaming. Remplacé par boucle bornée par Count, sans déréférencer la liste lorsqueCount0 ; régressions pour ``` / ```json / ouverture avec newline / fence vide fermée. Le rendu de la campagne02 ne tombe plus.
+LlamaCppRuntime conserve sa queue de diagnostics déjà masqués/bornés et fournit le code d'arrêt/tail lorsqu'un processus détenu meurt pendant la génération ; le contrôleur enrichit alors l'erreur et l'état backend.
+Une assertion existante de InferenceM1Tests attendait exactement JsonException au lieu d'accepter JsonReaderException dérivée. Corrigée en ThrowsAny<JsonException>, assertion de préservation des octets inchangée.
+Le correcteur Python reprend maintenant measurement_method des métadonnées, pour ne pas étiqueter ces mesures scriptées comme une saisie manuelle.
+
+VALIDATIONS REELLEMENT EXECUTEES
+- Inspection état/configuration, port/GPU/session graphique hors sandbox selon autorisations. Port18080 libre au début et à la fin ; aucun llama-server/oryn de campagne observé après fermeture. GPU total échantillonné1041MiB avant, un échantillon11316MiB à67% pendant,1281MiB après ; GPU entier, pas pics ni mémoire par processus/cas.
+- dotnet build Oryn.slnx --no-restore hors sandbox : plusieurs compilations réussies, dernière0avertissement/0erreur.
+- prepare des deux campagnes ; exécution réelle des deux campagnes via dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- --m1-benchmark <dossier> hors sandbox pour GPU/SDL. Premier runner arrêté sur défaut de rendu ; second termine les12cas.
+- Grade des deux tentatives réellement exécuté. Exit1 du correcteur pour11/12 est attendu : une réponse fausse, pas un échec d'infrastructure de la campagne02.
+- dotnet test tests/Oryn.App.Tests --no-build --no-restore --filter FullyQualifiedName~ChatMarkdownTests :13/13 après correctif. Première tentative de test en sandbox bloquée par le socket VSTest puis escalade prévue.
+- Suite InferenceM1Tests initialement19/20 (assertion typeexacte ci-dessus) ; après correction, dotnet test tests/Oryn.App.Tests --no-build --no-restore --filter 'FullyQualifiedName~ChatMarkdownTests|FullyQualifiedName~InferenceM1Tests' :33/33, aucun ignoré.
+- Inspection visuelle des capturesC05 etT01 réelles, contrôle du hash modèle, lecture rapports/CSV et récupération des12historiques par le runner.
+- AST Python et git diff --check réussis.
+Aucune suite App complète ni smoke général stub/keyboard/souris/clipboard exécuté. Aucun téléchargement ni autre modèle lancé. Pas de commit/push.
+
+FICHIERS
+Nouveaux tests/Oryn.Ui.Smoke/M1BenchmarkRun.cs et docs/m1-automated-ui-battery.md ; modifiés tests/Oryn.Ui.Smoke/Program.cs, src/Oryn.App/ChatMarkdown.cs,LlamaCppRuntime.cs,GraphicalWorkspaceController.Inference.cs, tests/Oryn.App.Tests/ChatMarkdownTests.cs,InferenceM1Tests.cs, scripts/benchmarks/m1.py, docs/m1-completion-and-validation.md,m1-llama-cpp-integration.md ; ce log. Préexistants NerdFont, README/configuration utilisateur et journaux préservés.
+Artefacts ignorés : deux campagnes sous artifacts/m1/ ; résumé lisible artifacts/m1/automated-gptoss-20261017-02/SUMMARY.md ; report.json,execution.json,measurements.csv,run.json, réponses,prompts,workspaces et PNG. run-01 préexistant de l'utilisateur non modifié.
+
+VALIDATIONS HISTORIQUES ET LIMITES
+Anciennes mesures backend et confirmation de chat historiques distinctes ; pas réutilisées comme preuve de cette campagne. Les captures NerdFont du prompt précédent ne sont pas une suite d'événements native. Pas de validation Windows/macOS. La petite suite publique et les33tests ciblés ne clôturent pas toutM1. Pas d'exécution de code généré ni test agentique. Le diagnostic serveur enrichi ne démontre pas la cause des deux ruptures précédentes.
+
+SUITE
+Examiner la réponseC04/fiabilité du modèle sans modifier rétroactivement l'oracle. Vérifier les scénariosI01-I11 restants, l'annulation/failures/natif et éventuellement répétitions contrôlées ou comparaison Fast/8B. Le fastactuel est4B dans la config et l'artefact4B n'est pas installé ; ne pas le confondre avec8B. Aucun nouveau chantierM2/RAG/HIE demandé. Une UI Tools/Benchmarks reste une évolution possible, le lanceur développeur est déjà utilisable.
+Commit associé : aucun nouveau commit ; HEAD de référence323a720.

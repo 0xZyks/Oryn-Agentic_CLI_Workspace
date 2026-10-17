@@ -1,0 +1,23 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; horodatage local : 2026-10-17T01:31:08.762898+02:00.
+
+Demande
+Lire AGENTS.md et charger les logs M1.
+
+Résultat et observations actuelles
+Lecture d'AGENTS.md, de README_ORYN.md et des 29 journaux M1. Aucun log M0 lu. Dernier journal identifié par le nom : 2026_10_16__03_41_45_M1_reprise_validation_complete_et_benchmarks.txt.
+État Git avant journalisation : propre. HEAD actuel : 323a720, Impl Multi-Model, llama-cpp server, adjust UI and Markdown Formatting integration. Les mentions historiques d'un arbre modifié sans commit ne décrivent donc plus l'état actuel.
+Présence recoupée des contrats provider/runtime llama.cpp, du stockage UUID/journal JSONL/gzip et du Markdown Markdig, ainsi que des suites et utilitaires M1. Configuration projet : Core GPT-OSS, CpuMoeLayers=2, FlashAttention=on. Ne pas perdre le réglage hybride mémoire.
+
+Validations historiques, non rejouées
+Les logs précédents rapportent compilation réussie, previews graphiques hors fenêtre et confirmation utilisateur du sélecteur/chargement GPT-OSS. Les tests fonctionnels, smoke SDL interactif et benchmarks du chemin intégré restent à exécuter par l'utilisateur selon la dernière passation ; les anciens benchmarks backend ne les remplacent pas.
+
+Vérifications de cette session
+Lectures des consignes, vision et journaux ; git status --short et git log -1 ; inspection ciblée des fichiers/configuration et présence des tests/scripts. Aucun build, test, modèle, fenêtre, téléchargement ou benchmark exécuté. Aucun code applicatif modifié.
+Écriture initiale du journal refusée : .codex protégé en lecture seule dans le sandbox ; nouvelle tentative via l'autorisation prévue.
+
+Prochaine étape prévue
+Reprendre la batterie complète M1 et les benchmarks avec l'utilisateur, depuis docs/m1-completion-and-validation.md et scripts/benchmarks/m1.py ; conserver la distinction réussi/échoué/non exécuté/non disponible. Cette demande de lecture ne lance pas les validations. Ne pas commencer M2, RAG complet ou HIE avant le bilan demandé.
+
+Fichiers et commit
+Seul ce nouveau journal ajouté. Aucun commit créé pour cette demande ; commit de référence observé : 323a720. Aucun push.

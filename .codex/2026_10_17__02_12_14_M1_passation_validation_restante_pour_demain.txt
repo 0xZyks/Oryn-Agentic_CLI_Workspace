@@ -1,0 +1,40 @@
+Palier principal : M1.
+Fuseau : Europe/Paris ; horodatage local : 2026-10-17T02:12:14.349532+02:00.
+
+DEMANDE ET POINT DE REPRISE
+L'utilisateur arrête pour aller dormir et demande de consigner le bilan ainsi que les validations restantes pour demain. Ne rien lancer de plus cette nuit. Cette passation ne marque pas M1 terminé et ne lance pas M2.
+
+ETAT A RETENIR
+Le socle M1 est intégré : backend llama.cpp local détenu, streaming, annulation, erreurs visibles, contexte borné, historique UUID/journal/gzip/reprise, setup et profils Fast/Core. Nerd Font embarquée et repli Unicode ajoutés cette session. Implémentation principale livrée ; clôture M1 encore conditionnée par stabilisation et validation restante.
+Le lanceur de batterie est un mode développeur tests/Oryn.Ui.Smoke --m1-benchmark ; aucun bouton Tools/Benchmarks n'est encore intégré. La saisie est pilotée via le contrôleur, avec de vraies fenêtres SDL : cela ne valide pas les événements clavier/souris/presse-papiers natifs.
+HEAD actuel observé : 323a720. Nombreux changements locaux et fichiers non suivis préexistants, dont oryn.settings.json modifié par l'utilisateur : tous préservés. Aucun commit/push nouveau.
+
+VALIDATIONS HISTORIQUES DE CETTE SESSION, NON REJOUEES POUR CE PROMPT
+Campagne complète artifacts/m1/automated-gptoss-20261017-02 : GPT-OSS Core, 12/12 générations Complete, 12/12 historiques récupérés à l'identique après fermeture, 11/12 réponses correctes. C04 est une erreur du modèle sur les méthodes d'interface C#, pas une preuve de panne d'intégration. Résumé : artifacts/m1/automated-gptoss-20261017-02/SUMMARY.md ; détails report.json, execution.json, run.json, measurements.csv et captures.
+Temps médian jusqu'à première frame présentée4.92s, fin5.30s, chargement inclus, cache OS non contrôlé. Une seule passe, pas p95 ni benchmark général. Le profil testé : contexte4096, CpuMoeLayers2, FlashAttention on ; conserver ce réglage mémoire GPT-OSS. Le profil Fast actuel configuré est4B, non8B, artefact4B absent lors de l'inspection précédente ; pas de téléchargement implicite.
+Campagne01 partielle conservée : deux ruptures de réponse backend C02/C03, erreur de réponse C04 et crash de rendu C05. Crash Markdown sur fence encore vide corrigé ; 13 tests Markdown passent. Diagnostics d'arrêt backend enrichis ; cause des deux ruptures toujours indéterminée, elles n'ont pas réapparu dans campagne02. Ne pas déclarer le problème définitivement réglé.
+Dernier build complet réussi0avertissement/0erreur. Tests ciblés Markdown+InferenceM1 :33/33 réussis après correction d'une assertion trop stricte sur JsonException dérivée. Cela n'est pas la suite App complète. Port18080 libre et aucun serveur de campagne laissé actif à la fin de l'exécution précédente.
+
+TRAVAIL PREVU POUR LA REPRISE — PAS EXECUTE ICI
+1. Inspecter l'état Git/fichiers avant modification ; lire ce log puis, si besoin, le précédent 2026_10_17__02_06_21_M1_batterie_oryn_gptoss_11_sur_12.txt. Conserver changements utilisateur et artefacts historiques.
+2. Lancer les vérifications générales depuis la racine du dépôt, après recompilation si nécessaire :
+   dotnet build Oryn.slnx --no-restore
+   dotnet test tests/Oryn.App.Tests --no-build --no-restore
+   dotnet run --project tests/Oryn.Smoke --no-build --no-restore
+   dotnet run --project tests/Oryn.Ui.Smoke --no-build --no-restore -- artifacts/m1/ui-validation-next
+   Choisir un nouveau dossier de captures si celui-ci existe. Suivre les permissions : build/test/GPU/SDL peuvent exiger hors sandbox ; ne pas contourner un refus.
+3. Compléter les scénarios d'acceptation réels I01-I11 dans docs/m1-completion-and-validation.md, avec workspaces jetables. Priorités :
+   - Annulation pendant chargement et génération ; nouvel envoi sans anciens fragments ; fermeture pendant activité, sans processus orphelin ni perte silencieuse.
+   - Fast/Core avec profils réellement installés ; remplacement séquentiel d'un seul gros modèle et paramètres préservés. Pas de confusion sans-modèle/core-only.
+   - Absence de modèle/backend, port occupé, timeout/rupture, récupération après erreur. Investiguer les deux ruptures observées avec les diagnostics enrichis si elles récidivent.
+   - Reprise/états partiels, historique corrompu ou stockage indisponible/verrouillé, intégrité des segments et migration. Les tests déterministes couvrent déjà une partie, mais ne remplacent pas tous les scénarios réels.
+   - Clavier/souris/texte/selection/copie native, Markdown streamé, brouillon/scroll, petite fenêtre, resize/scaling et fermeture.
+   - Découverte configuration/override, budgets de contexte et setup/refus de téléchargement.
+4. Séparer réussi/échoué/non exécuté/non disponible. Export/import général toujours absent : cette partie d'I10 est non disponible, pas réussie. Pas de compatibilité Windows/macOS revendiquée sur la seule validation Linux.
+5. Corriger seulement les défauts démontrés et relancer les vérifications affectées ; produire ensuite un bilan de clôture M1. Comparaisons modèles/répétitions/mesures plus complètes possibles ensuite, sans prétendre que le11/12 certifie l'ingénierie générale.
+Guides : docs/m1-llama-cpp-integration.md, docs/m1-completion-and-validation.md, docs/m1-automated-ui-battery.md. Les anciens benchmarks backend restent distincts du parcours Oryn.
+Ne pas commencer M2, RAG complet ou HIE avant le bilan de validation demandé. Une UI Tools/Benchmarks n'est pas requise pour utiliser le lanceur développeur existant.
+
+VERIFICATIONS REELLEMENT EXECUTEES POUR CE PROMPT
+git status --short, git log -1, identification du dernier log par horodatage du nom et lecture de ce log. Création du présent journal uniquement. Aucun build, test, fenêtre, modèle, benchmark, installation ou modification applicative pour cette passation.
+Fichier concerné : ce nouveau journal .codex seulement. Commit associé : aucun nouveau commit ; référence323a720. Aucun push.

@@ -31,7 +31,7 @@
       "PresencePenalty": 0
     },
     "fast": {
-      "CatalogId": "8b-q4",
+      "CatalogId": "4b-q4",
       "ModelPath": null,
       "ContextTokens": 4096,
       "MaxOutputTokens": 1024,

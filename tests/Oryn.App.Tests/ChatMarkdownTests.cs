@@ -66,9 +66,14 @@ public sealed class ChatMarkdownTests
     [InlineData("[lien](https://")]
     [InlineData("| a | b |\n| --")]
     [InlineData("***")]
+    [InlineData("```")]
+    [InlineData("```json")]
+    [InlineData("```json\n")]
+    [InlineData("```json\n```")]
     public void PartialStreamingMarkdownRemainsParseable(string source)
     {
         var blocks = ChatMarkdown.Parse(source);
         Assert.All(blocks.SelectMany(b => b.Runs), r => { Assert.InRange(r.Start, 0, source.Length); Assert.InRange(r.End, r.Start, source.Length); });
+        _ = ChatMarkdown.CopySelection(source, 0, source.Length);
     }
 }
